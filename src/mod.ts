@@ -1,2 +1,3 @@
-console.log('123')
-export {}
+export const interaction = (request: Request): Response => {
+  return Response.json({})
+}
