@@ -32,5 +32,8 @@
     "semiColons": false,
     "singleQuote": true,
     "spaceSurroundingProperties": false
+  },
+  "compilerOptions": {
+    "verbatimModuleSyntax": true
   }
 }
