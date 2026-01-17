@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": true,
+    //
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    // "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "strict": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

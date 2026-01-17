@@ -1,0 +1,8 @@
+{
+  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "headwind.runOnSave": true,
+  "svg.preview.background": "editor"
+}
