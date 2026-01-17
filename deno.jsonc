@@ -7,13 +7,13 @@
     "dev": "deno run -A --env-file --watch-hmr src/serve.ts"
   },
   "imports": {
-    "@hono/standard-validator": "npm:@hono/standard-validator@^0.1.5",
+    "@hono/standard-validator": "npm:@hono/standard-validator@^0.2.2",
     "@std/bytes": "jsr:@std/bytes@^1.0.6",
     "@std/collections": "jsr:@std/collections@^1.1.3",
     "@std/encoding": "jsr:@std/encoding@^1.0.10",
-    "discord-api-types": "npm:discord-api-types@^0.38.21",
-    "hono": "npm:hono@^4.9.4",
-    "zod": "npm:zod@^4.1.3"
+    "discord-api-types": "npm:discord-api-types@^0.38.37",
+    "hono": "npm:hono@^4.11.4",
+    "zod": "npm:zod@^4.3.5"
   },
   "exports": {
     ".": "./src/mod.ts"
@@ -32,9 +32,5 @@
     "semiColons": false,
     "singleQuote": true,
     "spaceSurroundingProperties": false
-  },
-  "unstable": [
-    "fmt-component",
-    "kv"
-  ]
+  }
 }
