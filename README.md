@@ -51,7 +51,7 @@ Define commands:
 
 ```ts
 // ./src/commands.ts
-import { defineCommand, Format } from '@maks11060/discord-interactions'
+import {defineCommand, Format} from '@maks11060/discord-interactions'
 
 const hello = defineCommand({
   name: 'hello',
@@ -84,9 +84,9 @@ deploy-discord -h
 
 ```ts
 // main.ts
-import { Hono } from 'hono'
-import { discordInteraction, importKeyRaw } from '@maks11060/discord-interactions/hono'
-import { commands } from './src/commands.ts'
+import {Hono} from 'hono'
+import {discordInteraction, importKeyRaw} from '@maks11060/discord-interactions/hono'
+import {commands} from './src/commands.ts'
 
 const app = new Hono()
 const key = await importKeyRaw(Deno.env.get('CLIENT_PUBLIC_KEY')!)
@@ -100,8 +100,8 @@ Deno.serve(app.fetch)
 
 ```ts
 // main.ts
-import { discordInteraction, importKeyRaw } from '@maks11060/discord-interactions'
-import { commands } from './src/commands.ts'
+import {discordInteraction, importKeyRaw} from '@maks11060/discord-interactions'
+import {commands} from './src/commands.ts'
 
 const key = await importKeyRaw(Deno.env.get('CLIENT_PUBLIC_KEY')!)
 const interaction = await discordInteraction(key, commands)
@@ -153,8 +153,8 @@ Deno.serve((req) => {
 
 ```ts
 // ./src/commands.ts
-import { defineCommand } from '@maks11060/discord-interactions' // or 'jsr:@maks11060/discord-interactions'
-import { ApplicationCommandType } from 'discord-api-types/v10' // or 'npm:discord-api-types/v10'
+import {defineCommand} from '@maks11060/discord-interactions' // or 'jsr:@maks11060/discord-interactions'
+import {ApplicationCommandType} from 'discord-api-types/v10' // or 'npm:discord-api-types/v10'
 
 const test = defineCommand({
   type: ApplicationCommandType.ChatInput,
