@@ -11,5 +11,7 @@
 
   "explorer.fileNesting.patterns": {
     "deno.jsonc": "package.json, svelte.config.*, drizzle.config.*, .gitignore"
-  }
+  },
+
+  "explorer.incrementalNaming": "smart"
 }
