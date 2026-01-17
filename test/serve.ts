@@ -1,11 +1,11 @@
 #!/usr/bin/env -S deno run -A --env-file --watch-hmr
 
-import {Hono} from 'hono'
-import {createMiddleware} from 'hono/factory'
-import {cors} from 'hono/cors'
-import {logger} from 'hono/logger'
+import {verifyRequestSignature} from '#/lib/crypto.ts'
 import {interaction} from '@maks11060/discord-interactions'
-import {verifyRequestSignature} from '../src/lib/crypto.ts'
+import {Hono} from 'hono'
+import {cors} from 'hono/cors'
+import {createMiddleware} from 'hono/factory'
+import {logger} from 'hono/logger'
 import {publicKey} from './config.ts'
 
 const verifyInteraction = (key: CryptoKey /* | Record<string, CryptoKey> */) => {

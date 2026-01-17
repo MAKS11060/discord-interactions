@@ -1,4 +1,6 @@
 .env
 .vite
 
+.tmp/
+
 node_modules
