@@ -9,7 +9,13 @@ const encoder = new TextEncoder()
  * @returns A promise that resolves to a CryptoKey object representing the imported public key.
  */
 export const importPublicKey = (publicKey: string): Promise<CryptoKey> => {
-  return crypto.subtle.importKey('raw', Uint8Array.fromHex(publicKey), 'Ed25519', false, ['verify'])
+  return crypto.subtle.importKey(
+    'raw',
+    Uint8Array.fromHex(publicKey),
+    'Ed25519',
+    false,
+    ['verify'],
+  )
 }
 
 /**

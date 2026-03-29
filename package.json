@@ -12,6 +12,7 @@
   "packageManager": "pnpm@10.30.0",
   "dependencies": {
     "@maks11060/oauth2": "jsr:^0.0.2",
+    "@std/bytes": "jsr:^1.0.6",
     "@types/node": "^25.5.0",
     "@typescript/native-preview": "7.0.0-dev.20260329.1",
     "discord-api-types": "^0.38.43",
