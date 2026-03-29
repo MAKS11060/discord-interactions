@@ -1259,6 +1259,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/guilds/{guild_id}/messages/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                guild_id: components["schemas"]["SnowflakeType"];
+            };
+            cookie?: never;
+        };
+        get: operations["guild_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/guilds/{guild_id}/new-member-welcome": {
         parameters: {
             query?: never;
@@ -1972,6 +1990,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lobbies/{lobby_id}/messages/{message_id}/moderation-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lobby_id: components["schemas"]["SnowflakeType"];
+                message_id: components["schemas"]["SnowflakeType"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Update the external moderation metadata for a lobby message. */
+        put: operations["update_lobby_message_external_moderation_metadata"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/oauth2/@me": {
         parameters: {
             query?: never;
@@ -2029,6 +2067,27 @@ export interface paths {
         };
         get: operations["get_openid_connect_userinfo"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/partner-sdk/dms/{user_id_1}/{user_id_2}/messages/{message_id}/moderation-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id_1: components["schemas"]["SnowflakeType"];
+                user_id_2: components["schemas"]["SnowflakeType"];
+                message_id: components["schemas"]["SnowflakeType"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Update the external moderation metadata for a user message (DM). */
+        put: operations["update_user_message_external_moderation_metadata"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2492,7 +2551,7 @@ export interface components {
     schemas: {
         AccountResponse: {
             id: string;
-            name?: string | null;
+            name: string | null;
         };
         ActionRowComponentForMessageRequest: {
             /**
@@ -2874,7 +2933,7 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             application_id: components["schemas"]["SnowflakeType"];
             version: components["schemas"]["SnowflakeType"];
-            default_member_permissions?: string | null;
+            default_member_permissions: string | null;
             type: components["schemas"]["ApplicationCommandType"];
             name: string;
             name_localized?: string;
@@ -3128,9 +3187,9 @@ export interface components {
         };
         ApplicationIdentityProviderAuthType: string & ("OIDC" | "EPIC_ONLINE_SERVICES_ACCESS_TOKEN" | "EPIC_ONLINE_SERVICES_ID_TOKEN" | "STEAM_SESSION_TICKET" | "UNITY_SERVICES_ID_TOKEN" | "DISCORD_BOT_ISSUED_ACCESS_TOKEN" | "APPLE_ID_TOKEN" | "PLAYSTATION_NETWORK_ID_TOKEN");
         ApplicationIncomingWebhookResponse: {
-            application_id?: null | components["schemas"]["SnowflakeType"];
-            avatar?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
+            application_id: null | components["schemas"]["SnowflakeType"];
+            avatar: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
             guild_id?: null | components["schemas"]["SnowflakeType"];
             id: components["schemas"]["SnowflakeType"];
             name: string;
@@ -3160,9 +3219,9 @@ export interface components {
         ApplicationResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
+            icon: string | null;
             description: string;
-            type?: null | components["schemas"]["ApplicationTypes"];
+            type: null | components["schemas"]["ApplicationTypes"];
             cover_image?: string;
             primary_sku_id?: components["schemas"]["SnowflakeType"];
             bot?: components["schemas"]["UserResponse"];
@@ -3251,8 +3310,8 @@ export interface components {
         AuditLogEntryResponse: {
             id: components["schemas"]["SnowflakeType"];
             action_type: components["schemas"]["AuditLogActionTypes"];
-            user_id?: null | components["schemas"]["SnowflakeType"];
-            target_id?: null | components["schemas"]["SnowflakeType"];
+            user_id: null | components["schemas"]["SnowflakeType"];
+            target_id: null | components["schemas"]["SnowflakeType"];
             changes?: components["schemas"]["AuditLogObjectChangeResponse"][];
             options?: {
                 [key: string]: string;
@@ -3260,10 +3319,11 @@ export interface components {
             reason?: string;
         };
         AuditLogObjectChangeResponse: {
-            key?: string | null;
+            key: string | null;
             new_value?: unknown;
             old_value?: unknown;
         };
+        AuthorType: string & ("user" | "bot" | "webhook" | "-user" | "-bot" | "-webhook");
         /** Format: int32 */
         AutomodActionType: number & (1 | 2 | 3 | 4);
         /** Format: int32 */
@@ -3291,27 +3351,27 @@ export interface components {
         BasicApplicationResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
+            icon: string | null;
             description: string;
-            type?: null | components["schemas"]["ApplicationTypes"];
+            type: null | components["schemas"]["ApplicationTypes"];
             cover_image?: string;
             primary_sku_id?: components["schemas"]["SnowflakeType"];
             bot?: components["schemas"]["UserResponse"];
         };
         BasicGuildMemberResponse: {
-            avatar?: string | null;
+            avatar: string | null;
             avatar_decoration_data?: null | components["schemas"]["UserAvatarDecorationResponse"];
-            banner?: string | null;
+            banner: string | null;
             /** Format: date-time */
-            communication_disabled_until?: string | null;
+            communication_disabled_until: string | null;
             /** Format: int32 */
             flags: number;
             /** Format: date-time */
             joined_at: string;
-            nick?: string | null;
+            nick: string | null;
             pending: boolean;
             /** Format: date-time */
-            premium_since?: string | null;
+            premium_since: string | null;
             roles: components["schemas"]["SnowflakeType"][];
             collectibles?: null | components["schemas"]["UserCollectiblesResponse"];
         };
@@ -3325,7 +3385,7 @@ export interface components {
             /** Format: date-time */
             timestamp: string;
             /** Format: date-time */
-            edited_timestamp?: string | null;
+            edited_timestamp: string | null;
             /** Format: int32 */
             flags: number;
             components: (components["schemas"]["ActionRowComponentResponse"] | components["schemas"]["ContainerComponentResponse"] | components["schemas"]["FileComponentResponse"] | components["schemas"]["MediaGalleryComponentResponse"] | components["schemas"]["SectionComponentResponse"] | components["schemas"]["SeparatorComponentResponse"] | components["schemas"]["TextDisplayComponentResponse"])[];
@@ -3449,9 +3509,9 @@ export interface components {
             webhook_id: components["schemas"]["SnowflakeType"];
         };
         ChannelFollowerWebhookResponse: {
-            application_id?: null | components["schemas"]["SnowflakeType"];
-            avatar?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
+            application_id: null | components["schemas"]["SnowflakeType"];
+            avatar: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
             guild_id?: null | components["schemas"]["SnowflakeType"];
             id: components["schemas"]["SnowflakeType"];
             name: string;
@@ -3523,9 +3583,9 @@ export interface components {
             custom_id: string;
             placeholder?: string;
             /** Format: int32 */
-            min_values?: number | null;
+            min_values: number | null;
             /** Format: int32 */
-            max_values?: number | null;
+            max_values: number | null;
             disabled?: boolean;
             channel_types?: components["schemas"]["ChannelTypes"][];
             default_values?: components["schemas"]["ChannelSelectDefaultValueResponse"][];
@@ -3542,6 +3602,37 @@ export interface components {
         };
         /** Format: int32 */
         ChannelTypes: number & (1 | 3 | 0 | 2 | 4 | 5 | 10 | 11 | 12 | 13 | 14 | 15);
+        CheckboxComponentForModalRequest: {
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            type: 23;
+            /** Format: int32 */
+            id?: number | null;
+            custom_id: string;
+            default?: boolean | null;
+        };
+        CheckboxGroupComponentForModalRequest: {
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            type: 22;
+            /** Format: int32 */
+            id?: number | null;
+            custom_id: string;
+            min_values?: number | null;
+            max_values?: number | null;
+            required?: boolean | null;
+            options: components["schemas"]["CheckboxGroupOptionForRequest"][];
+        };
+        CheckboxGroupOptionForRequest: {
+            label: string;
+            value: string;
+            description?: string | null;
+            default?: boolean | null;
+        };
         CommandPermissionResponse: {
             id: components["schemas"]["SnowflakeType"];
             type: components["schemas"]["ApplicationCommandPermissionType"];
@@ -3565,7 +3656,7 @@ export interface components {
         ConnectedAccountGuildResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
+            icon: string | null;
         };
         ConnectedAccountIntegrationResponse: {
             id: string;
@@ -3576,7 +3667,7 @@ export interface components {
         ConnectedAccountProviders: string & ("battlenet" | "bluesky" | "bungie" | "ebay" | "epicgames" | "facebook" | "github" | "instagram" | "mastodon" | "leagueoflegends" | "paypal" | "playstation" | "reddit" | "riotgames" | "roblox" | "skype" | "spotify" | "steam" | "tiktok" | "twitch" | "twitter" | "xbox" | "youtube" | "domain");
         ConnectedAccountResponse: {
             id: string;
-            name?: string | null;
+            name: string | null;
             type: components["schemas"]["ConnectedAccountProviders"];
             friend_sync: boolean;
             integrations?: components["schemas"]["ConnectedAccountIntegrationResponse"][];
@@ -3609,7 +3700,7 @@ export interface components {
             /** Format: int32 */
             id: number;
             /** Format: int32 */
-            accent_color?: number | null;
+            accent_color: number | null;
             components: (components["schemas"]["ActionRowComponentResponse"] | components["schemas"]["FileComponentResponse"] | components["schemas"]["MediaGalleryComponentResponse"] | components["schemas"]["SectionComponentResponse"] | components["schemas"]["SeparatorComponentResponse"] | components["schemas"]["TextDisplayComponentResponse"])[];
             spoiler: boolean;
         };
@@ -3823,7 +3914,7 @@ export interface components {
         DiscordIntegrationResponse: {
             /** @enum {string} */
             type: "discord";
-            name?: string | null;
+            name: string | null;
             account: components["schemas"]["AccountResponse"];
             enabled: boolean;
             id: components["schemas"]["SnowflakeType"];
@@ -3887,7 +3978,7 @@ export interface components {
         ExternalConnectionIntegrationResponse: {
             /** @enum {string} */
             type: "twitch" | "youtube";
-            name?: string | null;
+            name: string | null;
             account: components["schemas"]["AccountResponse"];
             enabled: boolean;
             id: string;
@@ -3938,22 +4029,22 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             guild_id: components["schemas"]["SnowflakeType"];
             name: string;
-            description?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
-            creator_id?: null | components["schemas"]["SnowflakeType"];
+            description: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
+            creator_id: null | components["schemas"]["SnowflakeType"];
             creator?: components["schemas"]["UserResponse"];
-            image?: string | null;
+            image: string | null;
             /** Format: date-time */
             scheduled_start_time: string;
             /** Format: date-time */
-            scheduled_end_time?: string | null;
+            scheduled_end_time: string | null;
             status: components["schemas"]["GuildScheduledEventStatuses"];
             /**
              * Format: int32
              * @enum {integer}
              */
             entity_type: 3;
-            entity_id?: null | components["schemas"]["SnowflakeType"];
+            entity_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             user_count?: number;
             privacy_level: components["schemas"]["GuildScheduledEventPrivacyLevels"];
@@ -3980,9 +4071,9 @@ export interface components {
             /** Format: int32 */
             id: number;
             file: components["schemas"]["UnfurledMediaResponse"];
-            name?: string | null;
+            name: string | null;
             /** Format: int32 */
-            size?: number | null;
+            size: number | null;
             spoiler: boolean;
         };
         FileUploadComponentForModalRequest: {
@@ -4026,8 +4117,8 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             name: string;
             moderated: boolean;
-            emoji_id?: null | components["schemas"]["SnowflakeType"];
-            emoji_name?: string | null;
+            emoji_id: null | components["schemas"]["SnowflakeType"];
+            emoji_name: string | null;
         };
         FriendInviteResponse: {
             /**
@@ -4042,10 +4133,10 @@ export interface components {
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             /** Format: int32 */
             friends_count?: number;
-            channel?: null | components["schemas"]["InviteChannelResponse"];
+            channel: null | components["schemas"]["InviteChannelResponse"];
             is_contact?: boolean;
             /** Format: int32 */
             uses?: number;
@@ -4207,7 +4298,7 @@ export interface components {
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             channel: components["schemas"]["InviteChannelResponse"];
             /** Format: int32 */
             approximate_member_count?: number | null;
@@ -4224,7 +4315,7 @@ export interface components {
         };
         GuildBanResponse: {
             user: components["schemas"]["UserResponse"];
-            reason?: string | null;
+            reason: string | null;
         };
         GuildChannelLocation: {
             id: string;
@@ -4276,7 +4367,7 @@ export interface components {
         };
         /** Format: int32 */
         GuildExplicitContentFilterTypes: number & (0 | 1 | 2);
-        GuildFeatures: string & ("ANIMATED_BANNER" | "ANIMATED_ICON" | "APPLICATION_COMMAND_PERMISSIONS_V2" | "AUTO_MODERATION" | "BANNER" | "COMMUNITY" | "CREATOR_MONETIZABLE_PROVISIONAL" | "CREATOR_STORE_PAGE" | "DEVELOPER_SUPPORT_SERVER" | "DISCOVERABLE" | "FEATURABLE" | "INVITES_DISABLED" | "INVITE_SPLASH" | "MEMBER_VERIFICATION_GATE_ENABLED" | "MORE_STICKERS" | "NEWS" | "PARTNERED" | "PREVIEW_ENABLED" | "RAID_ALERTS_DISABLED" | "ROLE_ICONS" | "ROLE_SUBSCRIPTIONS_AVAILABLE_FOR_PURCHASE" | "ROLE_SUBSCRIPTIONS_ENABLED" | "TICKETED_EVENTS_ENABLED" | "VANITY_URL" | "VERIFIED" | "VIP_REGIONS" | "WELCOME_SCREEN_ENABLED");
+        GuildFeatures: string & ("ANIMATED_BANNER" | "ANIMATED_ICON" | "APPLICATION_COMMAND_PERMISSIONS_V2" | "AUTO_MODERATION" | "BANNER" | "COMMUNITY" | "CREATOR_MONETIZABLE_PROVISIONAL" | "CREATOR_STORE_PAGE" | "DEVELOPER_SUPPORT_SERVER" | "DISCOVERABLE" | "FEATURABLE" | "INVITES_DISABLED" | "INVITE_SPLASH" | "MEMBER_VERIFICATION_GATE_ENABLED" | "MORE_STICKERS" | "NEWS" | "PARTNERED" | "PREVIEW_ENABLED" | "RAID_ALERTS_DISABLED" | "ROLE_ICONS" | "ROLE_SUBSCRIPTIONS_AVAILABLE_FOR_PURCHASE" | "ROLE_SUBSCRIPTIONS_ENABLED" | "TICKETED_EVENTS_ENABLED" | "VANITY_URL" | "VERIFIED" | "VIP_REGIONS" | "WELCOME_SCREEN_ENABLED" | "OFFICIAL_GAME_GUILD");
         GuildHomeSettingsResponse: {
             guild_id: components["schemas"]["SnowflakeType"];
             enabled: boolean;
@@ -4285,9 +4376,9 @@ export interface components {
             resource_channels: (null | components["schemas"]["ResourceChannelResponse"])[];
         };
         GuildIncomingWebhookResponse: {
-            application_id?: null | components["schemas"]["SnowflakeType"];
-            avatar?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
+            application_id: null | components["schemas"]["SnowflakeType"];
+            avatar: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
             guild_id?: null | components["schemas"]["SnowflakeType"];
             id: components["schemas"]["SnowflakeType"];
             name: string;
@@ -4314,7 +4405,7 @@ export interface components {
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
-            expires_at?: string | null;
+            expires_at: string | null;
             is_contact?: boolean;
             /** Format: int32 */
             flags?: number;
@@ -4335,24 +4426,24 @@ export interface components {
             /** Format: int32 */
             approximate_presence_count?: number | null;
             is_nickname_changeable?: boolean;
-            roles?: components["schemas"]["GuildRoleResponse"][] | null;
+            roles?: components["schemas"]["InviteGuildRoleResponse"][] | null;
         };
         /** Format: int32 */
         GuildMFALevel: number & (0 | 1);
         GuildMemberResponse: {
-            avatar?: string | null;
+            avatar: string | null;
             avatar_decoration_data?: null | components["schemas"]["UserAvatarDecorationResponse"];
-            banner?: string | null;
+            banner: string | null;
             /** Format: date-time */
-            communication_disabled_until?: string | null;
+            communication_disabled_until: string | null;
             /** Format: int32 */
             flags: number;
             /** Format: date-time */
             joined_at: string;
-            nick?: string | null;
+            nick: string | null;
             pending: boolean;
             /** Format: date-time */
-            premium_since?: string | null;
+            premium_since: string | null;
             roles: components["schemas"]["SnowflakeType"][];
             collectibles?: null | components["schemas"]["UserCollectiblesResponse"];
             user: components["schemas"]["UserResponse"];
@@ -4395,11 +4486,11 @@ export interface components {
         GuildPreviewResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
-            description?: string | null;
-            home_header?: string | null;
-            splash?: string | null;
-            discovery_splash?: string | null;
+            icon: string | null;
+            description: string | null;
+            home_header: string | null;
+            splash: string | null;
+            discovery_splash: string | null;
             features: components["schemas"]["GuildFeatures"][];
             /** Format: int32 */
             approximate_member_count: number;
@@ -4414,50 +4505,52 @@ export interface components {
         };
         GuildPruneResponse: {
             /** Format: int32 */
-            pruned?: number | null;
+            pruned: number | null;
         };
         GuildResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
-            description?: string | null;
-            home_header?: string | null;
-            splash?: string | null;
-            discovery_splash?: string | null;
+            icon: string | null;
+            description: string | null;
+            home_header: string | null;
+            splash: string | null;
+            discovery_splash: string | null;
             features: components["schemas"]["GuildFeatures"][];
-            banner?: string | null;
+            banner: string | null;
             owner_id: components["schemas"]["SnowflakeType"];
-            application_id?: null | components["schemas"]["SnowflakeType"];
+            application_id: null | components["schemas"]["SnowflakeType"];
             region: string;
-            afk_channel_id?: null | components["schemas"]["SnowflakeType"];
+            afk_channel_id: null | components["schemas"]["SnowflakeType"];
             afk_timeout: components["schemas"]["AfkTimeouts"];
-            system_channel_id?: null | components["schemas"]["SnowflakeType"];
+            system_channel_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             system_channel_flags: number;
             widget_enabled: boolean;
-            widget_channel_id?: null | components["schemas"]["SnowflakeType"];
+            widget_channel_id: null | components["schemas"]["SnowflakeType"];
             verification_level: components["schemas"]["VerificationLevels"];
             roles: components["schemas"]["GuildRoleResponse"][];
             default_message_notifications: components["schemas"]["UserNotificationSettings"];
             mfa_level: components["schemas"]["GuildMFALevel"];
             explicit_content_filter: components["schemas"]["GuildExplicitContentFilterTypes"];
             /** Format: int32 */
-            max_presences?: number | null;
+            max_presences: number | null;
             /** Format: int32 */
             max_members: number;
             /** Format: int32 */
             max_stage_video_channel_users: number;
             /** Format: int32 */
             max_video_channel_users: number;
-            vanity_url_code?: string | null;
+            vanity_url_code: string | null;
             premium_tier: components["schemas"]["PremiumGuildTiers"];
             /** Format: int32 */
             premium_subscription_count: number;
             preferred_locale: components["schemas"]["AvailableLocalesEnum"];
-            rules_channel_id?: null | components["schemas"]["SnowflakeType"];
-            safety_alerts_channel_id?: null | components["schemas"]["SnowflakeType"];
-            public_updates_channel_id?: null | components["schemas"]["SnowflakeType"];
+            rules_channel_id: null | components["schemas"]["SnowflakeType"];
+            safety_alerts_channel_id: null | components["schemas"]["SnowflakeType"];
+            public_updates_channel_id: null | components["schemas"]["SnowflakeType"];
             premium_progress_bar_enabled: boolean;
+            /** Format: date-time */
+            premium_progress_bar_enabled_user_updated_at?: string | null;
             nsfw: boolean;
             nsfw_level: components["schemas"]["GuildNSFWContentLevel"];
             emojis: components["schemas"]["EmojiResponse"][];
@@ -4467,14 +4560,14 @@ export interface components {
             /** Format: int32 */
             primary_color: number;
             /** Format: int32 */
-            secondary_color?: number | null;
+            secondary_color: number | null;
             /** Format: int32 */
-            tertiary_color?: number | null;
+            tertiary_color: number | null;
         };
         GuildRoleResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            description?: string | null;
+            description: string | null;
             permissions: string;
             /** Format: int32 */
             position: number;
@@ -4484,8 +4577,8 @@ export interface components {
             hoist: boolean;
             managed: boolean;
             mentionable: boolean;
-            icon?: string | null;
-            unicode_emoji?: string | null;
+            icon: string | null;
+            unicode_emoji: string | null;
             tags?: components["schemas"]["GuildRoleTagsResponse"];
             /** Format: int32 */
             flags: number;
@@ -4504,6 +4597,16 @@ export interface components {
         GuildScheduledEventPrivacyLevels: number & 2;
         /** Format: int32 */
         GuildScheduledEventStatuses: number & (1 | 2 | 3 | 4);
+        GuildSearchResponse: {
+            messages: components["schemas"]["SearchMessageResponse"][][];
+            doing_deep_historical_index: boolean;
+            /** Format: int32 */
+            total_results: number;
+            threads?: components["schemas"]["ThreadResponse"][] | null;
+            members?: components["schemas"]["ThreadMemberResponse"][] | null;
+            /** Format: int32 */
+            documents_indexed?: number | null;
+        };
         GuildStickerResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
@@ -4513,8 +4616,8 @@ export interface components {
              * @enum {integer}
              */
             type: 2;
-            format_type?: null | components["schemas"]["StickerFormatTypes"];
-            description?: string | null;
+            format_type: null | components["schemas"]["StickerFormatTypes"];
+            description: string | null;
             available: boolean;
             guild_id: components["schemas"]["SnowflakeType"];
             user?: components["schemas"]["UserResponse"];
@@ -4522,23 +4625,23 @@ export interface components {
         GuildSubscriptionIntegrationResponse: {
             /** @enum {string} */
             type: "guild_subscription";
-            name?: string | null;
+            name: string | null;
             account: components["schemas"]["AccountResponse"];
             enabled: boolean;
             id: components["schemas"]["SnowflakeType"];
         };
         GuildTemplateChannelResponse: {
             /** Format: int32 */
-            id?: number | null;
+            id: number | null;
             /**
              * Format: int32
              * @enum {integer}
              */
             type: 0 | 2 | 4 | 15;
-            name?: string | null;
+            name: string | null;
             /** Format: int32 */
-            position?: number | null;
-            topic?: string | null;
+            position: number | null;
+            topic: string | null;
             /** Format: int32 */
             bitrate: number;
             /** Format: int32 */
@@ -4546,52 +4649,52 @@ export interface components {
             nsfw: boolean;
             /** Format: int32 */
             rate_limit_per_user: number;
-            parent_id?: null | components["schemas"]["SnowflakeType"];
-            default_auto_archive_duration?: null | components["schemas"]["ThreadAutoArchiveDuration"];
+            parent_id: null | components["schemas"]["SnowflakeType"];
+            default_auto_archive_duration: null | components["schemas"]["ThreadAutoArchiveDuration"];
             permission_overwrites: (null | components["schemas"]["ChannelPermissionOverwriteResponse"])[];
-            available_tags?: components["schemas"]["GuildTemplateChannelTags"][] | null;
+            available_tags: components["schemas"]["GuildTemplateChannelTags"][] | null;
             template: string;
-            default_reaction_emoji?: null | components["schemas"]["DefaultReactionEmojiResponse"];
+            default_reaction_emoji: null | components["schemas"]["DefaultReactionEmojiResponse"];
             /** Format: int32 */
-            default_thread_rate_limit_per_user?: number | null;
-            default_sort_order?: null | components["schemas"]["ThreadSortOrder"];
-            default_forum_layout?: null | components["schemas"]["ForumLayout"];
-            default_tag_setting?: null | components["schemas"]["ThreadSearchTagSetting"];
-            icon_emoji?: null | components["schemas"]["IconEmojiResponse"];
+            default_thread_rate_limit_per_user: number | null;
+            default_sort_order: null | components["schemas"]["ThreadSortOrder"];
+            default_forum_layout: null | components["schemas"]["ForumLayout"];
+            default_tag_setting: null | components["schemas"]["ThreadSearchTagSetting"];
+            icon_emoji: null | components["schemas"]["IconEmojiResponse"];
             /** Format: int32 */
-            theme_color?: number | null;
+            theme_color: number | null;
         };
         GuildTemplateChannelTags: {
             /** Format: int32 */
-            id?: number | null;
+            id: number | null;
             name: string;
-            emoji_id?: null | components["schemas"]["SnowflakeType"];
-            emoji_name?: string | null;
-            moderated?: boolean | null;
+            emoji_id: null | components["schemas"]["SnowflakeType"];
+            emoji_name: string | null;
+            moderated: boolean | null;
         };
         GuildTemplateResponse: {
             code: string;
             name: string;
-            description?: string | null;
+            description: string | null;
             /** Format: int32 */
             usage_count: number;
             creator_id: components["schemas"]["SnowflakeType"];
-            creator?: null | components["schemas"]["UserResponse"];
+            creator: null | components["schemas"]["UserResponse"];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
             source_guild_id: components["schemas"]["SnowflakeType"];
             serialized_source_guild: components["schemas"]["GuildTemplateSnapshotResponse"];
-            is_dirty?: boolean | null;
+            is_dirty: boolean | null;
         };
         GuildTemplateRoleColorsResponse: {
             /** Format: int32 */
             primary_color: number;
             /** Format: int32 */
-            secondary_color?: number | null;
+            secondary_color: number | null;
             /** Format: int32 */
-            tertiary_color?: number | null;
+            tertiary_color: number | null;
         };
         GuildTemplateRoleResponse: {
             /** Format: int32 */
@@ -4600,23 +4703,23 @@ export interface components {
             permissions: string;
             /** Format: int32 */
             color: number;
-            colors?: null | components["schemas"]["GuildTemplateRoleColorsResponse"];
+            colors: null | components["schemas"]["GuildTemplateRoleColorsResponse"];
             hoist: boolean;
             mentionable: boolean;
-            icon?: string | null;
-            unicode_emoji?: string | null;
+            icon: string | null;
+            unicode_emoji: string | null;
         };
         GuildTemplateSnapshotResponse: {
             name: string;
-            description?: string | null;
-            region?: string | null;
+            description: string | null;
+            region: string | null;
             verification_level: components["schemas"]["VerificationLevels"];
             default_message_notifications: components["schemas"]["UserNotificationSettings"];
             explicit_content_filter: components["schemas"]["GuildExplicitContentFilterTypes"];
             preferred_locale: components["schemas"]["AvailableLocalesEnum"];
-            afk_channel_id?: null | components["schemas"]["SnowflakeType"];
+            afk_channel_id: null | components["schemas"]["SnowflakeType"];
             afk_timeout: components["schemas"]["AfkTimeouts"];
-            system_channel_id?: null | components["schemas"]["SnowflakeType"];
+            system_channel_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             system_channel_flags: number;
             roles: components["schemas"]["GuildTemplateRoleResponse"][];
@@ -4631,55 +4734,57 @@ export interface components {
         GuildWelcomeScreenChannelResponse: {
             channel_id: components["schemas"]["SnowflakeType"];
             description: string;
-            emoji_id?: null | components["schemas"]["SnowflakeType"];
-            emoji_name?: string | null;
+            emoji_id: null | components["schemas"]["SnowflakeType"];
+            emoji_name: string | null;
         };
         GuildWelcomeScreenResponse: {
-            description?: string | null;
+            description: string | null;
             welcome_channels: components["schemas"]["GuildWelcomeScreenChannelResponse"][];
         };
         GuildWithCountsResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
-            description?: string | null;
-            home_header?: string | null;
-            splash?: string | null;
-            discovery_splash?: string | null;
+            icon: string | null;
+            description: string | null;
+            home_header: string | null;
+            splash: string | null;
+            discovery_splash: string | null;
             features: components["schemas"]["GuildFeatures"][];
-            banner?: string | null;
+            banner: string | null;
             owner_id: components["schemas"]["SnowflakeType"];
-            application_id?: null | components["schemas"]["SnowflakeType"];
+            application_id: null | components["schemas"]["SnowflakeType"];
             region: string;
-            afk_channel_id?: null | components["schemas"]["SnowflakeType"];
+            afk_channel_id: null | components["schemas"]["SnowflakeType"];
             afk_timeout: components["schemas"]["AfkTimeouts"];
-            system_channel_id?: null | components["schemas"]["SnowflakeType"];
+            system_channel_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             system_channel_flags: number;
             widget_enabled: boolean;
-            widget_channel_id?: null | components["schemas"]["SnowflakeType"];
+            widget_channel_id: null | components["schemas"]["SnowflakeType"];
             verification_level: components["schemas"]["VerificationLevels"];
             roles: components["schemas"]["GuildRoleResponse"][];
             default_message_notifications: components["schemas"]["UserNotificationSettings"];
             mfa_level: components["schemas"]["GuildMFALevel"];
             explicit_content_filter: components["schemas"]["GuildExplicitContentFilterTypes"];
             /** Format: int32 */
-            max_presences?: number | null;
+            max_presences: number | null;
             /** Format: int32 */
             max_members: number;
             /** Format: int32 */
             max_stage_video_channel_users: number;
             /** Format: int32 */
             max_video_channel_users: number;
-            vanity_url_code?: string | null;
+            vanity_url_code: string | null;
             premium_tier: components["schemas"]["PremiumGuildTiers"];
             /** Format: int32 */
             premium_subscription_count: number;
             preferred_locale: components["schemas"]["AvailableLocalesEnum"];
-            rules_channel_id?: null | components["schemas"]["SnowflakeType"];
-            safety_alerts_channel_id?: null | components["schemas"]["SnowflakeType"];
-            public_updates_channel_id?: null | components["schemas"]["SnowflakeType"];
+            rules_channel_id: null | components["schemas"]["SnowflakeType"];
+            safety_alerts_channel_id: null | components["schemas"]["SnowflakeType"];
+            public_updates_channel_id: null | components["schemas"]["SnowflakeType"];
             premium_progress_bar_enabled: boolean;
+            /** Format: date-time */
+            premium_progress_bar_enabled_user_updated_at?: string | null;
             nsfw: boolean;
             nsfw_level: components["schemas"]["GuildNSFWContentLevel"];
             emojis: components["schemas"]["EmojiResponse"][];
@@ -4689,6 +4794,7 @@ export interface components {
             /** Format: int32 */
             approximate_presence_count?: number | null;
         };
+        HasOption: string & ("link" | "embed" | "file" | "image" | "video" | "sound" | "sticker" | "poll" | "snapshot" | "-link" | "-embed" | "-file" | "-image" | "-video" | "-sound" | "-sticker" | "-poll" | "-snapshot");
         IconEmojiResponse: Record<string, never>;
         IncomingWebhookInteractionRequest: {
             content?: string | null;
@@ -4737,9 +4843,9 @@ export interface components {
         IntegrationApplicationResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
+            icon: string | null;
             description: string;
-            type?: null | components["schemas"]["ApplicationTypes"];
+            type: null | components["schemas"]["ApplicationTypes"];
             cover_image?: string;
             primary_sku_id?: components["schemas"]["SnowflakeType"];
             bot?: components["schemas"]["UserResponse"];
@@ -4763,7 +4869,7 @@ export interface components {
             resource?: components["schemas"]["CreateMessageInteractionCallbackResponse"] | components["schemas"]["LaunchActivityInteractionCallbackResponse"] | components["schemas"]["UpdateMessageInteractionCallbackResponse"];
         };
         /** Format: int32 */
-        InteractionCallbackTypes: number & (1 | 4 | 5 | 6 | 7 | 8 | 9 | 12);
+        InteractionCallbackTypes: number & (1 | 4 | 5 | 6 | 7 | 8 | 9 | 12 | 13);
         /** Format: int32 */
         InteractionContextType: number & (0 | 1 | 2);
         InteractionResponse: {
@@ -4776,13 +4882,13 @@ export interface components {
             guild_id?: components["schemas"]["SnowflakeType"];
         };
         /** Format: int32 */
-        InteractionTypes: number & (1 | 2 | 3 | 4 | 5);
+        InteractionTypes: number & (1 | 2 | 3 | 4 | 5 | 6);
         InviteApplicationResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
+            icon: string | null;
             description: string;
-            type?: null | components["schemas"]["ApplicationTypes"];
+            type: null | components["schemas"]["ApplicationTypes"];
             cover_image?: string;
             primary_sku_id?: components["schemas"]["SnowflakeType"];
             bot?: components["schemas"]["UserResponse"];
@@ -4814,24 +4920,36 @@ export interface components {
         InviteChannelResponse: {
             id: components["schemas"]["SnowflakeType"];
             type: components["schemas"]["ChannelTypes"];
-            name?: string | null;
+            name: string | null;
             icon?: string;
             recipients?: components["schemas"]["InviteChannelRecipientResponse"][];
         };
         InviteGuildResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            splash?: string | null;
-            banner?: string | null;
-            description?: string | null;
-            icon?: string | null;
+            splash: string | null;
+            banner: string | null;
+            description: string | null;
+            icon: string | null;
             features: components["schemas"]["GuildFeatures"][];
-            verification_level?: null | components["schemas"]["VerificationLevels"];
-            vanity_url_code?: string | null;
-            nsfw_level?: null | components["schemas"]["GuildNSFWContentLevel"];
-            nsfw?: boolean | null;
+            verification_level: null | components["schemas"]["VerificationLevels"];
+            vanity_url_code: string | null;
+            nsfw_level: null | components["schemas"]["GuildNSFWContentLevel"];
+            nsfw: boolean | null;
             /** Format: int32 */
             premium_subscription_count: number;
+        };
+        InviteGuildRoleResponse: {
+            id: components["schemas"]["SnowflakeType"];
+            name: string;
+            /** Format: int32 */
+            position: number;
+            /** Format: int32 */
+            color: number;
+            colors: components["schemas"]["GuildRoleColorsResponse"];
+            icon: string | null;
+            unicode_emoji: string | null;
+            permissions?: string;
         };
         /** Format: int32 */
         InviteTargetTypes: number & (1 | 2 | 3);
@@ -4902,7 +5020,7 @@ export interface components {
             id?: number | null;
             label: string;
             description?: string | null;
-            component: components["schemas"]["ChannelSelectComponentForModalRequest"] | components["schemas"]["FileUploadComponentForModalRequest"] | components["schemas"]["MentionableSelectComponentForModalRequest"] | components["schemas"]["RoleSelectComponentForModalRequest"] | components["schemas"]["StringSelectComponentForModalRequest"] | components["schemas"]["TextInputComponentForModalRequest"] | components["schemas"]["UserSelectComponentForModalRequest"];
+            component: components["schemas"]["ChannelSelectComponentForModalRequest"] | components["schemas"]["CheckboxComponentForModalRequest"] | components["schemas"]["CheckboxGroupComponentForModalRequest"] | components["schemas"]["FileUploadComponentForModalRequest"] | components["schemas"]["MentionableSelectComponentForModalRequest"] | components["schemas"]["RadioGroupComponentForModalRequest"] | components["schemas"]["RoleSelectComponentForModalRequest"] | components["schemas"]["StringSelectComponentForModalRequest"] | components["schemas"]["TextInputComponentForModalRequest"] | components["schemas"]["UserSelectComponentForModalRequest"];
         };
         LaunchActivityInteractionCallbackRequest: {
             /**
@@ -4936,7 +5054,7 @@ export interface components {
         };
         LobbyMemberResponse: {
             id: components["schemas"]["SnowflakeType"];
-            metadata?: {
+            metadata: {
                 [key: string]: string;
             } | null;
             /** Format: int32 */
@@ -4952,6 +5070,9 @@ export interface components {
             metadata?: {
                 [key: string]: string;
             };
+            moderation_metadata?: {
+                [key: string]: string;
+            };
             /** Format: int32 */
             flags: number;
             application_id?: components["schemas"]["SnowflakeType"];
@@ -4959,7 +5080,7 @@ export interface components {
         LobbyResponse: {
             id: components["schemas"]["SnowflakeType"];
             application_id: components["schemas"]["SnowflakeType"];
-            metadata?: {
+            metadata: {
                 [key: string]: string;
             } | null;
             members: components["schemas"]["LobbyMemberResponse"][];
@@ -5041,7 +5162,7 @@ export interface components {
         };
         MediaGalleryItemResponse: {
             media: components["schemas"]["UnfurledMediaResponse"];
-            description?: string | null;
+            description: string | null;
             spoiler: boolean;
         };
         MentionSpamRuleResponse: {
@@ -5141,9 +5262,9 @@ export interface components {
             custom_id: string;
             placeholder?: string;
             /** Format: int32 */
-            min_values?: number | null;
+            min_values: number | null;
             /** Format: int32 */
-            max_values?: number | null;
+            max_values: number | null;
             disabled?: boolean;
             default_values?: (components["schemas"]["RoleSelectDefaultValueResponse"] | components["schemas"]["UserSelectDefaultValueResponse"])[];
         };
@@ -5211,7 +5332,7 @@ export interface components {
         /** Format: int32 */
         MessageComponentSeparatorSpacingSize: number & (1 | 2);
         /** Format: int32 */
-        MessageComponentTypes: number & (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18 | 19);
+        MessageComponentTypes: number & (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 17 | 18 | 19 | 21 | 22 | 23);
         MessageCreateRequest: {
             content?: string | null;
             embeds?: components["schemas"]["RichEmbed"][] | null;
@@ -5321,8 +5442,8 @@ export interface components {
             normal: number;
         };
         MessageReactionEmojiResponse: {
-            id?: null | components["schemas"]["SnowflakeType"];
-            name?: string | null;
+            id: null | components["schemas"]["SnowflakeType"];
+            name: string | null;
             animated?: boolean;
         };
         MessageReactionResponse: {
@@ -5359,7 +5480,7 @@ export interface components {
             /** Format: date-time */
             timestamp: string;
             /** Format: date-time */
-            edited_timestamp?: string | null;
+            edited_timestamp: string | null;
             /** Format: int32 */
             flags: number;
             components: (components["schemas"]["ActionRowComponentResponse"] | components["schemas"]["ContainerComponentResponse"] | components["schemas"]["FileComponentResponse"] | components["schemas"]["MediaGalleryComponentResponse"] | components["schemas"]["SectionComponentResponse"] | components["schemas"]["SeparatorComponentResponse"] | components["schemas"]["TextDisplayComponentResponse"])[];
@@ -5424,7 +5545,7 @@ export interface components {
             /** Format: date-time */
             timestamp: string;
             /** Format: date-time */
-            edited_timestamp?: string | null;
+            edited_timestamp: string | null;
             /** Format: int32 */
             flags: number;
             components: (components["schemas"]["ActionRowComponentResponse"] | components["schemas"]["ContainerComponentResponse"] | components["schemas"]["FileComponentResponse"] | components["schemas"]["MediaGalleryComponentResponse"] | components["schemas"]["SectionComponentResponse"] | components["schemas"]["SeparatorComponentResponse"] | components["schemas"]["TextDisplayComponentResponse"])[];
@@ -5461,8 +5582,8 @@ export interface components {
         MyGuildResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
-            banner?: string | null;
+            icon: string | null;
+            banner: string | null;
             owner: boolean;
             permissions: string;
             features: components["schemas"]["GuildFeatures"][];
@@ -5543,7 +5664,7 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             /** @enum {string} */
             type: "discord";
-            name?: string | null;
+            name: string | null;
             account: components["schemas"]["AccountResponse"];
             application_id: components["schemas"]["SnowflakeType"];
         };
@@ -5551,14 +5672,14 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             /** @enum {string} */
             type: "twitch" | "youtube";
-            name?: string | null;
+            name: string | null;
             account: components["schemas"]["AccountResponse"];
         };
         PartialGuildSubscriptionIntegrationResponse: {
             id: components["schemas"]["SnowflakeType"];
             /** @enum {string} */
             type: "guild_subscription";
-            name?: string | null;
+            name: string | null;
             account: components["schemas"]["AccountResponse"];
         };
         PinnedMessageResponse: {
@@ -5647,9 +5768,9 @@ export interface components {
         PrivateApplicationResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            icon?: string | null;
+            icon: string | null;
             description: string;
-            type?: null | components["schemas"]["ApplicationTypes"];
+            type: null | components["schemas"]["ApplicationTypes"];
             cover_image?: string;
             primary_sku_id?: components["schemas"]["SnowflakeType"];
             bot?: components["schemas"]["UserResponse"];
@@ -5676,18 +5797,18 @@ export interface components {
             tags?: string[];
             redirect_uris: (string | null)[];
             /** Format: uri */
-            interactions_endpoint_url?: string | null;
+            interactions_endpoint_url: string | null;
             /** Format: uri */
-            role_connections_verification_url?: string | null;
+            role_connections_verification_url: string | null;
             owner: components["schemas"]["UserResponse"];
             /** Format: int32 */
-            approximate_guild_count?: number | null;
+            approximate_guild_count: number | null;
             /** Format: int32 */
             approximate_user_install_count: number;
             /** Format: int32 */
             approximate_user_authorization_count: number;
             explicit_content_filter: components["schemas"]["ApplicationExplicitContentFilterTypes"];
-            team?: null | components["schemas"]["TeamResponse"];
+            team: null | components["schemas"]["TeamResponse"];
         };
         PrivateChannelLocation: {
             id: string;
@@ -5722,26 +5843,26 @@ export interface components {
             /** Format: date-time */
             last_pin_timestamp?: string | null;
             recipients: components["schemas"]["UserResponse"][];
-            name?: string | null;
-            icon?: string | null;
+            name: string | null;
+            icon: string | null;
             owner_id: components["schemas"]["SnowflakeType"];
             managed?: boolean;
             application_id?: components["schemas"]["SnowflakeType"];
         };
         PrivateGuildMemberResponse: {
-            avatar?: string | null;
+            avatar: string | null;
             avatar_decoration_data?: null | components["schemas"]["UserAvatarDecorationResponse"];
-            banner?: string | null;
+            banner: string | null;
             /** Format: date-time */
-            communication_disabled_until?: string | null;
+            communication_disabled_until: string | null;
             /** Format: int32 */
             flags: number;
             /** Format: date-time */
             joined_at: string;
-            nick?: string | null;
+            nick: string | null;
             pending: boolean;
             /** Format: date-time */
-            premium_since?: string | null;
+            premium_since: string | null;
             roles: components["schemas"]["SnowflakeType"][];
             collectibles?: null | components["schemas"]["UserCollectiblesResponse"];
             user: components["schemas"]["UserResponse"];
@@ -5789,6 +5910,24 @@ export interface components {
              */
             type: 4;
             metadata: components["schemas"]["QuarantineUserActionMetadataResponse"];
+        };
+        RadioGroupComponentForModalRequest: {
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            type: 21;
+            /** Format: int32 */
+            id?: number | null;
+            custom_id: string;
+            required?: boolean | null;
+            options: components["schemas"]["RadioGroupOptionForRequest"][];
+        };
+        RadioGroupOptionForRequest: {
+            label: string;
+            value: string;
+            description?: string | null;
+            default?: boolean | null;
         };
         /** Format: int32 */
         ReactionTypes: number & (0 | 1);
@@ -5930,9 +6069,9 @@ export interface components {
             custom_id: string;
             placeholder?: string;
             /** Format: int32 */
-            min_values?: number | null;
+            min_values: number | null;
             /** Format: int32 */
-            max_values?: number | null;
+            max_values: number | null;
             disabled?: boolean;
             default_values?: components["schemas"]["RoleSelectDefaultValueResponse"][];
         };
@@ -5961,22 +6100,24 @@ export interface components {
             enforce_nonce?: boolean | null;
             tts?: boolean | null;
         };
+        /** Format: int32 */
+        SKUIneligibilityReason: number & (0 | 1 | 2);
         ScheduledEventResponse: {
             id: components["schemas"]["SnowflakeType"];
             guild_id: components["schemas"]["SnowflakeType"];
             name: string;
-            description?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
-            creator_id?: null | components["schemas"]["SnowflakeType"];
+            description: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
+            creator_id: null | components["schemas"]["SnowflakeType"];
             creator?: components["schemas"]["UserResponse"];
-            image?: string | null;
+            image: string | null;
             /** Format: date-time */
             scheduled_start_time: string;
             /** Format: date-time */
-            scheduled_end_time?: string | null;
+            scheduled_end_time: string | null;
             status: components["schemas"]["GuildScheduledEventStatuses"];
             entity_type: components["schemas"]["GuildScheduledEventEntityTypes"];
-            entity_id?: null | components["schemas"]["SnowflakeType"];
+            entity_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             user_count?: number;
             privacy_level: components["schemas"]["GuildScheduledEventPrivacyLevels"];
@@ -5988,6 +6129,61 @@ export interface components {
             user?: components["schemas"]["UserResponse"];
             member?: components["schemas"]["GuildMemberResponse"];
         };
+        SearchIndexNotReadyResponse: {
+            message: string;
+            /** Format: int32 */
+            code: number;
+            /** Format: int32 */
+            documents_indexed: number;
+            /** Format: int32 */
+            retry_after: number;
+        };
+        SearchMessageResponse: {
+            type: components["schemas"]["MessageType"];
+            content: string;
+            mentions: components["schemas"]["UserResponse"][];
+            mention_roles: components["schemas"]["SnowflakeType"][];
+            attachments: components["schemas"]["MessageAttachmentResponse"][];
+            embeds: components["schemas"]["MessageEmbedResponse"][];
+            /** Format: date-time */
+            timestamp: string;
+            /** Format: date-time */
+            edited_timestamp: string | null;
+            /** Format: int32 */
+            flags: number;
+            components: (components["schemas"]["ActionRowComponentResponse"] | components["schemas"]["ContainerComponentResponse"] | components["schemas"]["FileComponentResponse"] | components["schemas"]["MediaGalleryComponentResponse"] | components["schemas"]["SectionComponentResponse"] | components["schemas"]["SeparatorComponentResponse"] | components["schemas"]["TextDisplayComponentResponse"])[];
+            stickers?: (components["schemas"]["GuildStickerResponse"] | components["schemas"]["StandardStickerResponse"])[];
+            sticker_items?: components["schemas"]["MessageStickerItemResponse"][];
+            id: components["schemas"]["SnowflakeType"];
+            channel_id: components["schemas"]["SnowflakeType"];
+            author: components["schemas"]["UserResponse"];
+            pinned: boolean;
+            mention_everyone: boolean;
+            tts: boolean;
+            call?: components["schemas"]["MessageCallResponse"];
+            activity?: components["schemas"]["MessageActivityResponse"];
+            application?: components["schemas"]["BasicApplicationResponse"];
+            application_id?: components["schemas"]["SnowflakeType"];
+            interaction?: components["schemas"]["MessageInteractionResponse"];
+            nonce?: number | string | null;
+            webhook_id?: components["schemas"]["SnowflakeType"];
+            message_reference?: components["schemas"]["MessageReferenceResponse"];
+            thread?: components["schemas"]["ThreadResponse"];
+            mention_channels?: (null | components["schemas"]["MessageMentionChannelResponse"])[];
+            role_subscription_data?: components["schemas"]["MessageRoleSubscriptionDataResponse"];
+            purchase_notification?: components["schemas"]["PurchaseNotificationResponse"];
+            /** Format: int32 */
+            position?: number;
+            resolved?: components["schemas"]["ResolvedObjectsResponse"];
+            poll?: components["schemas"]["PollResponse"];
+            shared_client_theme?: null | components["schemas"]["CustomClientThemeResponse"];
+            interaction_metadata?: components["schemas"]["ApplicationCommandInteractionMetadataResponse"] | components["schemas"]["MessageComponentInteractionMetadataResponse"] | components["schemas"]["ModalSubmitInteractionMetadataResponse"];
+            message_snapshots?: components["schemas"]["MessageSnapshotResponse"][];
+            reactions?: components["schemas"]["MessageReactionResponse"][];
+            referenced_message?: null | components["schemas"]["BasicMessageResponse"];
+            hit: boolean;
+        };
+        SearchableEmbedType: string & ("image" | "video" | "gif" | "sound" | "article");
         SectionComponentForMessageRequest: {
             /**
              * Format: int32
@@ -6033,8 +6229,8 @@ export interface components {
             divider: boolean;
         };
         SettingsEmojiResponse: {
-            id?: null | components["schemas"]["SnowflakeType"];
-            name?: string | null;
+            id: null | components["schemas"]["SnowflakeType"];
+            name: string | null;
             animated: boolean;
         };
         SlackWebhook: {
@@ -6047,6 +6243,20 @@ export interface components {
         SnowflakeSelectDefaultValueTypes: string & ("user" | "role" | "channel");
         /** Format: snowflake */
         SnowflakeType: string;
+        SocialLayerSKUPurchaseEligibilityCallbackData: {
+            eligible: boolean;
+            ineligible_reason?: null | components["schemas"]["SKUIneligibilityReason"];
+            ineligible_reason_description?: string | null;
+        };
+        SocialLayerSKUPurchaseEligibilityInteractionCallbackRequest: {
+            /**
+             * Format: int32
+             * @enum {integer}
+             */
+            type: 13;
+            data: components["schemas"]["SocialLayerSKUPurchaseEligibilityCallbackData"];
+        };
+        SortingMode: string & ("relevance" | "timestamp");
         SortingOrder: string & ("asc" | "desc");
         SoundboardCreateRequest: {
             name: string;
@@ -6068,8 +6278,8 @@ export interface components {
             sound_id: components["schemas"]["SnowflakeType"];
             /** Format: double */
             volume: number;
-            emoji_id?: null | components["schemas"]["SnowflakeType"];
-            emoji_name?: string | null;
+            emoji_id: null | components["schemas"]["SnowflakeType"];
+            emoji_name: string | null;
             guild_id?: components["schemas"]["SnowflakeType"];
             available: boolean;
             user?: components["schemas"]["UserResponse"];
@@ -6103,7 +6313,7 @@ export interface components {
             privacy_level: components["schemas"]["StageInstancesPrivacyLevels"];
             id: components["schemas"]["SnowflakeType"];
             discoverable_disabled: boolean;
-            guild_scheduled_event_id?: null | components["schemas"]["SnowflakeType"];
+            guild_scheduled_event_id: null | components["schemas"]["SnowflakeType"];
         };
         /** Format: int32 */
         StageInstancesPrivacyLevels: number & (1 | 2);
@@ -6142,27 +6352,27 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             guild_id: components["schemas"]["SnowflakeType"];
             name: string;
-            description?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
-            creator_id?: null | components["schemas"]["SnowflakeType"];
+            description: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
+            creator_id: null | components["schemas"]["SnowflakeType"];
             creator?: components["schemas"]["UserResponse"];
-            image?: string | null;
+            image: string | null;
             /** Format: date-time */
             scheduled_start_time: string;
             /** Format: date-time */
-            scheduled_end_time?: string | null;
+            scheduled_end_time: string | null;
             status: components["schemas"]["GuildScheduledEventStatuses"];
             /**
              * Format: int32
              * @enum {integer}
              */
             entity_type: 1;
-            entity_id?: null | components["schemas"]["SnowflakeType"];
+            entity_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             user_count?: number;
             privacy_level: components["schemas"]["GuildScheduledEventPrivacyLevels"];
             user_rsvp?: null | components["schemas"]["ScheduledEventUserResponse"];
-            entity_metadata?: null | components["schemas"]["EntityMetadataStageInstanceResponse"];
+            entity_metadata: null | components["schemas"]["EntityMetadataStageInstanceResponse"];
         };
         StandardStickerResponse: {
             id: components["schemas"]["SnowflakeType"];
@@ -6173,8 +6383,8 @@ export interface components {
              * @enum {integer}
              */
             type: 1;
-            format_type?: null | components["schemas"]["StickerFormatTypes"];
-            description?: string | null;
+            format_type: null | components["schemas"]["StickerFormatTypes"];
+            description: string | null;
             pack_id: components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             sort_value: number;
@@ -6188,7 +6398,7 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             sku_id: components["schemas"]["SnowflakeType"];
             name: string;
-            description?: string | null;
+            description: string | null;
             stickers: components["schemas"]["StandardStickerResponse"][];
             cover_sticker_id?: components["schemas"]["SnowflakeType"];
             banner_asset_id?: components["schemas"]["SnowflakeType"];
@@ -6238,9 +6448,9 @@ export interface components {
             custom_id: string;
             placeholder?: string;
             /** Format: int32 */
-            min_values?: number | null;
+            min_values: number | null;
             /** Format: int32 */
-            max_values?: number | null;
+            max_values: number | null;
             disabled?: boolean;
             options: components["schemas"]["StringSelectOptionResponse"][];
         };
@@ -6269,14 +6479,14 @@ export interface components {
              * Format: date-time
              * @description The timestamp when the job was created.
              */
-            created_at?: string | null;
+            created_at: string | null;
             /**
              * Format: date-time
              * @description The timestamp when the job was successfully completed.
              */
-            completed_at?: string | null;
+            completed_at: string | null;
             /** @description The error message if the job failed. */
-            error_message?: string | null;
+            error_message: string | null;
         };
         /** Format: int32 */
         TargetUsersJobStatusTypes: number & (0 | 1 | 2 | 3);
@@ -6289,7 +6499,7 @@ export interface components {
         TeamMembershipStates: number & (1 | 2);
         TeamResponse: {
             id: components["schemas"]["SnowflakeType"];
-            icon?: string | null;
+            icon: string | null;
             name: string;
             owner_user_id: components["schemas"]["SnowflakeType"];
             members: components["schemas"]["TeamMemberResponse"][];
@@ -6351,14 +6561,14 @@ export interface components {
             id: number;
             custom_id: string;
             style: components["schemas"]["TextInputStyleTypes"];
-            label?: string | null;
+            label: string | null;
             value?: string;
             placeholder?: string;
             required?: boolean;
             /** Format: int32 */
-            min_length?: number | null;
+            min_length: number | null;
             /** Format: int32 */
-            max_length?: number | null;
+            max_length: number | null;
         };
         /** Format: int32 */
         TextInputStyleTypes: number & (1 | 2);
@@ -6376,7 +6586,7 @@ export interface components {
         ThreadMetadataResponse: {
             archived: boolean;
             /** Format: date-time */
-            archive_timestamp?: string | null;
+            archive_timestamp: string | null;
             auto_archive_duration: components["schemas"]["ThreadAutoArchiveDuration"];
             locked: boolean;
             /** Format: date-time */
@@ -6457,7 +6667,7 @@ export interface components {
             /** Format: int32 */
             id: number;
             media: components["schemas"]["UnfurledMediaResponse"];
-            description?: string | null;
+            description: string | null;
             spoiler: boolean;
         };
         TypingIndicatorResponse: Record<string, never>;
@@ -6606,10 +6816,10 @@ export interface components {
         };
         UserAvatarDecorationResponse: {
             asset: string;
-            sku_id?: null | components["schemas"]["SnowflakeType"];
+            sku_id: null | components["schemas"]["SnowflakeType"];
         };
         UserCollectiblesResponse: {
-            nameplate?: null | components["schemas"]["UserNameplateResponse"];
+            nameplate: null | components["schemas"]["UserNameplateResponse"];
         };
         UserCommunicationDisabledAction: {
             /**
@@ -6641,7 +6851,7 @@ export interface components {
             enabled: boolean;
         };
         UserNameplateResponse: {
-            sku_id?: null | components["schemas"]["SnowflakeType"];
+            sku_id: null | components["schemas"]["SnowflakeType"];
             asset: string;
             label: string;
             palette: components["schemas"]["NameplatePalette"];
@@ -6651,7 +6861,7 @@ export interface components {
         UserPIIResponse: {
             id: components["schemas"]["SnowflakeType"];
             username: string;
-            avatar?: string | null;
+            avatar: string | null;
             discriminator: string;
             /** Format: int32 */
             public_flags: number;
@@ -6661,7 +6871,7 @@ export interface components {
             banner?: string | null;
             /** Format: int32 */
             accent_color?: number | null;
-            global_name?: string | null;
+            global_name: string | null;
             avatar_decoration_data?: null | components["schemas"]["UserAvatarDecorationResponse"];
             collectibles?: null | components["schemas"]["UserCollectiblesResponse"];
             primary_guild?: null | components["schemas"]["UserPrimaryGuildResponse"];
@@ -6672,15 +6882,15 @@ export interface components {
             verified?: boolean;
         };
         UserPrimaryGuildResponse: {
-            identity_guild_id?: null | components["schemas"]["SnowflakeType"];
-            identity_enabled?: boolean | null;
-            tag?: string | null;
-            badge?: string | null;
+            identity_guild_id: null | components["schemas"]["SnowflakeType"];
+            identity_enabled: boolean | null;
+            tag: string | null;
+            badge: string | null;
         };
         UserResponse: {
             id: components["schemas"]["SnowflakeType"];
             username: string;
-            avatar?: string | null;
+            avatar: string | null;
             discriminator: string;
             /** Format: int32 */
             public_flags: number;
@@ -6690,10 +6900,10 @@ export interface components {
             banner?: string | null;
             /** Format: int32 */
             accent_color?: number | null;
-            global_name?: string | null;
+            global_name: string | null;
             avatar_decoration_data?: null | components["schemas"]["UserAvatarDecorationResponse"];
             collectibles?: null | components["schemas"]["UserCollectiblesResponse"];
-            primary_guild?: null | components["schemas"]["UserPrimaryGuildResponse"];
+            primary_guild: null | components["schemas"]["UserPrimaryGuildResponse"];
         };
         UserSelectComponentForMessageRequest: {
             /**
@@ -6738,9 +6948,9 @@ export interface components {
             custom_id: string;
             placeholder?: string;
             /** Format: int32 */
-            min_values?: number | null;
+            min_values: number | null;
             /** Format: int32 */
-            max_values?: number | null;
+            max_values: number | null;
             disabled?: boolean;
             default_values?: components["schemas"]["UserSelectDefaultValueResponse"][];
         };
@@ -6760,7 +6970,7 @@ export interface components {
             code: number;
         };
         VanityURLResponse: {
-            code?: string | null;
+            code: string | null;
             /** Format: int32 */
             uses: number;
             error?: null | components["schemas"]["VanityURLErrorResponse"];
@@ -6811,38 +7021,38 @@ export interface components {
             id: components["schemas"]["SnowflakeType"];
             guild_id: components["schemas"]["SnowflakeType"];
             name: string;
-            description?: string | null;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
-            creator_id?: null | components["schemas"]["SnowflakeType"];
+            description: string | null;
+            channel_id: null | components["schemas"]["SnowflakeType"];
+            creator_id: null | components["schemas"]["SnowflakeType"];
             creator?: components["schemas"]["UserResponse"];
-            image?: string | null;
+            image: string | null;
             /** Format: date-time */
             scheduled_start_time: string;
             /** Format: date-time */
-            scheduled_end_time?: string | null;
+            scheduled_end_time: string | null;
             status: components["schemas"]["GuildScheduledEventStatuses"];
             /**
              * Format: int32
              * @enum {integer}
              */
             entity_type: 2;
-            entity_id?: null | components["schemas"]["SnowflakeType"];
+            entity_id: null | components["schemas"]["SnowflakeType"];
             /** Format: int32 */
             user_count?: number;
             privacy_level: components["schemas"]["GuildScheduledEventPrivacyLevels"];
             user_rsvp?: null | components["schemas"]["ScheduledEventUserResponse"];
-            entity_metadata?: null | components["schemas"]["EntityMetadataVoiceResponse"];
+            entity_metadata: null | components["schemas"]["EntityMetadataVoiceResponse"];
         };
         VoiceStateResponse: {
-            channel_id?: null | components["schemas"]["SnowflakeType"];
+            channel_id: null | components["schemas"]["SnowflakeType"];
             deaf: boolean;
-            guild_id?: null | components["schemas"]["SnowflakeType"];
+            guild_id: null | components["schemas"]["SnowflakeType"];
             member?: components["schemas"]["GuildMemberResponse"];
             mute: boolean;
             /** Format: date-time */
-            request_to_speak_timestamp?: string | null;
+            request_to_speak_timestamp: string | null;
             suppress: boolean;
-            self_stream?: boolean | null;
+            self_stream: boolean | null;
             self_deaf: boolean;
             self_mute: boolean;
             self_video: boolean;
@@ -6882,7 +7092,7 @@ export interface components {
         };
         WebhookSourceGuildResponse: {
             id: components["schemas"]["SnowflakeType"];
-            icon?: string | null;
+            icon: string | null;
             name: string;
         };
         /** Format: int32 */
@@ -6910,7 +7120,7 @@ export interface components {
             id: string;
             username: string;
             discriminator: components["schemas"]["WidgetUserDiscriminator"];
-            avatar?: null;
+            avatar: null;
             status: string;
             /** Format: uri */
             avatar_url: string;
@@ -6925,7 +7135,7 @@ export interface components {
         WidgetResponse: {
             id: components["schemas"]["SnowflakeType"];
             name: string;
-            instant_invite?: string | null;
+            instant_invite: string | null;
             channels: components["schemas"]["WidgetChannel"][];
             members: components["schemas"]["WidgetMember"][];
             /** Format: int32 */
@@ -6933,7 +7143,7 @@ export interface components {
         };
         WidgetSettingsResponse: {
             enabled: boolean;
-            channel_id?: null | components["schemas"]["SnowflakeType"];
+            channel_id: null | components["schemas"]["SnowflakeType"];
         };
         WidgetUserDiscriminator: string & "0000";
         /** @description A single error, either for an API response or a specific field. */
@@ -10105,6 +10315,18 @@ export interface operations {
                     "application/json": components["schemas"]["BulkBanUsersResponse"];
                 };
             };
+            /** @description 204 response for bulk_ban_users_from_guild */
+            204: {
+                headers: {
+                    "X-RateLimit-Limit": components["headers"]["X-RateLimit-Limit"];
+                    "X-RateLimit-Remaining": components["headers"]["X-RateLimit-Remaining"];
+                    "X-RateLimit-Reset": components["headers"]["X-RateLimit-Reset"];
+                    "X-RateLimit-Reset-After": components["headers"]["X-RateLimit-Reset-After"];
+                    "X-RateLimit-Bucket": components["headers"]["X-RateLimit-Bucket"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             429: components["responses"]["ClientRatelimitedResponse"];
             "4XX": components["responses"]["ClientErrorResponse"];
         };
@@ -10769,6 +10991,74 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            429: components["responses"]["ClientRatelimitedResponse"];
+            "4XX": components["responses"]["ClientErrorResponse"];
+        };
+    };
+    guild_search: {
+        parameters: {
+            query?: {
+                sort_by?: components["schemas"]["SortingMode"];
+                sort_order?: components["schemas"]["SortingOrder"];
+                content?: string;
+                slop?: number;
+                author_id?: components["schemas"]["SnowflakeType"][];
+                author_type?: components["schemas"]["AuthorType"][];
+                mentions?: components["schemas"]["SnowflakeType"][];
+                mentions_role_id?: components["schemas"]["SnowflakeType"][];
+                replied_to_user_id?: components["schemas"]["SnowflakeType"][];
+                replied_to_message_id?: components["schemas"]["SnowflakeType"][];
+                mention_everyone?: boolean;
+                min_id?: components["schemas"]["SnowflakeType"];
+                max_id?: components["schemas"]["SnowflakeType"];
+                limit?: number;
+                offset?: number;
+                has?: components["schemas"]["HasOption"][];
+                link_hostname?: string[];
+                embed_provider?: string[];
+                embed_type?: components["schemas"]["SearchableEmbedType"][];
+                attachment_extension?: string[];
+                attachment_filename?: string[];
+                pinned?: boolean;
+                include_nsfw?: boolean;
+                channel_id?: components["schemas"]["SnowflakeType"][];
+            };
+            header?: never;
+            path: {
+                guild_id: components["schemas"]["SnowflakeType"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 200 response for guild_search */
+            200: {
+                headers: {
+                    "X-RateLimit-Limit": components["headers"]["X-RateLimit-Limit"];
+                    "X-RateLimit-Remaining": components["headers"]["X-RateLimit-Remaining"];
+                    "X-RateLimit-Reset": components["headers"]["X-RateLimit-Reset"];
+                    "X-RateLimit-Reset-After": components["headers"]["X-RateLimit-Reset-After"];
+                    "X-RateLimit-Bucket": components["headers"]["X-RateLimit-Bucket"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuildSearchResponse"];
+                };
+            };
+            /** @description 202 response for guild_search */
+            202: {
+                headers: {
+                    "X-RateLimit-Limit": components["headers"]["X-RateLimit-Limit"];
+                    "X-RateLimit-Remaining": components["headers"]["X-RateLimit-Remaining"];
+                    "X-RateLimit-Reset": components["headers"]["X-RateLimit-Reset"];
+                    "X-RateLimit-Reset-After": components["headers"]["X-RateLimit-Reset-After"];
+                    "X-RateLimit-Bucket": components["headers"]["X-RateLimit-Bucket"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchIndexNotReadyResponse"];
+                };
             };
             429: components["responses"]["ClientRatelimitedResponse"];
             "4XX": components["responses"]["ClientErrorResponse"];
@@ -12300,9 +12590,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ApplicationCommandAutocompleteCallbackRequest"] | components["schemas"]["CreateMessageInteractionCallbackRequest"] | components["schemas"]["LaunchActivityInteractionCallbackRequest"] | components["schemas"]["ModalInteractionCallbackRequest"] | components["schemas"]["PongInteractionCallbackRequest"] | components["schemas"]["UpdateMessageInteractionCallbackRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ApplicationCommandAutocompleteCallbackRequest"] | components["schemas"]["CreateMessageInteractionCallbackRequest"] | components["schemas"]["LaunchActivityInteractionCallbackRequest"] | components["schemas"]["ModalInteractionCallbackRequest"] | components["schemas"]["PongInteractionCallbackRequest"] | components["schemas"]["UpdateMessageInteractionCallbackRequest"];
-                "multipart/form-data": components["schemas"]["ApplicationCommandAutocompleteCallbackRequest"] | components["schemas"]["CreateMessageInteractionCallbackRequest"] | components["schemas"]["LaunchActivityInteractionCallbackRequest"] | components["schemas"]["ModalInteractionCallbackRequest"] | components["schemas"]["PongInteractionCallbackRequest"] | components["schemas"]["UpdateMessageInteractionCallbackRequest"];
+                "application/json": components["schemas"]["ApplicationCommandAutocompleteCallbackRequest"] | components["schemas"]["CreateMessageInteractionCallbackRequest"] | components["schemas"]["LaunchActivityInteractionCallbackRequest"] | components["schemas"]["ModalInteractionCallbackRequest"] | components["schemas"]["PongInteractionCallbackRequest"] | components["schemas"]["SocialLayerSKUPurchaseEligibilityInteractionCallbackRequest"] | components["schemas"]["UpdateMessageInteractionCallbackRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ApplicationCommandAutocompleteCallbackRequest"] | components["schemas"]["CreateMessageInteractionCallbackRequest"] | components["schemas"]["LaunchActivityInteractionCallbackRequest"] | components["schemas"]["ModalInteractionCallbackRequest"] | components["schemas"]["PongInteractionCallbackRequest"] | components["schemas"]["SocialLayerSKUPurchaseEligibilityInteractionCallbackRequest"] | components["schemas"]["UpdateMessageInteractionCallbackRequest"];
+                "multipart/form-data": components["schemas"]["ApplicationCommandAutocompleteCallbackRequest"] | components["schemas"]["CreateMessageInteractionCallbackRequest"] | components["schemas"]["LaunchActivityInteractionCallbackRequest"] | components["schemas"]["ModalInteractionCallbackRequest"] | components["schemas"]["PongInteractionCallbackRequest"] | components["schemas"]["SocialLayerSKUPurchaseEligibilityInteractionCallbackRequest"] | components["schemas"]["UpdateMessageInteractionCallbackRequest"];
             };
         };
         responses: {
@@ -12930,6 +13220,46 @@ export interface operations {
             "4XX": components["responses"]["ClientErrorResponse"];
         };
     };
+    update_lobby_message_external_moderation_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lobby_id: components["schemas"]["SnowflakeType"];
+                message_id: components["schemas"]["SnowflakeType"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    [key: string]: string;
+                };
+                "multipart/form-data": {
+                    [key: string]: string;
+                };
+            };
+        };
+        responses: {
+            /** @description 204 response for update_lobby_message_external_moderation_metadata */
+            204: {
+                headers: {
+                    "X-RateLimit-Limit": components["headers"]["X-RateLimit-Limit"];
+                    "X-RateLimit-Remaining": components["headers"]["X-RateLimit-Remaining"];
+                    "X-RateLimit-Reset": components["headers"]["X-RateLimit-Reset"];
+                    "X-RateLimit-Reset-After": components["headers"]["X-RateLimit-Reset-After"];
+                    "X-RateLimit-Bucket": components["headers"]["X-RateLimit-Bucket"];
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            429: components["responses"]["ClientRatelimitedResponse"];
+            "4XX": components["responses"]["ClientErrorResponse"];
+        };
+    };
     get_my_oauth2_authorization: {
         parameters: {
             query?: never;
@@ -13033,6 +13363,47 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["OAuth2GetOpenIDConnectUserInfoResponse"];
                 };
+            };
+            429: components["responses"]["ClientRatelimitedResponse"];
+            "4XX": components["responses"]["ClientErrorResponse"];
+        };
+    };
+    update_user_message_external_moderation_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id_1: components["schemas"]["SnowflakeType"];
+                user_id_2: components["schemas"]["SnowflakeType"];
+                message_id: components["schemas"]["SnowflakeType"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: string;
+                };
+                "application/x-www-form-urlencoded": {
+                    [key: string]: string;
+                };
+                "multipart/form-data": {
+                    [key: string]: string;
+                };
+            };
+        };
+        responses: {
+            /** @description 204 response for update_user_message_external_moderation_metadata */
+            204: {
+                headers: {
+                    "X-RateLimit-Limit": components["headers"]["X-RateLimit-Limit"];
+                    "X-RateLimit-Remaining": components["headers"]["X-RateLimit-Remaining"];
+                    "X-RateLimit-Reset": components["headers"]["X-RateLimit-Reset"];
+                    "X-RateLimit-Reset-After": components["headers"]["X-RateLimit-Reset-After"];
+                    "X-RateLimit-Bucket": components["headers"]["X-RateLimit-Bucket"];
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             429: components["responses"]["ClientRatelimitedResponse"];
             "4XX": components["responses"]["ClientErrorResponse"];
@@ -14454,6 +14825,7 @@ export enum ApiPaths {
     update_guild_member = "/guilds/{guild_id}/members/{user_id}",
     add_guild_member_role = "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
     delete_guild_member_role = "/guilds/{guild_id}/members/{user_id}/roles/{role_id}",
+    guild_search = "/guilds/{guild_id}/messages/search",
     get_guild_new_member_welcome = "/guilds/{guild_id}/new-member-welcome",
     get_guilds_onboarding = "/guilds/{guild_id}/onboarding",
     put_guilds_onboarding = "/guilds/{guild_id}/onboarding",
@@ -14521,10 +14893,12 @@ export enum ApiPaths {
     create_linked_lobby_guild_invite_for_user = "/lobbies/{lobby_id}/members/{user_id}/invites",
     get_lobby_messages = "/lobbies/{lobby_id}/messages",
     create_lobby_message = "/lobbies/{lobby_id}/messages",
+    update_lobby_message_external_moderation_metadata = "/lobbies/{lobby_id}/messages/{message_id}/moderation-metadata",
     get_my_oauth2_authorization = "/oauth2/@me",
     get_my_oauth2_application = "/oauth2/applications/@me",
     get_public_keys = "/oauth2/keys",
     get_openid_connect_userinfo = "/oauth2/userinfo",
+    update_user_message_external_moderation_metadata = "/partner-sdk/dms/{user_id_1}/{user_id_2}/messages/{message_id}/moderation-metadata",
     partner_sdk_unmerge_provisional_account = "/partner-sdk/provisional-accounts/unmerge",
     bot_partner_sdk_unmerge_provisional_account = "/partner-sdk/provisional-accounts/unmerge/bot",
     partner_sdk_token = "/partner-sdk/token",
