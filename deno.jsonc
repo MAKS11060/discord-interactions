@@ -20,8 +20,8 @@
     "openapi-fetch": "npm:openapi-fetch@^0.15.0",
     "zod": "npm:zod@^4.3.5",
     // alias
-    "#/lib/": "./src/lib/",
-    "#/": "./src/",
+    "#/*": "./src/",
+    "#/lib/*": "./src/lib/"
   },
   "exports": {
     ".": "./src/mod.ts",

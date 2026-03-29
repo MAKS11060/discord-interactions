@@ -14,9 +14,6 @@ importers:
       '@std/bytes':
         specifier: jsr:^1.0.6
         version: '@jsr/std__bytes@1.0.6'
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
       '@typescript/native-preview':
         specifier: 7.0.0-dev.20260329.1
         version: 7.0.0-dev.20260329.1
@@ -32,6 +29,16 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.3.6
+    devDependencies:
+      '@types/bun':
+        specifier: ^1.3.11
+        version: 1.3.11
+      '@types/deno':
+        specifier: ^2.5.0
+        version: 2.5.0
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
 
 packages:
 
@@ -43,6 +50,12 @@ packages:
 
   '@jsr/std__encoding@1.0.10':
     resolution: {integrity: sha512-WK2njnDTyKefroRNk2Ooq7GStp6Y0ccAvr4To+Z/zecRAGe7+OSvH9DbiaHpAKwEi2KQbmpWMOYsdNt+TsdmSw==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/1.0.10.tgz}
+
+  '@types/bun@1.3.11':
+    resolution: {integrity: sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg==}
+
+  '@types/deno@2.5.0':
+    resolution: {integrity: sha512-g8JS38vmc0S87jKsFzre+0ZyMOUDHPVokEJymSCRlL57h6f/FdKPWBXgdFh3Z8Ees9sz11qt9VWELU9Y9ZkiVw==}
 
   '@types/node@25.5.0':
     resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
@@ -86,6 +99,9 @@ packages:
     resolution: {integrity: sha512-v5lJ0TgSt2m9yVk2xoj9+NH/gTDeWTLaWGPx6MJsUKOYd6bmCJhHbMcWmb8d/zlfhE9ffpixUKYj62CdYfriqA==}
     hasBin: true
 
+  bun-types@1.3.11:
+    resolution: {integrity: sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg==}
+
   discord-api-types@0.38.43:
     resolution: {integrity: sha512-sSoBf/nK6m7BGtw65mi+QBuvEWaHE8MMziFLqWL+gT6ME/BLg34dRSVKS3Husx40uU06bvxUc3/X+D9Y6/zAbw==}
 
@@ -114,6 +130,12 @@ snapshots:
   '@jsr/std__bytes@1.0.6': {}
 
   '@jsr/std__encoding@1.0.10': {}
+
+  '@types/bun@1.3.11':
+    dependencies:
+      bun-types: 1.3.11
+
+  '@types/deno@2.5.0': {}
 
   '@types/node@25.5.0':
     dependencies:
@@ -149,6 +171,10 @@ snapshots:
       '@typescript/native-preview-linux-x64': 7.0.0-dev.20260329.1
       '@typescript/native-preview-win32-arm64': 7.0.0-dev.20260329.1
       '@typescript/native-preview-win32-x64': 7.0.0-dev.20260329.1
+
+  bun-types@1.3.11:
+    dependencies:
+      '@types/node': 25.5.0
 
   discord-api-types@0.38.43: {}
 

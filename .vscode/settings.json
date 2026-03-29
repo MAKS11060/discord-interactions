@@ -3,6 +3,19 @@
   "editor.defaultFormatter": "dprint.dprint",
 
   "js/ts.experimental.useTsgo": true,
+  "js/ts.referencesCodeLens.enabled": true,
+  "js/ts.preferences.autoImportSpecifierExcludeRegexes": [
+    "discord-api-types/v7",
+    "discord-api-types/v8",
+    "discord-api-types/v9",
+    "discord-api-types/payload",
+    "console",
+    "node:console",
+    "node:inspector",
+    "zod/"
+    // "^node:"
+  ],
+  "js/ts.preferences.autoImportFileExcludePatterns": [],
 
   "explorer.incrementalNaming": "smart",
   "explorer.fileNesting.patterns": {
