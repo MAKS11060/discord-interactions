@@ -32,10 +32,10 @@ export class DiscordSnowflake {
       throw new Error('The increment cannot exceed 4095')
     }
 
-    const id = (ts - this.EPOCH) << 22n |
-      (workerId << 17n) |
-      (processId << 12n) |
-      increment
+    const id = (ts - this.EPOCH) << 22n
+      | (workerId << 17n)
+      | (processId << 12n)
+      | increment
 
     return id.toString()
   }

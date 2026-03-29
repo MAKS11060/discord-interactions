@@ -1,0 +1,22 @@
+{
+  "name": "discord-interaction",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.30.0",
+  "dependencies": {
+    "@maks11060/oauth2": "jsr:^0.0.2",
+    "@types/node": "^25.5.0",
+    "@typescript/native-preview": "7.0.0-dev.20260329.1",
+    "discord-api-types": "^0.38.43",
+    "hono": "^4.12.9",
+    "openapi-fetch": "^0.17.0",
+    "zod": "^4.3.6"
+  }
+}

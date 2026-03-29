@@ -1,0 +1,157 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@maks11060/oauth2':
+        specifier: jsr:^0.0.2
+        version: '@jsr/maks11060__oauth2@0.0.2'
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@typescript/native-preview':
+        specifier: 7.0.0-dev.20260329.1
+        version: 7.0.0-dev.20260329.1
+      discord-api-types:
+        specifier: ^0.38.43
+        version: 0.38.43
+      hono:
+        specifier: ^4.12.9
+        version: 4.12.9
+      openapi-fetch:
+        specifier: ^0.17.0
+        version: 0.17.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+
+packages:
+
+  '@jsr/maks11060__oauth2@0.0.2':
+    resolution: {integrity: sha512-wNVJfYSqaYDq+h6hTn0qlDj4yZLR1VJs28zI14BobXSJeFe8xG5BuxWE9TwfGQk11AARA1o6f1vwDEEk5AtJjg==, tarball: https://npm.jsr.io/~/11/@jsr/maks11060__oauth2/0.0.2.tgz}
+
+  '@jsr/std__encoding@1.0.10':
+    resolution: {integrity: sha512-WK2njnDTyKefroRNk2Ooq7GStp6Y0ccAvr4To+Z/zecRAGe7+OSvH9DbiaHpAKwEi2KQbmpWMOYsdNt+TsdmSw==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/1.0.10.tgz}
+
+  '@types/node@25.5.0':
+    resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
+
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-zS1thDk7luD82nXVwvMd97F7FgxAE6jGtSmnHeXdaQ+6hJQcQLOVkfUdaehhdodqKDapWA2jEURxQAYjDGvv3g==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-3IJ2qmpjQ1OXpZNUhJRjF1+SbDuqGC14Ug8DjWJlPBp06isi1fcJph90f5qW//FxEsNnJPYRcNwpP0A2RbTASg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-gQb6SjB5JlUKDaDuz6mv/m+/OBWVDlcjHINFOykBZZYZtgxBx6nEDjLrT8TiJRjmHEG6hSbv+yisUL9IThWycA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-WKSSJrH611DFFAg6YCkgbnkdy0a4RRpzvDpNXtPzLTbMYC5oJdq3Dpvncx5nrJvGh4J4yvzXoMxraGPyygqGLw==}
+    cpu: [arm]
+    os: [linux]
+
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-kg4r+ssxoEWruBynUg9bFMdcMpo5NupzAPqNBlV8uWbmYGZjaPLonFWAi9ZZMiVJY/x5ZQ9GBl6xskwLdd3PJQ==}
+    cpu: [x64]
+    os: [linux]
+
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-Qi4lddVxl5MG7Tk67gYhCFnoqqLGd4TvaI8RN4qHFjt3GV8s6c+0cQGsJXJnVgMx27qbyDTdsyAa2pvb42rYcQ==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-+k5+usuB8HZ6Xc+enLdb95ZJd25bQqsnI1zXxfRCHP+RS9mxs70Mi9ezQz3lKOLZFFXShSH7iW9iulm8KwVzCQ==}
+    cpu: [x64]
+    os: [win32]
+
+  '@typescript/native-preview@7.0.0-dev.20260329.1':
+    resolution: {integrity: sha512-v5lJ0TgSt2m9yVk2xoj9+NH/gTDeWTLaWGPx6MJsUKOYd6bmCJhHbMcWmb8d/zlfhE9ffpixUKYj62CdYfriqA==}
+    hasBin: true
+
+  discord-api-types@0.38.43:
+    resolution: {integrity: sha512-sSoBf/nK6m7BGtw65mi+QBuvEWaHE8MMziFLqWL+gT6ME/BLg34dRSVKS3Husx40uU06bvxUc3/X+D9Y6/zAbw==}
+
+  hono@4.12.9:
+    resolution: {integrity: sha512-wy3T8Zm2bsEvxKZM5w21VdHDDcwVS1yUFFY6i8UobSsKfFceT7TOwhbhfKsDyx7tYQlmRM5FLpIuYvNFyjctiA==}
+    engines: {node: '>=16.9.0'}
+
+  openapi-fetch@0.17.0:
+    resolution: {integrity: sha512-PsbZR1wAPcG91eEthKhN+Zn92FMHxv+/faECIwjXdxfTODGSGegYv0sc1Olz+HYPvKOuoXfp+0pA2XVt2cI0Ig==}
+
+  openapi-typescript-helpers@0.1.0:
+    resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
+
+  undici-types@7.18.2:
+    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
+
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+
+snapshots:
+
+  '@jsr/maks11060__oauth2@0.0.2':
+    dependencies:
+      '@jsr/std__encoding': 1.0.10
+
+  '@jsr/std__encoding@1.0.10': {}
+
+  '@types/node@25.5.0':
+    dependencies:
+      undici-types: 7.18.2
+
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20260329.1':
+    optional: true
+
+  '@typescript/native-preview@7.0.0-dev.20260329.1':
+    optionalDependencies:
+      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-linux-arm': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-linux-x64': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-win32-x64': 7.0.0-dev.20260329.1
+
+  discord-api-types@0.38.43: {}
+
+  hono@4.12.9: {}
+
+  openapi-fetch@0.17.0:
+    dependencies:
+      openapi-typescript-helpers: 0.1.0
+
+  openapi-typescript-helpers@0.1.0: {}
+
+  undici-types@7.18.2: {}
+
+  zod@4.3.6: {}

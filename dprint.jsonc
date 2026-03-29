@@ -6,7 +6,7 @@
     "quoteStyle": "alwaysSingle",
     "semiColons": "asi",
     "spaceAround": false,
-    "spaceSurroundingProperties": false
+    "spaceSurroundingProperties": false,
     // "conditionalExpression.operatorPosition": "sameLine"
   },
   "json": {},
@@ -17,7 +17,7 @@
     "html.void.selfClosing": false, // remove <img />
     "svelte.scriptIndent": true,
     "svelte.styleIndent": true,
-    "printWidth": 120
+    "printWidth": 120,
   },
   "yaml": {},
   "excludes": [
@@ -27,7 +27,7 @@
     // "**/.*",
     "**/*.oas.ts",
     "**/*.d.ts",
-    "**/*.svg"
+    "**/*.svg",
   ],
   "plugins": [
     "https://plugins.dprint.dev/typescript-0.95.15.wasm",
@@ -36,6 +36,6 @@
     "https://plugins.dprint.dev/toml-0.7.0.wasm",
     "https://plugins.dprint.dev/g-plane/malva-v0.15.2.wasm",
     "https://plugins.dprint.dev/g-plane/markup_fmt-v0.25.3.wasm",
-    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm"
-  ]
+    "https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
+  ],
 }
