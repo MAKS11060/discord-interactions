@@ -84,8 +84,8 @@ deploy-discord -h
 
 ```ts
 // main.ts
-import {Hono} from 'hono'
 import {discordInteraction, importKeyRaw} from '@maks11060/discord-interactions/hono'
+import {Hono} from 'hono'
 import {commands} from './src/commands.ts'
 
 const app = new Hono()

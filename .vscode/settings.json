@@ -1,17 +1,28 @@
 {
-  "deno.enable": true,
-  "prettier.enable": false,
-  "typescript.format.enable": false,
-  "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": false,
+  "deno.enable": false,
 
-  "[typescript]": { "editor.defaultFormatter": "denoland.vscode-deno" },
-  "[jsonc]": { "editor.defaultFormatter": "denoland.vscode-deno" },
-  "[json]": { "editor.defaultFormatter": "denoland.vscode-deno" },
-  "[markdown]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  "editor.defaultFormatter": "dprint.dprint",
+
+  // "typescript.format.enable": false,
+  // "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": false,
+
+  // "[typescript]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  // "[jsonc]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  // "[json]": { "editor.defaultFormatter": "denoland.vscode-deno" },
+  // "[markdown]": { "editor.defaultFormatter": "denoland.vscode-deno" },
 
   "explorer.fileNesting.patterns": {
     "deno.jsonc": "package.json, svelte.config.*, drizzle.config.*, .gitignore"
   },
 
-  "explorer.incrementalNaming": "smart"
+  "explorer.incrementalNaming": "smart",
+
+  "nodejs-testing.env": { "FORCE_COLOR": "0" },
+  "nodejs-testing.extensions": [{
+    // "filePatterns": ["**/*{.test.,.spec.,_test_,_spec_}{js,ts,tsx,jsx,mts,cts,cjs,mjs}"],
+    "filePatterns": ["**/*{js,ts,tsx,jsx,mts,cts,cjs,mjs}"],
+    "parameters": ["--experimental-transform-types"],
+    // "parameters": ["--experimental-transform-types", "--env-file=.env"],
+    "extensions": ["ts"]
+  }]
 }
