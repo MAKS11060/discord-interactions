@@ -4,7 +4,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "fmt": "dprint fmt"
+    "fmt": "dprint fmt",
+    "prepare": "git config core.hooksPath .hooks",
+    "api:discord": "deno x npm:openapi-typescript https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json --make-paths-enum -o src/lib/discord.oas.ts"
   },
   "keywords": ["Discord", "Discord interactions"],
   "author": "MAKS11060",
@@ -12,7 +14,7 @@
   "packageManager": "pnpm@10.30.0",
   "imports": {
     "#adapter/*": "./src/adapter/*",
-    "#/lib/*": "./src/lib/*",
+    "#lib/*": "./src/lib/*",
     "#/": "./src/*"
   },
   "dependencies": {

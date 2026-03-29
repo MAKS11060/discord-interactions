@@ -1,6 +1,6 @@
 #!/usr/bin/env -S bun
 
-import {importPublicKey} from '#/lib/crypto.ts'
+import {importPublicKey} from '#lib/crypto.ts'
 import {interactionHandler} from '#adapter/web.ts'
 import {getRuntimeKey} from 'hono/adapter'
 
