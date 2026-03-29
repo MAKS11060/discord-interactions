@@ -19,3 +19,38 @@ export default defineCommand({
     ],
   },
 })
+
+defineHandler({})
+
+/*
+[
+  {
+    "id": "1462122821995073755",
+    "application_id": "1097172825292406814",
+    "version": "1462122821995073756",
+    "default_member_permissions": null,
+    "type": 1,
+    "name": "test2",
+    "description": "Test 2",
+    "dm_permission": true,
+    "contexts": null,
+    "integration_types": [
+      0,
+      1
+    ],
+    "options": [
+      {
+        "type": 3,
+        "name": "string",
+        "description": "String option"
+      },
+      {
+        "type": 4,
+        "name": "integer",
+        "description": "Integer option"
+      },
+    ],
+    "nsfw": false
+  }
+]
+*/

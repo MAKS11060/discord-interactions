@@ -3,7 +3,7 @@ import {parseResponse} from '#/lib/openapi-fetch.ts'
 import {getRequiredEnv} from '#/lib/utils.ts'
 import {oauth2ClientCredentials} from '@maks11060/oauth2/client-credentials'
 import {createDiscordOauth2} from '@maks11060/oauth2/providers'
-import type {RESTPostOAuth2ClientCredentialsResult} from 'discord-api-types/v10'
+import type {APIApplicationCommand, APIInteraction, RESTPostOAuth2ClientCredentialsResult} from 'discord-api-types/v10'
 import * as ts from 'npm:typescript'
 import applicationJson from '../.tmp/1097172825292406814.json' with {type: 'json'}
 
@@ -176,7 +176,7 @@ Deno.test('Test 451658', async (t) => {
   // }
 })
 
-import type {DiscordInteractionDefaultExport} from '@maks11060/discord-interactions'
+import type {DiscordInteractionDefaultExport} from '#/mod.ts'
 import {ensureFile, expandGlob} from 'jsr:@std/fs'
 import {fromFileUrl, toFileUrl} from 'jsr:@std/path'
 
@@ -187,4 +187,32 @@ Deno.test('Test 557697', async (t) => {
     const mod = await import(toFileUrl(entry.path).toString()) as DiscordInteractionDefaultExport
     console.log(mod)
   }
+})
+
+Deno.test('Test 798672', async (t) => {
+  console.log((async () => {
+    await ensureFile('test/commands/-index.ts')
+
+    for await (const entry of expandGlob('test/commands/*.ts')) {
+      const mod = await import(toFileUrl(entry.path).toString()) as DiscordInteractionDefaultExport
+      console.log(mod)
+    }
+  }).toString())
+})
+
+// ---
+Deno.test('generate types', async (t) => {
+  const commands = JSON.parse(
+    Deno.readTextFileSync(fromFileUrl(import.meta.resolve(`./.commands.json`))),
+  ) as APIApplicationCommand[]
+
+  // gen
+  let dts = 'export type CommandHandlers = {\n'
+  for (const cmd of commands) {
+    dts += `  /** name '${cmd.name}' *\/\n`
+    dts += `  '${cmd.id}': (interaction: APIInteraction, options: {}) => any\n`
+  }
+  dts += '}\n'
+
+  console.log(dts)
 })
