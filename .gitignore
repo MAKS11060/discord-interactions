@@ -1,7 +1,7 @@
 .env
 .vite
-
-.tmp/
+.discord
+.tmp
 
 node_modules
 

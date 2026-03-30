@@ -1,13 +1,15 @@
+import type {DiscordInteraction} from '#app'
+import {importPublicKey} from '#lib/crypto.ts'
 import {concat} from '@std/bytes/concat'
 import {InteractionError} from '../core/errors.ts'
 import type {InteractionHandler} from '../core/types.ts'
 
 const encoder = new TextEncoder()
+const publicKeyCache = new WeakMap()
 
 export const interactionHandler = async (
   request: Request,
-  publicKey: CryptoKey,
-  handler: InteractionHandler,
+  app: DiscordInteraction,
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return Response.json({error: 'Method Not Allowed'}, {status: 405})
@@ -20,6 +22,14 @@ export const interactionHandler = async (
   }
 
   const body = await request.clone().bytes()
+
+  const publicKey = publicKeyCache.getOrInsert(
+    app,
+    typeof app.publicKey === 'string'
+      ? await importPublicKey(app.publicKey)
+      : app.publicKey,
+  )
+
   const valid = await crypto.subtle.verify(
     publicKey.algorithm,
     publicKey,
@@ -32,7 +42,7 @@ export const interactionHandler = async (
 
   try {
     return Response.json(
-      handler.execute(
+      app.execute(
         await request.json(),
       ),
     )

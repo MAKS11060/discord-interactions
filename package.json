@@ -15,7 +15,8 @@
   "imports": {
     "#adapter/*": "./src/adapter/*",
     "#lib/*": "./src/lib/*",
-    "#/": "./src/*"
+    "#/": "./src/*",
+    "#app": "./src/mod.ts"
   },
   "dependencies": {
     "@maks11060/oauth2": "jsr:^0.0.2",

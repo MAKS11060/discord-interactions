@@ -19,7 +19,7 @@
 
   "explorer.incrementalNaming": "smart",
   "explorer.fileNesting.patterns": {
-    "package.json": "deno.*, drizzle.config.*, .*, *.jsonc, *.yaml"
+    "package.json": "deno.*, drizzle.config.*, .*, *.json, *.jsonc, *.yaml"
   },
 
   "nodejs-testing.env": { "FORCE_COLOR": "0" },
