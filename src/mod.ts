@@ -1,6 +1,4 @@
 import {
-  type APIInteraction,
-  type APIInteractionResponse,
   ApplicationCommandType,
   type RESTPostAPIApplicationCommandsJSONBody,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
@@ -12,15 +10,10 @@ export interface CommandSchema<
 > {
   command: T
 }
-export interface SlashCommandSchema<
-  T extends RESTPostAPIChatInputApplicationCommandsJSONBody,
-> extends CommandSchema<T> {}
-export interface UserCommandSchema<
-  T extends RESTPostAPIContextMenuApplicationCommandsJSONBody,
-> extends CommandSchema<T> {}
-export interface MessageCommandSchema<
-  T extends RESTPostAPIContextMenuApplicationCommandsJSONBody,
-> extends CommandSchema<T> {}
+
+export type SlashCommandSchema<T extends RESTPostAPIChatInputApplicationCommandsJSONBody> = CommandSchema<T>
+export type UserCommandSchema<T extends RESTPostAPIContextMenuApplicationCommandsJSONBody> = CommandSchema<T>
+export type MessageCommandSchema<T extends RESTPostAPIContextMenuApplicationCommandsJSONBody> = CommandSchema<T>
 
 export interface DiscordInteraction<T extends Record<string, CommandSchema> = Record<string, CommandSchema>> {
   schema: T
@@ -73,7 +66,21 @@ export const messageCommand = <
   })
 }
 
+// --- Handler ---
+type HandlerCtx<T> = {
+  reply(message: string): void
+  reply(options: {data: string}): void
+}
+
+const handler = <T extends CommandSchema>(schema: T, handler: (t: HandlerCtx<T>) => void | Promise<void>) => {
+  handler({
+    reply(options) {
+    },
+  })
+}
+
 export const discord = {
+  handler,
   command: defCommand,
   slashCommand,
   userCommand,

@@ -8,7 +8,10 @@
     "prepare": "git config core.hooksPath .hooks",
     "api:discord": "deno x npm:openapi-typescript https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json --make-paths-enum -o src/lib/discord.oas.ts"
   },
-  "keywords": ["Discord", "Discord interactions"],
+  "keywords": [
+    "Discord",
+    "Discord interactions"
+  ],
   "author": "MAKS11060",
   "license": "MIT",
   "packageManager": "pnpm@10.30.0",
@@ -24,6 +27,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260329.1",
     "discord-api-types": "^0.38.43",
     "openapi-fetch": "^0.17.0",
+    "typescript": "^6.0.2",
     "zod": "^4.3.6"
   },
   "peerDependencies": {

@@ -1,5 +1,5 @@
 import {discordInteractions} from '#app'
-import { importPublicKey } from '#lib/crypto.ts';
+import {importPublicKey} from '#lib/crypto.ts'
 import * as example1 from './app/mod.ts'
 
 // --- USER API ---
@@ -12,6 +12,3 @@ export const app1 = discordInteractions({
     ...example1,
   },
 })
-
-// --- INTERNAL ---
-app1

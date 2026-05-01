@@ -10,7 +10,6 @@ export const handler = {
 
     // IMPL
 
-
     throw new InteractionError('No handlers')
   },
 } satisfies InteractionHandler

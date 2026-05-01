@@ -5,7 +5,6 @@ import {parseResponse} from '#lib/openapi-fetch.ts'
 import {readFile, writeFile} from 'node:fs/promises'
 import {authorize, clientId, getBearerToken, getToken} from './_utils.ts'
 
-
 const token = await authorize()
 console.log(token)
 
