@@ -1,4 +1,4 @@
-import {verifyRequestSignature} from '#/lib/crypto.ts'
+import {verifyRequestSignature} from '#lib/crypto.ts'
 import {concat} from '@std/bytes/concat'
 import type {APIInteraction, APIPingInteraction} from 'discord-api-types/v10'
 import {createMiddleware} from 'hono/factory'
