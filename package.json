@@ -6,7 +6,11 @@
   "scripts": {
     "fmt": "dprint fmt",
     "prepare": "git config core.hooksPath .hooks",
-    "api:discord": "deno x npm:openapi-typescript https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json --make-paths-enum -o src/lib/discord.oas.ts"
+    "api:discord": "deno x npm:openapi-typescript https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json --make-paths-enum -o src/lib/discord.oas.ts",
+    "serve": "pn serve:bun",
+    "serve:bun": "bun --hot ./test/main.ts",
+    "serve:deno": "deno -A --env-file --watch-hmr ./test/main.ts",
+    "serve:node": "node --import ./src/lib/polyfill.ts --env-file-if-exists .env --watch ./test/main.ts"
   },
   "keywords": [
     "Discord",
@@ -33,6 +37,7 @@
     "hono": "catalog:"
   },
   "devDependencies": {
+    "@hono/node-server": "^2.0.1",
     "@types/bun": "catalog:",
     "@types/deno": "catalog:",
     "@types/node": "catalog:",
