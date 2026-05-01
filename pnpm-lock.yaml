@@ -4,6 +4,27 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/bun':
+      specifier: ^1.3.13
+      version: 1.3.13
+    '@types/deno':
+      specifier: ^2.5.0
+      version: 2.5.0
+    '@types/node':
+      specifier: ^25.6.0
+      version: 25.6.0
+    '@typescript/native-preview':
+      specifier: 7.0.0-dev.20260501.1
+      version: 7.0.0-dev.20260501.1
+    hono:
+      specifier: ^4.12.16
+      version: 4.12.16
+    typescript:
+      specifier: ^6.0.3
+      version: 6.0.3
+
 importers:
 
   .:
@@ -14,102 +35,110 @@ importers:
       '@std/bytes':
         specifier: jsr:^1.0.6
         version: '@jsr/std__bytes@1.0.6'
-      '@typescript/native-preview':
-        specifier: 7.0.0-dev.20260329.1
-        version: 7.0.0-dev.20260329.1
       discord-api-types:
-        specifier: ^0.38.43
-        version: 0.38.43
+        specifier: ^0.38.47
+        version: 0.38.47
       hono:
-        specifier: ^4.12.9
-        version: 4.12.9
+        specifier: 'catalog:'
+        version: 4.12.16
       openapi-fetch:
         specifier: ^0.17.0
         version: 0.17.0
       typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
+        specifier: 'catalog:'
+        version: 6.0.3
       zod:
-        specifier: ^4.3.6
-        version: 4.3.6
+        specifier: ^4.4.1
+        version: 4.4.1
     devDependencies:
       '@types/bun':
-        specifier: ^1.3.11
-        version: 1.3.11
+        specifier: 'catalog:'
+        version: 1.3.13
       '@types/deno':
-        specifier: ^2.5.0
+        specifier: 'catalog:'
         version: 2.5.0
       '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
+        specifier: 'catalog:'
+        version: 25.6.0
+      '@typescript/native-preview':
+        specifier: 'catalog:'
+        version: 7.0.0-dev.20260501.1
 
 packages:
 
   '@jsr/maks11060__oauth2@0.0.2':
-    resolution: {integrity: sha512-wNVJfYSqaYDq+h6hTn0qlDj4yZLR1VJs28zI14BobXSJeFe8xG5BuxWE9TwfGQk11AARA1o6f1vwDEEk5AtJjg==, tarball: https://npm.jsr.io/~/11/@jsr/maks11060__oauth2/0.0.2.tgz}
+    resolution: {integrity: sha512-wNVJfYSqaYDq+h6hTn0qlDj4yZLR1VJs28zI14BobXSJeFe8xG5BuxWE9TwfGQk11AARA1o6f1vwDEEk5AtJjg==}
 
   '@jsr/std__bytes@1.0.6':
-    resolution: {integrity: sha512-St6yKggjFGhxS52IFLJWvkchRFbAKg2Xh8UxA4S1EGz7GJ2Ui+ssDDldj/w2c8vCxvl6qgR0HaYbKeFJNqujmA==, tarball: https://npm.jsr.io/~/11/@jsr/std__bytes/1.0.6.tgz}
+    resolution: {integrity: sha512-St6yKggjFGhxS52IFLJWvkchRFbAKg2Xh8UxA4S1EGz7GJ2Ui+ssDDldj/w2c8vCxvl6qgR0HaYbKeFJNqujmA==}
 
   '@jsr/std__encoding@1.0.10':
-    resolution: {integrity: sha512-WK2njnDTyKefroRNk2Ooq7GStp6Y0ccAvr4To+Z/zecRAGe7+OSvH9DbiaHpAKwEi2KQbmpWMOYsdNt+TsdmSw==, tarball: https://npm.jsr.io/~/11/@jsr/std__encoding/1.0.10.tgz}
+    resolution: {integrity: sha512-WK2njnDTyKefroRNk2Ooq7GStp6Y0ccAvr4To+Z/zecRAGe7+OSvH9DbiaHpAKwEi2KQbmpWMOYsdNt+TsdmSw==}
 
-  '@types/bun@1.3.11':
-    resolution: {integrity: sha512-5vPne5QvtpjGpsGYXiFyycfpDF2ECyPcTSsFBMa0fraoxiQyMJ3SmuQIGhzPg2WJuWxVBoxWJ2kClYTcw/4fAg==}
+  '@types/bun@1.3.13':
+    resolution: {integrity: sha512-9fqXWk5YIHGGnUau9TEi+qdlTYDAnOj+xLCmSTwXfAIqXr2x4tytJb43E9uCvt09zJURKXwAtkoH4nLQfzeTXw==}
 
   '@types/deno@2.5.0':
     resolution: {integrity: sha512-g8JS38vmc0S87jKsFzre+0ZyMOUDHPVokEJymSCRlL57h6f/FdKPWBXgdFh3Z8Ees9sz11qt9VWELU9Y9ZkiVw==}
 
-  '@types/node@25.5.0':
-    resolution: {integrity: sha512-jp2P3tQMSxWugkCUKLRPVUpGaL5MVFwF8RDuSRztfwgN1wmqJeMSbKlnEtQqU8UrhTmzEmZdu2I6v2dpp7XIxw==}
+  '@types/node@25.6.0':
+    resolution: {integrity: sha512-+qIYRKdNYJwY3vRCZMdJbPLJAtGjQBudzZzdzwQYkEPQd+PJGixUL5QfvCLDaULoLv+RhT3LDkwEfKaAkgSmNQ==}
 
-  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-zS1thDk7luD82nXVwvMd97F7FgxAE6jGtSmnHeXdaQ+6hJQcQLOVkfUdaehhdodqKDapWA2jEURxQAYjDGvv3g==}
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-OIYsqKouI2U7W5Q6VgUz7+t9FpIXNFk30xSUG7gGlN1bdDniWfW7t5n6mzEtiHUVTxRgJQBjXGAlhVa6A9h+pg==}
+    engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [darwin]
 
-  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-3IJ2qmpjQ1OXpZNUhJRjF1+SbDuqGC14Ug8DjWJlPBp06isi1fcJph90f5qW//FxEsNnJPYRcNwpP0A2RbTASg==}
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-hQ5UsEyOz3ErQE3sKKHMCfJJGQenD0DSCi2ob+ywElXirG2NyFNA8cmx1g+MIm1lpQeEQslWZhe9EGwo9DJAbg==}
+    engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [darwin]
 
-  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-gQb6SjB5JlUKDaDuz6mv/m+/OBWVDlcjHINFOykBZZYZtgxBx6nEDjLrT8TiJRjmHEG6hSbv+yisUL9IThWycA==}
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-fbaFKE1UvtsQ6i1eJjBiNbglR9ywXrW/CH1sqYPEtr0WgTUpixbE6inQOXjB0jlEA9RzQq+QMzDyaCDmU82Dkw==}
+    engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [linux]
 
-  '@typescript/native-preview-linux-arm@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-WKSSJrH611DFFAg6YCkgbnkdy0a4RRpzvDpNXtPzLTbMYC5oJdq3Dpvncx5nrJvGh4J4yvzXoMxraGPyygqGLw==}
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-agkTW/t85XSJKWGcXdUV9ZmSi3Akh3POK+HhWehigEJR3W/jebiO9njifETfoUF6cpoYkFn+CZvfAJ00IWGZfA==}
+    engines: {node: '>=16.20.0'}
     cpu: [arm]
     os: [linux]
 
-  '@typescript/native-preview-linux-x64@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-kg4r+ssxoEWruBynUg9bFMdcMpo5NupzAPqNBlV8uWbmYGZjaPLonFWAi9ZZMiVJY/x5ZQ9GBl6xskwLdd3PJQ==}
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-Sd8D+S88P7K0IH1U+a8pK20ZD+GM54t48/GLw9ebSklfCdt0iKdHgprjKIcl54C3SocGCcvEBPr1thwtTO9Vtg==}
+    engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [linux]
 
-  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-Qi4lddVxl5MG7Tk67gYhCFnoqqLGd4TvaI8RN4qHFjt3GV8s6c+0cQGsJXJnVgMx27qbyDTdsyAa2pvb42rYcQ==}
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-07sJNDnU7KHfo/trv/cBXpgFBELDYJAsTx5kNvBckSQUxbX+p/b9oQ3eFbtK3zDP4EEKdeiD9EelIy22atBnzA==}
+    engines: {node: '>=16.20.0'}
     cpu: [arm64]
     os: [win32]
 
-  '@typescript/native-preview-win32-x64@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-+k5+usuB8HZ6Xc+enLdb95ZJd25bQqsnI1zXxfRCHP+RS9mxs70Mi9ezQz3lKOLZFFXShSH7iW9iulm8KwVzCQ==}
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-8rzd/eQZyBuR+IRiPnIQrCwSuXIGBFiL8LsUMFqQt2WAUlQ0gGWBlLJHUVU4YNlju9QROjNHUGpJ52XGZbFv0Q==}
+    engines: {node: '>=16.20.0'}
     cpu: [x64]
     os: [win32]
 
-  '@typescript/native-preview@7.0.0-dev.20260329.1':
-    resolution: {integrity: sha512-v5lJ0TgSt2m9yVk2xoj9+NH/gTDeWTLaWGPx6MJsUKOYd6bmCJhHbMcWmb8d/zlfhE9ffpixUKYj62CdYfriqA==}
+  '@typescript/native-preview@7.0.0-dev.20260501.1':
+    resolution: {integrity: sha512-skD0ig8IzPwSY1L8VmNgfaxkfT8ImBwKeIypfZyJA+zHzWvroRKbRbT2GryOSREl22ZqLOuDfcq+7BdA0rjF2Q==}
+    engines: {node: '>=16.20.0'}
     hasBin: true
 
-  bun-types@1.3.11:
-    resolution: {integrity: sha512-1KGPpoxQWl9f6wcZh57LvrPIInQMn2TQ7jsgxqpRzg+l0QPOFvJVH7HmvHo/AiPgwXy+/Thf6Ov3EdVn1vOabg==}
+  bun-types@1.3.13:
+    resolution: {integrity: sha512-QXKeHLlOLqQX9LgYaHJfzdBaV21T63HhFJnvuRCcjZiaUDpbs5ED1MgxbMra71CsryN/1dAoXuJJJwIv/2drVA==}
 
-  discord-api-types@0.38.43:
-    resolution: {integrity: sha512-sSoBf/nK6m7BGtw65mi+QBuvEWaHE8MMziFLqWL+gT6ME/BLg34dRSVKS3Husx40uU06bvxUc3/X+D9Y6/zAbw==}
+  discord-api-types@0.38.47:
+    resolution: {integrity: sha512-XgXQodHQBAE6kfD7kMvVo30863iHX1LHSqNq6MGUTDwIFCCvHva13+rwxyxVXDqudyApMNAd32PGjgVETi5rjA==}
 
-  hono@4.12.9:
-    resolution: {integrity: sha512-wy3T8Zm2bsEvxKZM5w21VdHDDcwVS1yUFFY6i8UobSsKfFceT7TOwhbhfKsDyx7tYQlmRM5FLpIuYvNFyjctiA==}
+  hono@4.12.16:
+    resolution: {integrity: sha512-jN0ZewiNAWSe5khM3EyCmBb250+b40wWbwNILNfEvq84VREWwOIkuUsFONk/3i3nqkz7Oe1PcpM2mwQEK2L9Kg==}
     engines: {node: '>=16.9.0'}
 
   openapi-fetch@0.17.0:
@@ -118,16 +147,16 @@ packages:
   openapi-typescript-helpers@0.1.0:
     resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
 
-  typescript@6.0.2:
-    resolution: {integrity: sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ==}
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
-  undici-types@7.18.2:
-    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
+  undici-types@7.19.2:
+    resolution: {integrity: sha512-qYVnV5OEm2AW8cJMCpdV20CDyaN3g0AjDlOGf1OW4iaDEx8MwdtChUp4zu4H0VP3nDRF/8RKWH+IPp9uW0YGZg==}
 
-  zod@4.3.6:
-    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
+  zod@4.4.1:
+    resolution: {integrity: sha512-a6ENMBBGZBsnlSebQ/eKCguSBeGKSf4O7BPnqVPmYGtpBYI7VSqoVqw+QcB7kPRjbqPwhYTpFbVj/RqNz/CT0Q==}
 
 snapshots:
 
@@ -139,54 +168,54 @@ snapshots:
 
   '@jsr/std__encoding@1.0.10': {}
 
-  '@types/bun@1.3.11':
+  '@types/bun@1.3.13':
     dependencies:
-      bun-types: 1.3.11
+      bun-types: 1.3.13
 
   '@types/deno@2.5.0': {}
 
-  '@types/node@25.5.0':
+  '@types/node@25.6.0':
     dependencies:
-      undici-types: 7.18.2
+      undici-types: 7.19.2
 
-  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-darwin-arm64@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-darwin-x64@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-linux-arm64@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview-linux-arm@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-linux-arm@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview-linux-x64@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-linux-x64@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-win32-arm64@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview-win32-x64@7.0.0-dev.20260329.1':
+  '@typescript/native-preview-win32-x64@7.0.0-dev.20260501.1':
     optional: true
 
-  '@typescript/native-preview@7.0.0-dev.20260329.1':
+  '@typescript/native-preview@7.0.0-dev.20260501.1':
     optionalDependencies:
-      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20260329.1
-      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20260329.1
-      '@typescript/native-preview-linux-arm': 7.0.0-dev.20260329.1
-      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20260329.1
-      '@typescript/native-preview-linux-x64': 7.0.0-dev.20260329.1
-      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20260329.1
-      '@typescript/native-preview-win32-x64': 7.0.0-dev.20260329.1
+      '@typescript/native-preview-darwin-arm64': 7.0.0-dev.20260501.1
+      '@typescript/native-preview-darwin-x64': 7.0.0-dev.20260501.1
+      '@typescript/native-preview-linux-arm': 7.0.0-dev.20260501.1
+      '@typescript/native-preview-linux-arm64': 7.0.0-dev.20260501.1
+      '@typescript/native-preview-linux-x64': 7.0.0-dev.20260501.1
+      '@typescript/native-preview-win32-arm64': 7.0.0-dev.20260501.1
+      '@typescript/native-preview-win32-x64': 7.0.0-dev.20260501.1
 
-  bun-types@1.3.11:
+  bun-types@1.3.13:
     dependencies:
-      '@types/node': 25.5.0
+      '@types/node': 25.6.0
 
-  discord-api-types@0.38.43: {}
+  discord-api-types@0.38.47: {}
 
-  hono@4.12.9: {}
+  hono@4.12.16: {}
 
   openapi-fetch@0.17.0:
     dependencies:
@@ -194,8 +223,8 @@ snapshots:
 
   openapi-typescript-helpers@0.1.0: {}
 
-  typescript@6.0.2: {}
+  typescript@6.0.3: {}
 
-  undici-types@7.18.2: {}
+  undici-types@7.19.2: {}
 
-  zod@4.3.6: {}
+  zod@4.4.1: {}
