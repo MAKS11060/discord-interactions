@@ -50,29 +50,3 @@ export const verifyRequestSignature = async (request: Request, key: CryptoKey): 
 
   return null
 }
-
-/**
- * Signs a request using a CryptoKey object.
- *
- * The function adds the `X-Signature-Ed25519` and `X-Signature-Timestamp` headers to the request,
- * which contain the signature and timestamp of the request, respectively. The signature is calculated
- * using the provided CryptoKey object and the timestamp and body of the request.
- *
- * @param request - The request object to sign.
- * @param key - The CryptoKey object representing the private key to use for signing.
- * @returns A promise that resolves to a new Request object with the signature and timestamp headers added.
- */
-export const signRequest = async (request: Request, key: CryptoKey): Promise<Request> => {
-  const body = await request.clone().bytes()
-  const timestamp = Math.floor(Date.now() / 1000).toString()
-  const signature = await crypto.subtle.sign(
-    'Ed25519',
-    key,
-    concat([encoder.encode(timestamp), body]), // (timestamp + body)
-  )
-
-  const signedRequest = new Request(request)
-  signedRequest.headers.set('X-Signature-Ed25519', new Uint8Array(signature).toHex())
-  signedRequest.headers.set('X-Signature-Timestamp', timestamp)
-  return signedRequest
-}
