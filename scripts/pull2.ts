@@ -15,7 +15,6 @@ const sourceFile = ts.createSourceFile(
 // ts.factory.createto
 ts.factory
 
-
 ts.factory.createInterfaceDeclaration(
   undefined,
   'DiscordRegistry',
@@ -23,8 +22,7 @@ ts.factory.createInterfaceDeclaration(
   [],
   [
     // ts.factory.()
-  ]
+  ],
 )
 
 ts.factory.createIdentifier('test1')
-

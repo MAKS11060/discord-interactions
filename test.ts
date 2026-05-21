@@ -24,10 +24,11 @@ test('Test 443889', async (t) => {
 test('Test 268093', async (t) => {
   console.log(
     new Uint8Array(
-    Iterator.concat([
-      ...crypto.getRandomValues(new Uint8Array(2)),
-      ...crypto.getRandomValues(new Uint8Array(2)),
-    ])),
+      Iterator.concat([
+        ...crypto.getRandomValues(new Uint8Array(2)),
+        ...crypto.getRandomValues(new Uint8Array(2)),
+      ]),
+    ),
   )
 })
 

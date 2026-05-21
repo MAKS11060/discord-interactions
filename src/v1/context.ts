@@ -8,53 +8,14 @@ import {
   MessageFlags,
 } from 'discord-api-types/v10'
 
-type MaybePromise<T> = Promise<T> | T
-
-export class DiscordInteraction {
-  readonly client: {
-    publicKey: string | CryptoKey
-    applicationId?: string
-  }
-
-  constructor(options: {
-    publicKey: string | CryptoKey
-    applicationId?: string
-  }) {
-    // validate public key
-    if (typeof options.publicKey === 'string') {
-      if (options.publicKey.length !== 32) {
-        throw new Error('The publicKey must contain 32 characters in hex encoding')
-      }
-    } else if (options.publicKey instanceof CryptoKey) {
-      if (options.publicKey.algorithm.name !== 'Ed25519') {
-        throw new Error('The publicKey must be in the Ed25519 format')
-      }
-    }
-
-    this.client = options
-  }
-
-  async execute(interaction: APIInteraction): Promise<APIInteractionResponse> {
-    if (interaction.type === InteractionType.Ping) {
-      return {type: InteractionResponseType.Pong}
-    }
-
-    return {
-      type: InteractionResponseType.ChannelMessageWithSource,
-      data: {content: 'Command handler is not defined'},
-    }
-  }
-
-  onInteract(handler: (ctx: InteractionContext) => MaybePromise<unknown>) {}
-}
-
 export class InteractionContext {
   readonly signal!: AbortSignal
+  readonly interaction: APIInteraction
 
   constructor(options: {
-    signal: AbortSignal
+    readonly interaction: APIInteraction
   }) {
-    this.signal = options.signal
+    this.interaction = options.interaction
   }
 
   reply(content: string): APIInteractionResponseChannelMessageWithSource

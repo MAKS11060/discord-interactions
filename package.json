@@ -5,6 +5,7 @@
   "description": "",
   "scripts": {
     "fmt": "dprint fmt",
+    "lint": "dprint check",
     "prepare": "git config core.hooksPath .hooks",
     "api:discord": "deno x npm:openapi-typescript https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json --make-paths-enum -o src/lib/discord.oas.ts",
     "serve": "pn serve:bun",

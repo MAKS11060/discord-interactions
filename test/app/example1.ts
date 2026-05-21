@@ -1,10 +1,10 @@
-import {discord} from '../../src/-mod.ts'
 import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
   InteractionContextType,
   type Snowflake,
 } from 'discord-api-types/v10'
+import {discord} from '../../src/-mod.ts'
 
 export const hello = discord.slashCommand({
   name: 'hello',
@@ -231,7 +231,7 @@ interface DiscordRegistry {
       'application_id': '1097172825292406814_'
       'name': 'test4'
       'description': 'Test 4'
-    }
+    },
   ]
 }
 

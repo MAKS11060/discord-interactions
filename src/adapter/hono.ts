@@ -1,76 +1,71 @@
-import {verifyRequestSignature} from '#lib/crypto.ts'
+import type {DiscordInteractionsApp} from '#app'
+import {importPublicKey} from '#lib/crypto.ts'
 import {concat} from '@std/bytes/concat'
-import type {APIInteraction, APIPingInteraction} from 'discord-api-types/v10'
+import type {APIInteraction} from 'discord-api-types/v10'
 import {createMiddleware} from 'hono/factory'
-import type {InteractionHandler} from '../core/types.ts'
+import {InteractionError} from '../core/errors.ts'
+import {
+  ERROR_BadRequestSignature,
+  ERROR_ExecuteFailed,
+  ERROR_MethodNotAllowed,
+  HEADER_SIGNATURE,
+  HEADER_SIGNATURE_TS,
+  publicKeyCache,
+} from './_common.ts'
 
 const encoder = new TextEncoder()
 
 /**
  * @example
  * ```ts
- * import {Hono} from 'hono'
+ * const discordApp = new DiscordInteraction({
+ *   publicKey: process.env.CLIENT_PUBLIC_KEY!,
+ * })
  *
  * const app = new Hono()
- * app.use(logger())
- *
- * const discordApp = new DiscordInteractions()
- *
- * app.post('/api/interactions', interactionHandler(app))
+ * app.post('/api/interactions', interactionHandler(discordApp))
  * ```
  */
-export const interactionHono = (
-  publicKey:
-    | CryptoKey
-    | Record<string, CryptoKey>
-    | (({application_id}: APIPingInteraction) => Promise<CryptoKey>),
-  handler: InteractionHandler,
-) => {
-  if (publicKey instanceof CryptoKey) {
-    return createMiddleware(async (c, next) => {
-      const isInvalidRequest = await verifyRequestSignature(c.req.raw, publicKey)
-      if (isInvalidRequest) return isInvalidRequest
-      // await next() // ok
-
-      const data = await c.req.json<APIInteraction>()
-      return c.json(await handler.execute(data))
-    })
-  }
-
-  if (typeof publicKey === 'function') {
-    throw new Error('TODO')
-    return createMiddleware(async (c, next) => {
-    })
-  }
-
+export const interactionHandler = (app: DiscordInteractionsApp) => {
   return createMiddleware(async (c, next) => {
-    const data = await c.req.json<APIInteraction>()
+    if (c.req.method !== 'POST') {
+      return c.json(ERROR_MethodNotAllowed, {status: 405})
+    }
 
     // verify
-    const signature = c.req.header('X-Signature-Ed25519')
-    const timestamp = c.req.header('X-Signature-Timestamp')
-    const body = new Uint8Array(await c.req.arrayBuffer())
-
+    const signature = c.req.header(HEADER_SIGNATURE)
+    const timestamp = c.req.header(HEADER_SIGNATURE_TS)
     if (!signature || !timestamp) {
-      return Response.json({error: 'Bad request signature'}, {status: 401})
+      return c.json(ERROR_BadRequestSignature, {status: 401})
     }
 
-    if (!publicKey[data.application_id]) {
-      return c.json({error: 'Public key missing for application id'}, 404)
-    }
+    const publicKey = publicKeyCache.getOrInsert(
+      app,
+      typeof app.client.publicKey === 'string'
+        ? await importPublicKey(app.client.publicKey)
+        : app.client.publicKey,
+    )
 
-    const key = publicKey[data.application_id]!
     const valid = await crypto.subtle.verify(
-      key.algorithm,
-      key,
+      publicKey.algorithm,
+      publicKey,
       Uint8Array.fromHex(signature),
-      concat([encoder.encode(timestamp), body]), // (timestamp + body)
+      concat([encoder.encode(timestamp), await c.req.bytes()]), // (timestamp + body)
     )
     if (!valid) {
-      return c.json({error: 'Bad request signature'}, {status: 401})
+      return c.json(ERROR_BadRequestSignature, {status: 401})
     }
 
-    // handle
-    return c.json(await handler.execute(data))
+    // execute
+    try {
+      return c.json(
+        await app.execute(
+          await c.req.json<APIInteraction>(),
+        ) as any, // hono can't forward a large type
+      )
+    } catch (e) {
+      if (e instanceof InteractionError) return c.json({error: e.name, message: e.message}, {status: e.status})
+      return c.json(ERROR_ExecuteFailed, {status: 500})
+    }
   })
 }
