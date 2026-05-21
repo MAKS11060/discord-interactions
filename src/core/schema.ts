@@ -1,6 +1,6 @@
 import {ApplicationCommandOptionType, ApplicationCommandType, Locale} from 'discord-api-types/v10'
 import {z} from 'zod'
-import {CHAT_INPUT_NAME_RE} from './constance.ts'
+import {CHAT_INPUT_NAME_RE} from './constants.ts'
 
 const localeRecord = (val: z.ZodString) => z.record(z.enum(Locale), val)
 

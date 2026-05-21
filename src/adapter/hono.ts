@@ -6,6 +6,19 @@ import type {InteractionHandler} from '../core/types.ts'
 
 const encoder = new TextEncoder()
 
+/**
+ * @example
+ * ```ts
+ * import {Hono} from 'hono'
+ *
+ * const app = new Hono()
+ * app.use(logger())
+ *
+ * const discordApp = new DiscordInteractions()
+ *
+ * app.post('/api/interactions', interactionHandler(app))
+ * ```
+ */
 export const interactionHono = (
   publicKey:
     | CryptoKey

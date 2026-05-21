@@ -1,6 +1,6 @@
 #!/usr/bin/env -S bun
 
-import type {DiscordInteraction} from '#app'
+import type {DiscordInteraction} from '../src/-mod.ts'
 import {DiscordApi, discordApi} from '#lib/discord.ts'
 import {resolve} from 'node:path'
 import {pathToFileURL} from 'node:url'

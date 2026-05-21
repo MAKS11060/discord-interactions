@@ -1,15 +1,30 @@
-import type {DiscordInteraction} from '#app'
 import {importPublicKey} from '#lib/crypto.ts'
 import {concat} from '@std/bytes/concat'
 import {InteractionError} from '../core/errors.ts'
-import type {InteractionHandler} from '../core/types.ts'
+import type {DiscordInteractionsApp} from '#app'
 
 const encoder = new TextEncoder()
 const publicKeyCache = new WeakMap()
 
+/**
+ * @example
+ * ```ts
+ * const app = new DiscordInteractions()
+ *
+ * Deno.serve(async (req) => {
+ *   const url = new URL(req.url)
+ *
+ *   if (req.method === 'POST' && url.pathname === '/api/interactions') {
+ *     return await interactionHandler(req, app)
+ *   }
+ *
+ *   return Response.json('Not Found')
+ * })
+ * ```
+ */
 export const interactionHandler = async (
   request: Request,
-  app: DiscordInteraction,
+  app: DiscordInteractionsApp,
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return Response.json({error: 'Method Not Allowed'}, {status: 405})

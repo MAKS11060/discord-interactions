@@ -1,4 +1,4 @@
-import {discord} from '#app'
+import {discord} from '../../src/-mod.ts'
 import {
   ApplicationCommandOptionType,
   ApplicationCommandType,

@@ -2,7 +2,6 @@ import {concat} from '@std/bytes/concat'
 import {type APIInteractionResponse, type APIPingInteraction, InteractionType} from 'discord-api-types/v10'
 import {test} from 'node:test'
 import {interactionHandler} from './web.ts'
-import '#lib/polyfill.ts'
 
 const encoder = new TextEncoder()
 
