@@ -18,7 +18,6 @@ export class DiscordInteraction implements DiscordInteractionsApp {
   constructor(options: {
     publicKey: string | CryptoKey
     applicationId?: string
-    //
   }) {
     // validate public key
     if (typeof options.publicKey === 'string') {
@@ -47,7 +46,6 @@ export class DiscordInteraction implements DiscordInteractionsApp {
       data: {content: 'The handler for the command was not found', flags: MessageFlags.Ephemeral},
     }
   }
-
   onInteract(handler: (ctx: InteractionContext) => MaybePromise<unknown>) {
   }
 }
