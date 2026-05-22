@@ -1,10 +1,10 @@
-import {getRequiredEnv} from '#lib/utils.ts'
+// import {getRequiredEnv} from '#lib/utils.ts'
 import {createDiscordOauth2, oauth2ClientCredentials} from '@maks11060/oauth2'
 import type {RESTPostOAuth2ClientCredentialsResult} from 'discord-api-types/v10'
 import {readFile} from 'node:fs/promises'
 
-export const clientId = getRequiredEnv('CLIENT_ID')
-const clientSecret = getRequiredEnv('CLIENT_SECRET')
+export const clientId = process.env.CLIENT_ID!
+const clientSecret = process.env.CLIENT_SECRET!
 
 export const getToken = async () => {
   const token = await oauth2ClientCredentials<RESTPostOAuth2ClientCredentialsResult>(
