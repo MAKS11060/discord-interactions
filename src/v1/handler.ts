@@ -48,12 +48,4 @@ type CommandToHandler<T extends CommandSchema> = //
       ? {message(c: InteractionContext): APIInteractionResponse}
     : never
 
-// type CommandToHandler<T extends CommandSchema> = T['command'] extends {type: infer Type }
-//   ? Type extends (undefined | ApplicationCommandType.ChatInput)
-//     ? {
-//       chatInput(c: InteractionContext): APIInteractionResponse
-//     }
-//     : 2
-//   : Type extends ApplicationCommandType.Message
-//     ?
-//     :
+//

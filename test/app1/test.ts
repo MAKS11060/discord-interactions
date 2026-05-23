@@ -1,6 +1,12 @@
-import {ApplicationCommandOptionType, ApplicationCommandType, InteractionType} from 'discord-api-types/v10'
+import {
+  type APIRole,
+  type APIUser,
+  ApplicationCommandOptionType,
+  ApplicationCommandType,
+  InteractionType,
+} from 'discord-api-types/v10'
 import {test} from 'node:test'
-import type {CommandSchema} from '../../src/v1/types.ts'
+import type {CommandSchema, CommandToHandler} from '../../src/v1/types.ts'
 import * as commands from './commands.ts'
 
 test('Test 847634', async (t) => {
@@ -43,4 +49,61 @@ test('Test 847634', async (t) => {
   }
 
   console.dir(commandsAST, {depth: null})
+})
+
+test('Test 140238', async (t) => {
+  const handler = <T extends CommandSchema>(command: T, handler: CommandToHandler<T>) => {}
+
+  handler(commands.hello, {
+    chatInput: () => ({
+      command: (c) => {
+      },
+    }),
+  })
+
+  handler(commands.helloMessage, {
+    message() {},
+  })
+
+  handler(commands.helloUser, {
+    user() {},
+  })
+
+  handler(commands.test2, {
+    chatInput() {
+      return {
+        command(c) {
+          c.getString('string')
+          c.getInteger('integer')
+          c.getBoolean('boolean')
+          c.getUser('user')
+          c.getChannel('channel')
+          c.getRole('role')
+          c.getMentionable('mentionable')
+          c.getNumber('number')
+          c.getAttachment('attachment')
+
+          const string = c.getString('string')
+          const stringReq = c.getString('string-req')
+
+          const user = c.getUser('user')
+          const userReq = c.getUser('user-req')
+
+          const memberReq = c.getMember('user-req')
+
+          const attached = c.getAttachment('attachment-req')
+
+          const mentionableUser = c.getMentionableUser('mentionable-req')
+          const mentionableRole = c.getMentionableRole('mentionable-req')
+          const mentionableMember = c.getMentionableMember('mentionable-req')
+          const mentionable = c.getMentionable('mentionable-req')
+          if (c.isMentionableUser(mentionable)) {
+            mentionable satisfies APIUser
+          } else {
+            mentionable satisfies APIRole
+          }
+        },
+      }
+    },
+  })
 })

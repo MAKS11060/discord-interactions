@@ -7,7 +7,7 @@ import {
   InteractionType,
   MessageFlags,
 } from 'discord-api-types/v10'
-import {InteractionContext} from './context.ts'
+import {ApplicationCommandContext, InteractionContext} from './context.ts'
 import {commandMapRegistry, commandsAST} from './handler.ts'
 import type {DiscordInteractionsApp, MaybePromise} from './types.ts'
 
@@ -40,19 +40,9 @@ export class DiscordInteraction implements DiscordInteractionsApp {
       return {type: InteractionResponseType.Pong}
     }
 
-    // wrap
-    const interactionContext = new InteractionContext({interaction})
-
-    // from ast
-    console.dir(commandsAST, {depth: null})
-
     if (interaction.type === InteractionType.ApplicationCommand) {
-      const b = commandsAST[interaction.type]?.[interaction.data.type]
+      const applicationCommandContext = new ApplicationCommandContext(interaction, {})
 
-      console.log(b)
-    }
-
-    if (interaction.type === InteractionType.ApplicationCommand) {
       if (interaction.data.type === ApplicationCommandType.ChatInput) {
         // find command
         for (const [{command}, handler] of commandMapRegistry) {
@@ -66,7 +56,7 @@ export class DiscordInteraction implements DiscordInteractionsApp {
 
               for (const option of interaction.data.options ?? []) {}
 
-              return handler.chatInput(interactionContext)
+              return handler.chatInput(applicationCommandContext)
             }
           }
         }
@@ -78,19 +68,20 @@ export class DiscordInteraction implements DiscordInteractionsApp {
       }
 
       if (interaction.data.type === ApplicationCommandType.Message) {
-                  if (interaction.data.type === command.type) { // match type
-            if (interaction.data.name === command.name) { // match name
-            }}
+        if (interaction.data.type === command.type) { // match type
+          if (interaction.data.name === command.name) { // match name
+          }
+        }
       }
     }
 
+    if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {}
+    if (interaction.type === InteractionType.MessageComponent) {}
+    if (interaction.type === InteractionType.ModalSubmit) {}
+
+    //
     console.log(interaction.id, interaction.data)
-    return interactionContext.replyEphemeral('The handler for the command was not found')
-    // return {
-    //   type: InteractionResponseType.ChannelMessageWithSource,
-    //   data: {content: 'The handler for the command was not found', flags: MessageFlags.Ephemeral},
-    // }
-  }
-  onInteract(handler: (ctx: InteractionContext) => MaybePromise<unknown>) {
+    const applicationCommandContext = new ApplicationCommandContext(interaction, {})
+    return applicationCommandContext.replyEphemeral('The handler for the command was not found')
   }
 }

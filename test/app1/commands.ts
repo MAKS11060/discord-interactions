@@ -25,6 +25,7 @@ export const hashMessage = messageCommand({
 export const test2 = slashCommand({
   name: 'test2',
   description: `Test 2`,
+  // dprint-ignore
   options: [
     {type: ApplicationCommandOptionType.String, name: 'string', description: 'String option'},
     {type: ApplicationCommandOptionType.Integer, name: 'integer', description: 'Integer option'},
@@ -33,7 +34,18 @@ export const test2 = slashCommand({
     {type: ApplicationCommandOptionType.Channel, name: 'channel', description: 'Channel option'},
     {type: ApplicationCommandOptionType.Role, name: 'role', description: 'Role option'},
     {type: ApplicationCommandOptionType.Mentionable, name: 'mentionable', description: 'Mentionable option'},
+    {type: ApplicationCommandOptionType.Number, name: 'number', description: 'Number option'},
     {type: ApplicationCommandOptionType.Attachment, name: 'attachment', description: 'Attachment option'},
+    //
+    {type: ApplicationCommandOptionType.String, name: 'string-req', description: 'String option', required: true},
+    {type: ApplicationCommandOptionType.Integer, name: 'integer-req', description: 'Integer option', required: true},
+    {type: ApplicationCommandOptionType.Boolean, name: 'boolean-req', description: 'Boolean option', required: true},
+    {type: ApplicationCommandOptionType.User, name: 'user-req', description: 'User option', required: true},
+    {type: ApplicationCommandOptionType.Channel, name: 'channel-req', description: 'Channel option', required: true},
+    {type: ApplicationCommandOptionType.Role, name: 'role-req', description: 'Role option', required: true},
+    {type: ApplicationCommandOptionType.Mentionable, name: 'mentionable-req', description: 'Mentionable option', required: true},
+    {type: ApplicationCommandOptionType.Number, name: 'number-req', description: 'Number option', required: true},
+    {type: ApplicationCommandOptionType.Attachment, name: 'attachment-req', description: 'Attachment option', required: true},
   ],
 })
 

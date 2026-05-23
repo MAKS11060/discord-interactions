@@ -2,10 +2,23 @@ import {discordApi} from '#lib/discord.ts'
 import {HTTPError, parseResponse} from '#lib/openapi-fetch.ts'
 import {DiscordSnowflake} from '#lib/snowflake.ts'
 import {
+  type APIApplicationCommand,
+  type APIApplicationCommandInteraction,
+  type APIApplicationCommandOption,
+  type APIAttachment,
+  type APIGuildMember,
   type APIInteraction,
+  APIInteractionDataOptionBase,
+  type APIInteractionDataResolvedChannel,
+  type APIInteractionDataResolvedGuildMember,
   type APIInteractionResponse,
   type APIInteractionResponseCallbackData,
   type APIInteractionResponseChannelMessageWithSource,
+  type APIRole,
+  type APIUser,
+  type APIUserInteractionDataResolved,
+  ApplicationCommandOptionType,
+  ApplicationCommandType,
   ComponentType,
   InteractionResponseType,
   InteractionType,
@@ -14,32 +27,252 @@ import {
   type RESTPatchAPIInteractionOriginalResponseJSONBody,
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
-import {test} from 'node:test'
-import type {MaybePromise} from './types.ts'
+import type {MaybePromise, OptionToObject} from './types.ts'
 
-export class InteractionContext {
-  readonly signal!: AbortSignal
-  readonly interaction: APIInteraction
+// pick Option by Type
+type GetOptionNameByType<
+  Option extends APIApplicationCommandOption,
+  Type extends ApplicationCommandOptionType,
+> = Option extends {type: Type; name: infer Name} ? Name : never
 
-  constructor(options: {
-    readonly interaction: APIInteraction
-  }) {
-    this.interaction = options.interaction
+// check is required options
+type GetOptionsResult<
+  Option extends APIApplicationCommandOption,
+  Key extends string,
+  Result extends unknown,
+> = Option extends {name: Key} //
+  ? Option extends {required: true} ? Result : Result | null
+  : never
+
+// Context
+export class ApplicationCommandContext<
+  Option extends APIApplicationCommandOption,
+> {
+  readonly interaction: APIApplicationCommandInteraction
+  constructor(
+    interaction: APIApplicationCommandInteraction,
+    options: OptionToObject<Option>,
+  ) {
+    this.interaction = interaction
+
+    if (interaction.type !== InteractionType.ApplicationCommand) {
+      throw new Error('interaction type not supported for this context')
+    }
+    // if (interaction.data.type !== ApplicationCommandType.ChatInput) {
+    //   throw new Error('interaction type not supported for this context')
+    // }
   }
 
-  // getters
-  get user() {
-    return this.interaction.member?.user ?? this.interaction.user
+  // Request
+  get user(): APIUser {
+    // return this.interaction.user ?? this.interaction.member?.user!
+    return this.interaction.member?.user ?? this.interaction.user!
   }
 
-  get member() {
-    return this.interaction.member
+  getString<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.String>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, string> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.String
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.String, string>
+
+    return (payload.value ?? null) as any
   }
 
-  get message() {
-    return this.interaction.message
+  getInteger<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Integer>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, number> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Integer
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Integer, number>
+
+    return (payload.value ?? null) as any
   }
 
+  getBoolean<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Boolean>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, boolean> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Boolean
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Boolean, boolean>
+
+    return (payload.value ?? null) as any
+  }
+
+  getUser<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.User>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIUser> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "user", type: 6, value: "421033097400811521" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.User
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.User, string>
+
+    const resolved = this.interaction.data.resolved as APIUserInteractionDataResolved
+    return (resolved.users?.[payload.value] ?? null) as any
+  }
+
+  getMember<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.User>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIInteractionDataResolvedGuildMember> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "user", type: 6, value: "421033097400811521" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.User
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.User, string>
+
+    const resolved = this.interaction.data.resolved as APIUserInteractionDataResolved
+    return (resolved.members?.[payload.value] ?? null) as any
+  }
+
+  getChannel<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Channel>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIInteractionDataResolvedChannel> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "channel", type: 7, value: "1223906943987617833" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Channel
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Channel, string>
+
+    const resolved = this.interaction.data.resolved // as APIInteractionDataResolvedChannel
+    return (resolved?.channels?.[payload.value] ?? null) as any
+  }
+
+  getRole<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Role>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIRole> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Role
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Role, string>
+
+    const resolved = this.interaction.data.resolved
+    return (resolved?.roles?.[payload.value] ?? null) as any
+  }
+
+  getMentionable<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIUser | APIRole> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Mentionable
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Mentionable, string>
+
+    const resolved = this.interaction.data.resolved
+    return (
+      resolved?.roles?.[payload.value]
+        ?? resolved?.users?.[payload.value]
+        ?? null
+    ) as any
+  }
+
+  getMentionableUser<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIUser | null> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Mentionable
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Mentionable, string>
+
+    const resolved = this.interaction.data.resolved
+    return (resolved?.users?.[payload.value] ?? null) as any
+  }
+
+  getMentionableMember<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIInteractionDataResolvedGuildMember | null> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Mentionable
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Mentionable, string>
+
+    const resolved = this.interaction.data.resolved
+    return (resolved?.members?.[payload.value] ?? null) as any
+  }
+
+  getMentionableRole<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIRole | null> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Mentionable
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Mentionable, string>
+
+    const resolved = this.interaction.data.resolved
+    return (resolved?.roles?.[payload.value] ?? null) as any
+  }
+
+  // type guards
+  isMentionableUser(mentionable: APIUser | APIRole): mentionable is APIUser {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    return Boolean(this.interaction.data.resolved?.users?.[mentionable.id])
+  }
+
+  isMentionableRole(mentionable: APIUser | APIRole): mentionable is APIRole {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    return Boolean(this.interaction.data.resolved?.roles?.[mentionable.id])
+  }
+
+  getNumber<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Number>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, number> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Number
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Number, number>
+
+    return (payload.value ?? null) as any
+  }
+
+  getAttachment<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Attachment>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIAttachment> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const payload = this.interaction.data.options?.find((v) =>
+      v.type === ApplicationCommandOptionType.Mentionable
+      && v.name === name
+    ) as APIInteractionDataOptionBase<ApplicationCommandOptionType.Mentionable, string>
+
+    const resolved = this.interaction.data.resolved
+    return (resolved?.attachments?.[payload.value] ?? null) as any
+  }
+
+  // Response
   reply(content: string): APIInteractionResponseChannelMessageWithSource
   reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
   reply(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
@@ -61,7 +294,6 @@ export class InteractionContext {
     }
   }
 
-  //
   replyDeferred(cb: (c: DeferredContext) => MaybePromise<void>): APIInteractionResponse {
     cb(new DeferredContext(this.interaction))
 
@@ -78,9 +310,18 @@ export class InteractionContext {
   }
 }
 
-//
+export class ApplicationCommandAutocompleteContext {}
+
+export class MessageComponentContext {}
+
+export class ModalSubmitContext {}
+
+// Deferred messages
 export class DeferredContext {
-  constructor(readonly interaction: APIInteraction) {}
+  readonly interaction: APIApplicationCommandInteraction
+  constructor(interaction: APIApplicationCommandInteraction) {
+    this.interaction = interaction
+  }
 
   /**
    * Edits the original interaction response.
@@ -195,36 +436,3 @@ export class DeferredContext {
     }
   }
 }
-
-/*
-test('Test 982078', async (t) => {
-  try {
-    const res = await parseResponse(discordApi.POST('/webhooks/{webhook_id}/{webhook_token}', {
-      params: {
-        path: {
-          webhook_id: '1097172825292406814',
-          webhook_token:
-            'aW50ZXJhY3Rpb246MTUwNzAzMTU3MzgxNDU3OTMwMDpQV2VEcGxzT2dkYTBjQlFlMGo1NVAzWWtmdXVRSUZWU05lQXc1elFyUklZS3F3VjVEbjE1bVlnMnZlakpvSXdXMU91RGFvYXl6SDV1aEJqZHh0WFR2N2lwRk8xMVJScDFmMWU0THNsUk1SNGVTRWkzbGpCdW5MMFNrQ1g4UkY5Uw',
-        },
-      },
-      body: {
-        // content: '123'
-        components: [
-          {
-            type: ComponentType.ActionRow,
-            components: [
-              {type: ComponentType.Button, style: 1, label: 'BTN!!!', custom_id: 'btn-1'},
-            ],
-          },
-        ],
-      },
-    }))
-
-    console.log(res.data)
-  } catch (e) {
-    if (e instanceof HTTPError) {
-      console.dir(e.cause, {depth: null})
-    }
-  }
-})
- */
