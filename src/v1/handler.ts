@@ -1,10 +1,17 @@
-import type {CommandSchema, InteractionContext} from '#app'
 import {
   type APIInteraction,
   type APIInteractionResponse,
   ApplicationCommandType,
   InteractionType,
 } from 'discord-api-types/v10'
+import type {
+  ApplicationCommandAutocompleteContext,
+  ApplicationCommandContext,
+  MenuCommandContext,
+  MessageComponentContext,
+  ModalSubmitContext,
+} from './context.ts'
+import type {CommandSchema, CommandToHandler, MaybePromise} from './types.ts'
 
 type T1 = Partial<
   Record<
@@ -21,7 +28,15 @@ type T1 = Partial<
 export const commandsAST: T1 = {}
 
 export const commandMapRegistry = new Map<CommandSchema, {
-  chatInput(c: InteractionContext): APIInteractionResponse
+  chatInput?(): {
+    command(ctx: ApplicationCommandContext): MaybePromise<APIInteractionResponse>
+    commandAutocomplete?(ctx: ApplicationCommandAutocompleteContext): MaybePromise<APIInteractionResponse>
+    messageComponent?(ctx: MessageComponentContext): MaybePromise<APIInteractionResponse>
+    modalSubmit?(ctx: ModalSubmitContext): MaybePromise<APIInteractionResponse>
+  }
+  user?(b: MenuCommandContext): MaybePromise<APIInteractionResponse>
+  message?(c: MenuCommandContext): MaybePromise<APIInteractionResponse>
+  primaryEntryPoint?(c: string): void
 }>()
 
 export const handler = <T extends CommandSchema>(command: T, handler: CommandToHandler<T>) => {
@@ -38,14 +53,3 @@ export const handler = <T extends CommandSchema>(command: T, handler: CommandToH
 
   b![c.name] ??= command.command
 }
-
-type CommandToHandler<T extends CommandSchema> = //
-  T['command']['type'] extends (undefined | ApplicationCommandType.ChatInput) //
-    ? {chatInput(c: InteractionContext): APIInteractionResponse}
-    : T['command']['type'] extends ApplicationCommandType.User //
-      ? {user(c: InteractionContext): APIInteractionResponse}
-    : T['command']['type'] extends ApplicationCommandType.Message //
-      ? {message(c: InteractionContext): APIInteractionResponse}
-    : never
-
-//

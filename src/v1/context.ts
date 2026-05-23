@@ -8,7 +8,7 @@ import {
   type APIAttachment,
   type APIGuildMember,
   type APIInteraction,
-  APIInteractionDataOptionBase,
+  type APIInteractionDataOptionBase,
   type APIInteractionDataResolvedChannel,
   type APIInteractionDataResolvedGuildMember,
   type APIInteractionResponse,
@@ -46,12 +46,12 @@ type GetOptionsResult<
 
 // Context
 export class ApplicationCommandContext<
-  Option extends APIApplicationCommandOption,
+  Option extends APIApplicationCommandOption = APIApplicationCommandOption,
 > {
   readonly interaction: APIApplicationCommandInteraction
   constructor(
     interaction: APIApplicationCommandInteraction,
-    options: OptionToObject<Option>,
+    // options: OptionToObject<Option>,
   ) {
     this.interaction = interaction
 
@@ -64,8 +64,18 @@ export class ApplicationCommandContext<
   }
 
   // Request
+
+  /**
+   *
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
+  }
+
+  /**
+   * Get the user who caused the interaction
+   */
   get user(): APIUser {
-    // return this.interaction.user ?? this.interaction.member?.user!
     return this.interaction.member?.user ?? this.interaction.user!
   }
 
@@ -433,6 +443,76 @@ export class DeferredContext {
 
         return editRes.response.ok
       },
+    }
+  }
+}
+
+//
+export class MenuCommandContext {
+  readonly interaction: APIApplicationCommandInteraction
+  constructor(
+    interaction: APIApplicationCommandInteraction,
+  ) {
+    this.interaction = interaction
+
+    if (interaction.type !== InteractionType.ApplicationCommand) {
+      throw new Error('interaction type not supported for this context')
+    }
+    // if (interaction.data.type !== ApplicationCommandType.User) {
+    //   throw new Error('interaction type not supported for this context')
+    // }
+  }
+
+  // Request
+
+  /**
+   * @returns Get the `user` who caused the interaction
+   */
+  get me(): APIUser {
+    if (this.interaction.type !== InteractionType.ApplicationCommand) return null!
+    if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+    return this.interaction.member?.user || this.interaction.user!
+  }
+
+  /**
+   * Gets the user object for a user context menu command interaction.
+   * @returns The resolved user object.
+   */
+  get user(): APIUser {
+    if (this.interaction.type !== InteractionType.ApplicationCommand) return null!
+    if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+    return this.interaction.data.resolved.users[this.interaction.data.target_id]!
+  }
+
+  /**
+   * Gets the guild member object for a user context menu command interaction.
+   * @returns Returns the guild member object only if the interaction is a user context menu command interaction in a guild and the guild member object is present.
+   */
+  get member(): APIInteractionDataResolvedGuildMember | null {
+    if (this.interaction.type !== InteractionType.ApplicationCommand) return null!
+    if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+    return this.interaction.data.resolved.members?.[this.interaction.data.target_id] ?? null
+  }
+
+  // Response
+  reply(content: string): APIInteractionResponseChannelMessageWithSource
+  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  reply(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: typeof data === 'string' ? {content: data} : data,
+    }
+  }
+
+  replyEphemeral(content: string): APIInteractionResponseChannelMessageWithSource
+  replyEphemeral(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  replyEphemeral(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
+    const res = typeof data === 'string' ? {content: data} : data
+    res.flags = MessageFlags.Ephemeral
+
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: res,
     }
   }
 }

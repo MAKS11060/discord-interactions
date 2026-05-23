@@ -8,6 +8,7 @@ import {
 import {test} from 'node:test'
 import type {CommandSchema, CommandToHandler} from '../../src/v1/types.ts'
 import * as commands from './commands.ts'
+import {handler} from '#app'
 
 test('Test 847634', async (t) => {
   // console.log(commands)
@@ -52,8 +53,6 @@ test('Test 847634', async (t) => {
 })
 
 test('Test 140238', async (t) => {
-  const handler = <T extends CommandSchema>(command: T, handler: CommandToHandler<T>) => {}
-
   handler(commands.hello, {
     chatInput: () => ({
       command: (c) => {
@@ -102,6 +101,18 @@ test('Test 140238', async (t) => {
           } else {
             mentionable satisfies APIRole
           }
+        },
+      }
+    },
+  })
+
+  handler(commands.hello, {
+    chatInput() {
+      return {
+        command(c) {
+
+          return c.replyDeferred(async c => {})
+
         },
       }
     },

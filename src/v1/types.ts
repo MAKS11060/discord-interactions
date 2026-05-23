@@ -5,6 +5,7 @@ import {
   type APIApplicationCommandOption,
   type APIInteraction,
   type APIInteractionResponse,
+  type APIInteractionResponseChannelMessageWithSource,
   type APIUser,
   type ApplicationCommandType,
   InteractionType,
@@ -12,7 +13,7 @@ import {
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
   type RESTPostAPIContextMenuApplicationCommandsJSONBody,
 } from 'discord-api-types/v10'
-import type {ApplicationCommandAutocompleteContext, ApplicationCommandContext} from './context.ts'
+import type {ApplicationCommandAutocompleteContext, ApplicationCommandContext, MenuCommandContext, MessageComponentContext, ModalSubmitContext} from './context.ts'
 
 export type MaybePromise<T> = Promise<T> | T
 
@@ -74,17 +75,15 @@ export type CommandToHandler<
   {
     chatInput(): {
       command(
-        ctx: ApplicationCommandContext<
-          Unpack<T['command']['options']>
-        >,
-      ): MaybePromise<void>
-      commandAutocomplete?(ctx: ApplicationCommandAutocompleteContext): MaybePromise<void>
-      messageComponent?(ctx: ApplicationCommandAutocompleteContext): MaybePromise<void>
-      modalSubmit?(ctx: ApplicationCommandAutocompleteContext): MaybePromise<void>
+        ctx: ApplicationCommandContext<Unpack<T['command']['options']>>,
+      ): MaybePromise<APIInteractionResponse>
+      commandAutocomplete?(ctx: ApplicationCommandAutocompleteContext): MaybePromise<APIInteractionResponse>
+      messageComponent?(ctx: MessageComponentContext): MaybePromise<APIInteractionResponse>
+      modalSubmit?(ctx: ModalSubmitContext): MaybePromise<APIInteractionResponse>
     }
 
-    user(b: string): void
-    message(c: string): void
+    user(b: MenuCommandContext): MaybePromise<APIInteractionResponse>
+    message(c: MenuCommandContext): MaybePromise<APIInteractionResponse>
     primaryEntryPoint(c: string): void // TODO: impl
   },
   T['command']['type'] extends undefined | ApplicationCommandType.ChatInput ? 'chatInput'

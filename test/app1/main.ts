@@ -1,16 +1,14 @@
 #!/usr/bin/env -S deno run -A --env-file --watch-hmr
 
 import {interactionHandler} from '#adapter/hono.ts'
-import {DiscordInteraction, handler, slashCommand} from '#app'
+import {commandMapRegistry, DiscordInteraction, handler} from '#app'
+import {DiscordSnowflake} from '#lib/snowflake.ts'
 import {serve} from '#runtime'
+import {MessageFlags} from 'discord-api-types/v10'
 import {Hono} from 'hono'
 import {logger} from 'hono/logger'
-import {hello, helloMessage, helloUser} from './commands.ts'
-
-import type {} from 'discord:types'
-import {DiscordSnowflake} from '#lib/snowflake.ts'
-import {MessageFlags} from 'discord-api-types/v10'
 import {sleep} from '../utils.ts'
+import * as commands from './commands.ts'
 
 // Command handler
 // handler(hello, {
@@ -20,27 +18,42 @@ import {sleep} from '../utils.ts'
 //   },
 // })
 
-handler(hello, {
-  chatInput(c) {
-    return c.replyDeferredEphemeral(async (c) => {
-      console.log(c.interaction.id, DiscordSnowflake.parseDate(c.interaction.id))
-      // console.log(c.interaction.token)
-      console.log(c.interaction.data)
+handler(commands.hello, {
+  // chatInput(c) {
+  //   return c.replyDeferredEphemeral(async (c) => {
+  //     console.log(c.interaction.id, DiscordSnowflake.parseDate(c.interaction.id))
+  //     // console.log(c.interaction.token)
+  //     console.log(c.interaction.data)
 
-      await sleep(2000)
-      const msg1 = await c.reply({content: 'hello', flags: MessageFlags.Ephemeral})
-    })
+  //     await sleep(2000)
+  //     const msg1 = await c.reply({content: 'hello', flags: MessageFlags.Ephemeral})
+  //   })
+  // },
+  chatInput() {
+    return {
+      command(c) {
+        console.log(c.interaction)
+        // return c.replyEphemeral(`hello ${c.user.username}`)
+
+        return c.reply({
+          content: 'comp v2',
+          flags: MessageFlags.IsComponentsV2,
+        })
+      },
+    }
   },
 })
 
-handler(helloUser, {
+handler(commands.helloUser, {
   user(c) {
-    return c.replyEphemeral('Test ok')
+    console.log(c.interaction)
+    return c.replyEphemeral(`hello ${c.user.username}`)
   },
 })
 
-handler(helloMessage, {
+handler(commands.helloMessage, {
   message(c) {
+    console.log(c.interaction)
     return c.replyEphemeral('Test ok')
   },
 })
@@ -48,9 +61,6 @@ handler(helloMessage, {
 // APP
 const discordInteraction = new DiscordInteraction({
   publicKey: process.env.CLIENT_PUBLIC_KEY!,
-  schema: {
-    hello,
-  },
 })
 
 // Hono

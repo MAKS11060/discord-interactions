@@ -7,7 +7,7 @@ import {
   InteractionType,
   MessageFlags,
 } from 'discord-api-types/v10'
-import {ApplicationCommandContext, InteractionContext} from './context.ts'
+import {ApplicationCommandContext, MenuCommandContext} from './context.ts'
 import {commandMapRegistry, commandsAST} from './handler.ts'
 import type {DiscordInteractionsApp, MaybePromise} from './types.ts'
 
@@ -41,38 +41,54 @@ export class DiscordInteraction implements DiscordInteractionsApp {
     }
 
     if (interaction.type === InteractionType.ApplicationCommand) {
-      const applicationCommandContext = new ApplicationCommandContext(interaction, {})
+      const applicationCommandContext = new ApplicationCommandContext(interaction)
 
       if (interaction.data.type === ApplicationCommandType.ChatInput) {
         // find command
         for (const [{command}, handler] of commandMapRegistry) {
-          // console.log(command.name)
           if (interaction.data.type === command.type) { // match type
             if (interaction.data.name === command.name) { // match name
-              const options = interaction.data.options ?? []
+              // const options = interaction.data.options ?? []
 
-              const isSubcommand = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
-              const isSubcommandGroup = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
+              // const isSubcommand = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
+              // const isSubcommandGroup = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
 
-              for (const option of interaction.data.options ?? []) {}
+              // for (const option of interaction.data.options ?? []) {}
 
-              return handler.chatInput(applicationCommandContext)
+              return await handler.chatInput?.().command?.(applicationCommandContext)!
             }
           }
         }
       }
 
       if (interaction.data.type === ApplicationCommandType.User) {
-        interaction.data.resolved.users
-        interaction.data.resolved.members
-      }
+        const ctx = new MenuCommandContext(interaction)
 
-      if (interaction.data.type === ApplicationCommandType.Message) {
-        if (interaction.data.type === command.type) { // match type
-          if (interaction.data.name === command.name) { // match name
+        // find command
+        for (const [{command}, handler] of commandMapRegistry) {
+          if (interaction.data.type === command.type) { // match type
+            if (interaction.data.name === command.name) { // match name
+              return await handler.user?.(ctx)!
+            }
           }
         }
       }
+
+      if (interaction.data.type === ApplicationCommandType.Message) {
+        const ctx = new MenuCommandContext(interaction)
+
+        // find command
+        for (const [{command}, handler] of commandMapRegistry) {
+          if (interaction.data.type === command.type) { // match type
+            if (interaction.data.name === command.name) { // match name
+              return handler.message?.(ctx)!
+            }
+          }
+        }
+      }
+
+      console.log(interaction.id, InteractionType[interaction.type], interaction.data)
+      return applicationCommandContext.replyEphemeral('The handler for the command was not found')
     }
 
     if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {}
@@ -80,8 +96,10 @@ export class DiscordInteraction implements DiscordInteractionsApp {
     if (interaction.type === InteractionType.ModalSubmit) {}
 
     //
-    console.log(interaction.id, interaction.data)
-    const applicationCommandContext = new ApplicationCommandContext(interaction, {})
-    return applicationCommandContext.replyEphemeral('The handler for the command was not found')
+    console.log(interaction.id, InteractionType[interaction.type], interaction.data)
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: {content: 'error', flags: MessageFlags.Ephemeral},
+    }
   }
 }
