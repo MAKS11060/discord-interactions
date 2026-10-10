@@ -84,10 +84,7 @@ deploy-discord -h
 
 ```ts
 // main.ts
-import {
-  discordInteraction,
-  importKeyRaw,
-} from '@maks11060/discord-interactions/hono'
+import {discordInteraction, importKeyRaw} from '@maks11060/discord-interactions/hono'
 import {Hono} from 'hono'
 import {commands} from './src/commands.ts'
 
@@ -145,8 +142,7 @@ Deno.serve((req) => {
     - [x] getMessage
 - [x] CLI
   - [x] resolve imports in deno.json[c]
-  -
-    - [ ] resolve deps in package.json
+  - - [ ] resolve deps in package.json
 
 \* Maybe it works
 

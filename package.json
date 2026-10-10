@@ -1,25 +1,14 @@
 {
-  "type": "module",
   "name": "discord-interactions",
   "version": "1.0.0",
   "description": "",
-  "scripts": {
-    "fmt": "dprint fmt",
-    "lint": "dprint check",
-    "prepare": "git config core.hooksPath .hooks",
-    "api:discord": "deno x npm:openapi-typescript https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json --make-paths-enum -o src/lib/discord.oas.ts",
-    "serve": "pn serve:bun",
-    "serve:bun": "bun --hot ./test/main.ts",
-    "serve:deno": "deno -A --env-file --watch-hmr ./test/main.ts",
-    "serve:node": "node --import ./src/lib/polyfill.ts --env-file-if-exists .env --watch ./test/main.ts"
-  },
   "keywords": [
     "Discord",
     "Discord interactions"
   ],
-  "author": "MAKS11060",
   "license": "MIT",
-  "packageManager": "pnpm@11.1.3",
+  "author": "MAKS11060",
+  "type": "module",
   "imports": {
     "#adapter/*": "./src/adapter/*",
     "#lib/*": "./src/lib/*",
@@ -32,23 +21,33 @@
       "default": "./test/runtime/default.ts"
     }
   },
+  "scripts": {
+    "fmt": "dprint fmt",
+    "lint": "dprint check && tsc --noEmit",
+    "tc": "tsc --noEmit",
+    "tcw": "tsc --noEmit --watch",
+    "dev": "deno run -A --env-file --watch-hmr ./main.ts",
+    "dev:node": "node --env-file-if-exists=.env --watch ./main.ts",
+    "prepare": "git config core.hooksPath .hooks",
+    "openapi-ts": "openapi-ts"
+  },
   "dependencies": {
     "@maks11060/oauth2": "jsr:^0.0.2",
     "@std/bytes": "jsr:^1.0.6",
-    "discord-api-types": "^0.38.47",
-    "openapi-fetch": "^0.17.0",
-    "typescript": "catalog:",
-    "zod": "^4.4.3"
+    "discord-api-types": "^0.38.56",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.0.0-next-20260930190945",
+    "@hono/node-server": "^2.1.4",
+    "@types/bun": "catalog:",
+    "@types/deno": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "hono": "catalog:"
   },
-  "devDependencies": {
-    "@hono/node-server": "^2.0.3",
-    "@types/bun": "catalog:",
-    "@types/deno": "catalog:",
-    "@types/node": "catalog:",
-    "@typescript/native-preview": "catalog:",
-    "tsx": "^4.22.3"
-  }
+  "packageManager": "pnpm@12.11.2"
 }

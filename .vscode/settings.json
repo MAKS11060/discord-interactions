@@ -1,5 +1,6 @@
 {
   "deno.enable": false,
+  "task.autoDetect": "off", // hide default tasks
   "editor.defaultFormatter": "dprint.dprint",
 
   "js/ts.experimental.useTsgo": true,
@@ -12,22 +13,18 @@
     "console",
     "node:console",
     "node:inspector",
-    "zod/"
+    "zod/",
     // "^node:"
   ],
-  "js/ts.preferences.autoImportFileExcludePatterns": [],
 
   "explorer.incrementalNaming": "smart",
   "explorer.fileNesting.patterns": {
-    "package.json": "deno.*, drizzle.config.*, .*, *.json, *.jsonc, *.yaml"
+    "package.json": ".*, *.config.ts, *.config.js, tsconfig.json, dprint.*, pnpm-*",
   },
 
-  "nodejs-testing.env": { "FORCE_COLOR": "0" },
-  "nodejs-testing.extensions": [
-    {
-      "extensions": ["ts"],
-      "filePatterns": ["**/*{js,ts,tsx,jsx,mjs}"],
-      "parameters": ["--env-file-if-exists", ".env", "--import", "tsx"]
-    }
-  ]
+  "nodejs-testing.extensions": [{
+    "extensions": ["ts"],
+    "filePatterns": ["**/*{js,ts,tsx,jsx,mts,cts,cjs,mjs}"],
+    "parameters": ["--env-file-if-exists=.env", "--import", "tsx"],
+  }],
 }

@@ -1,8 +1,8 @@
-.env
-.vite
-.discord
-.tmp
-
 node_modules
 
 .*.json
+
+.env
+.discord
+.tmp
+

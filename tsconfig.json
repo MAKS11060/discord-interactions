@@ -25,14 +25,12 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-    // "isolatedModules": true,
-    // "esModuleInterop": true
+    "noPropertyAccessFromIndexSignature": false,
   },
 
   "exclude": [
     "**/*.json",
     "dist",
-    "node_modules"
-  ]
+    "node_modules",
+  ],
 }
