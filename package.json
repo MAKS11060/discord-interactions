@@ -12,13 +12,34 @@
   "imports": {
     "#adapter/*": "./src/adapter/*",
     "#lib/*": "./src/lib/*",
-    "#/": "./src/*",
-    "#app": "./src/mod.ts",
-    "#runtime": {
-      "bun": "./test/runtime/bun.ts",
-      "deno": "./test/runtime/deno.ts",
-      "node": "./test/runtime/node.ts",
-      "default": "./test/runtime/default.ts"
+    "#app": "./src/index.ts",
+    "#env": {
+      "deno": {
+        "types": "./src/lib/env/deno.ts",
+        "default": "./src/lib/env/deno.ts"
+      },
+      "default": {
+        "types": "./src/lib/env/node.ts",
+        "default": "./src/lib/env/node.ts"
+      }
+    },
+    "#serve": {
+      "bun": {
+        "types": "./src/lib/serve/bun.ts",
+        "default": "./src/lib/serve/bun.ts"
+      },
+      "deno": {
+        "types": "./src/lib/serve/deno.ts",
+        "default": "./src/lib/serve/deno.ts"
+      },
+      "node": {
+        "types": "./src/lib/serve/node.ts",
+        "default": "./src/lib/serve/node.ts"
+      },
+      "default": {
+        "types": "./src/lib/serve/node.ts",
+        "default": "./src/lib/serve/node.ts"
+      }
     }
   },
   "scripts": {
@@ -26,8 +47,9 @@
     "lint": "dprint check && tsc --noEmit",
     "tc": "tsc --noEmit",
     "tcw": "tsc --noEmit --watch",
-    "dev": "deno run -A --env-file --watch-hmr ./main.ts",
-    "dev:node": "node --env-file-if-exists=.env --watch ./main.ts",
+    "dev": "deno run -A --env-file --watch-hmr  --unstable-no-legacy-abort ./example/main.ts",
+    "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
+    "dev:bun": "bun --hot ./example/main.ts",
     "prepare": "git config core.hooksPath .hooks",
     "openapi-ts": "openapi-ts"
   },

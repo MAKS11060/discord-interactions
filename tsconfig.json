@@ -8,6 +8,7 @@
     "jsx": "react-jsx",
     "allowJs": true,
     "types": ["bun", "deno", "node"],
+    // "customConditions": ["deno"],
 
     // Bundler mode
     "moduleResolution": "bundler",
