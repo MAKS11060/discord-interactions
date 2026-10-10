@@ -7,9 +7,17 @@ import {
   InteractionType,
   MessageFlags,
 } from 'discord-api-types/v10'
-import {ApplicationCommandContext, MenuCommandContext} from './context.ts'
-import {commandMapRegistry, commandsAST} from './handler.ts'
-import type {DiscordInteractionsApp, MaybePromise} from './types.ts'
+import {
+  ApplicationCommandAutocompleteContext,
+  ApplicationCommandContextChatInput,
+  ApplicationCommandContextMessage,
+  ApplicationCommandContextUser,
+  deferredResponse,
+  MessageComponentContext,
+  ModalSubmitContext,
+} from './context.ts'
+import {commandMapRegistry} from './handler.ts'
+import type {DiscordInteractionsApp} from './types.ts'
 
 export class DiscordInteraction implements DiscordInteractionsApp {
   readonly client: {
@@ -36,65 +44,79 @@ export class DiscordInteraction implements DiscordInteractionsApp {
   }
 
   async execute(interaction: APIInteraction): Promise<APIInteractionResponse> {
-    if (interaction.type === InteractionType.Ping) {
-      return {type: InteractionResponseType.Pong}
+    try {
+      if (interaction.type === InteractionType.Ping) {
+        return {type: InteractionResponseType.Pong}
+      }
+
+      if (interaction.type === InteractionType.ApplicationCommand) {
+        const applicationCommandContext = new ApplicationCommandContextChatInput(interaction)
+
+        if (interaction.data.type === ApplicationCommandType.ChatInput) {
+          // find command
+          for (const [{command}, handler] of commandMapRegistry) {
+            if (interaction.data.type === command.type) { // match type
+              if (interaction.data.name === command.name) { // match name
+                // const options = interaction.data.options ?? []
+
+                // const isSubcommand = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
+                // const isSubcommandGroup = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
+
+                // for (const option of interaction.data.options ?? []) {}
+
+                const res = await handler.chatInput?.().command?.(applicationCommandContext)!
+                if (deferredResponse in res) { // use internal response
+                  return res[deferredResponse]
+                } else {
+                  return res
+                }
+              }
+            }
+          }
+        }
+
+        if (interaction.data.type === ApplicationCommandType.User) {
+          const ctx = new ApplicationCommandContextUser(interaction)
+
+          // find command
+          for (const [{command}, handler] of commandMapRegistry) {
+            if (interaction.data.type === command.type) { // match type
+              if (interaction.data.name === command.name) { // match name
+                return await handler.user?.(ctx)!
+              }
+            }
+          }
+        }
+
+        if (interaction.data.type === ApplicationCommandType.Message) {
+          const ctx = new ApplicationCommandContextMessage(interaction)
+
+          // find command
+          for (const [{command}, handler] of commandMapRegistry) {
+            if (interaction.data.type === command.type) { // match type
+              if (interaction.data.name === command.name) { // match name
+                return handler.message?.(ctx)!
+              }
+            }
+          }
+        }
+
+        console.log(interaction.id, InteractionType[interaction.type], interaction.data)
+        return applicationCommandContext.replyEphemeral('The handler for the command was not found')
+      }
+
+      if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+        new ApplicationCommandAutocompleteContext(interaction)
+      }
+      if (interaction.type === InteractionType.MessageComponent) {
+        new MessageComponentContext(interaction)
+      }
+      if (interaction.type === InteractionType.ModalSubmit) {
+        new ModalSubmitContext(interaction)
+      }
+    } catch (e) {
+      console.error(e)
     }
-
-    if (interaction.type === InteractionType.ApplicationCommand) {
-      const applicationCommandContext = new ApplicationCommandContext(interaction)
-
-      if (interaction.data.type === ApplicationCommandType.ChatInput) {
-        // find command
-        for (const [{command}, handler] of commandMapRegistry) {
-          if (interaction.data.type === command.type) { // match type
-            if (interaction.data.name === command.name) { // match name
-              // const options = interaction.data.options ?? []
-
-              // const isSubcommand = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
-              // const isSubcommandGroup = options.some((v) => v.type === ApplicationCommandOptionType.Subcommand)
-
-              // for (const option of interaction.data.options ?? []) {}
-
-              return await handler.chatInput?.().command?.(applicationCommandContext)!
-            }
-          }
-        }
-      }
-
-      if (interaction.data.type === ApplicationCommandType.User) {
-        const ctx = new MenuCommandContext(interaction)
-
-        // find command
-        for (const [{command}, handler] of commandMapRegistry) {
-          if (interaction.data.type === command.type) { // match type
-            if (interaction.data.name === command.name) { // match name
-              return await handler.user?.(ctx)!
-            }
-          }
-        }
-      }
-
-      if (interaction.data.type === ApplicationCommandType.Message) {
-        const ctx = new MenuCommandContext(interaction)
-
-        // find command
-        for (const [{command}, handler] of commandMapRegistry) {
-          if (interaction.data.type === command.type) { // match type
-            if (interaction.data.name === command.name) { // match name
-              return handler.message?.(ctx)!
-            }
-          }
-        }
-      }
-
-      console.log(interaction.id, InteractionType[interaction.type], interaction.data)
-      return applicationCommandContext.replyEphemeral('The handler for the command was not found')
-    }
-
-    if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {}
-    if (interaction.type === InteractionType.MessageComponent) {}
-    if (interaction.type === InteractionType.ModalSubmit) {}
-
     //
     console.log(interaction.id, InteractionType[interaction.type], interaction.data)
     return {

@@ -1,25 +1,25 @@
 import {discordApi} from '#lib/discord.ts'
-import {HTTPError, parseResponse} from '#lib/openapi-fetch.ts'
+import {parseResponse} from '#lib/openapi-fetch.ts'
 import {DiscordSnowflake} from '#lib/snowflake.ts'
 import {
-  type APIApplicationCommand,
+  type APIApplicationCommandAutocompleteInteraction,
   type APIApplicationCommandInteraction,
   type APIApplicationCommandOption,
   type APIAttachment,
-  type APIGuildMember,
-  type APIInteraction,
   type APIInteractionDataOptionBase,
   type APIInteractionDataResolvedChannel,
   type APIInteractionDataResolvedGuildMember,
+  type APIInteractionGuildMember,
   type APIInteractionResponse,
   type APIInteractionResponseCallbackData,
   type APIInteractionResponseChannelMessageWithSource,
+  type APIModalInteractionResponseCallbackData,
+  type APIModalSubmitInteraction,
   type APIRole,
   type APIUser,
   type APIUserInteractionDataResolved,
   ApplicationCommandOptionType,
   ApplicationCommandType,
-  ComponentType,
   InteractionResponseType,
   InteractionType,
   MessageFlags,
@@ -28,6 +28,9 @@ import {
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
 import type {MaybePromise, OptionToObject} from './types.ts'
+
+//
+export const deferredResponse = Symbol('Deferred')
 
 // pick Option by Type
 type GetOptionNameByType<
@@ -45,37 +48,62 @@ type GetOptionsResult<
   : never
 
 // Context
-export class ApplicationCommandContext<
+export class ApplicationCommandContextChatInput<
   Option extends APIApplicationCommandOption = APIApplicationCommandOption,
 > {
-  readonly interaction: APIApplicationCommandInteraction
-  constructor(
-    interaction: APIApplicationCommandInteraction,
-    // options: OptionToObject<Option>,
-  ) {
-    this.interaction = interaction
+  readonly interaction!: APIApplicationCommandInteraction
 
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns Get the `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns Get the `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
+  }
+
+  constructor(interaction: APIApplicationCommandInteraction) {
     if (interaction.type !== InteractionType.ApplicationCommand) {
       throw new Error('interaction type not supported for this context')
     }
     // if (interaction.data.type !== ApplicationCommandType.ChatInput) {
     //   throw new Error('interaction type not supported for this context')
     // }
+
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.member ?? null
+        },
+      },
+    })
+  }
+
+  // for pretty log
+  get [Symbol.toStringTag]() {
+    return `app:${this.interaction.application_id} id:${this.interaction.id} user:${this.me.username}`
   }
 
   // Request
 
   /**
-   *
+   * @returns Get the `user` who caused the interaction
    */
   get me(): APIUser {
-    return this.interaction.member?.user ?? this.interaction.user!
-  }
-
-  /**
-   * Get the user who caused the interaction
-   */
-  get user(): APIUser {
     return this.interaction.member?.user ?? this.interaction.user!
   }
 
@@ -304,33 +332,161 @@ export class ApplicationCommandContext<
     }
   }
 
-  replyDeferred(cb: (c: DeferredContext) => MaybePromise<void>): APIInteractionResponse {
-    cb(new DeferredContext(this.interaction))
+  replyDeferred(cb?: (c: DeferredContext) => MaybePromise<void>): DeferredContext {
+    const deferredContext = new DeferredContext(
+      this.interaction,
+      {type: InteractionResponseType.DeferredChannelMessageWithSource},
+    )
 
-    return {type: InteractionResponseType.DeferredChannelMessageWithSource}
+    cb?.(deferredContext)
+    return deferredContext
   }
 
-  replyDeferredEphemeral(cb: (c: DeferredContext) => MaybePromise<void>): APIInteractionResponse {
-    cb(new DeferredContext(this.interaction))
-
-    return {
+  replyDeferredEphemeral(cb: (c: DeferredContext) => MaybePromise<void>): DeferredContext {
+    const deferredContext = new DeferredContext(this.interaction, {
       type: InteractionResponseType.DeferredChannelMessageWithSource,
       data: {flags: MessageFlags.Ephemeral},
+    })
+
+    cb?.(deferredContext)
+    return deferredContext
+  }
+
+  /**
+   * Creates a modal window
+   */
+  replyModal(data: APIModalInteractionResponseCallbackData): APIInteractionResponse {
+    return {
+      type: InteractionResponseType.Modal,
+      data,
     }
   }
 }
 
-export class ApplicationCommandAutocompleteContext {}
+//
+export class ApplicationCommandAutocompleteContext<
+  Option extends APIApplicationCommandOption = APIApplicationCommandOption,
+> {
+  interaction!: APIApplicationCommandAutocompleteInteraction
+
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns Get the `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns Get the `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
+  }
+
+  constructor(interaction: APIApplicationCommandInteraction) {
+    if (interaction.type !== InteractionType.ApplicationCommand) {
+      throw new Error('interaction type not supported for this context')
+    }
+    // if (interaction.data.type !== ApplicationCommandType.ChatInput) {
+    //   throw new Error('interaction type not supported for this context')
+    // }
+
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          return this.interaction.member ?? null
+        },
+      },
+    })
+  }
+
+  // Request
+
+  /**
+   * @returns Get the `user` who caused the interaction
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
+  }
+
+  // Response
+}
 
 export class MessageComponentContext {}
 
-export class ModalSubmitContext {}
+export class ModalSubmitContext {
+  interaction!: APIModalSubmitInteraction
+
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns Get the `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns Get the `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
+  }
+
+  constructor(interaction: APIModalSubmitInteraction) {
+    if (interaction.type !== InteractionType.ModalSubmit) {
+      throw new Error('interaction type not supported for this context')
+    }
+
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          return this.interaction.member ?? null
+        },
+      },
+    })
+
+    this.interaction.data.components
+  }
+
+  // Request
+
+  /**
+   * @returns Get the `user` who caused the interaction
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
+  }
+
+  get id() {
+    return this.interaction.data.custom_id
+  }
+
+  // Response
+}
 
 // Deferred messages
 export class DeferredContext {
-  readonly interaction: APIApplicationCommandInteraction
-  constructor(interaction: APIApplicationCommandInteraction) {
-    this.interaction = interaction
+  readonly interaction!: APIApplicationCommandInteraction;
+  [deferredResponse]!: APIInteractionResponse
+
+  constructor(interaction: APIApplicationCommandInteraction, response: APIInteractionResponse) {
+    Object.defineProperty(this, 'interaction', {value: interaction})
+    this[deferredResponse] = response
   }
 
   /**
@@ -447,51 +603,86 @@ export class DeferredContext {
   }
 }
 
-//
-export class MenuCommandContext {
-  readonly interaction: APIApplicationCommandInteraction
-  constructor(
-    interaction: APIApplicationCommandInteraction,
-  ) {
-    this.interaction = interaction
+// user context menu
+class ApplicationCommandContextMenu {
+  readonly interaction!: APIApplicationCommandInteraction
 
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns Get the `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns Get the `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
+  }
+
+  /**
+   * Contains the target user
+   */
+  readonly to!: {
+    /**
+     * Gets the user object for a user context menu command interaction.
+     * @returns The resolved user object.
+     */
+    readonly user: APIUser
+
+    /**
+     * Gets the guild member object for a user context menu command interaction.
+     * @returns Returns the guild member object only if the interaction is a user context menu command interaction in a guild and the guild member object is present.
+     */
+    readonly member?: APIInteractionDataResolvedGuildMember
+  }
+
+  constructor(interaction: APIApplicationCommandInteraction) {
     if (interaction.type !== InteractionType.ApplicationCommand) {
       throw new Error('interaction type not supported for this context')
     }
-    // if (interaction.data.type !== ApplicationCommandType.User) {
-    //   throw new Error('interaction type not supported for this context')
-    // }
-  }
 
-  // Request
+    Object.defineProperty(this, 'interaction', {value: interaction})
+
+    this.from = Object.create(null, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.member ?? null
+        },
+      },
+    })
+
+    this.to = Object.create(null, {
+      user: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.data.resolved.users[this.interaction.data.target_id]!
+        },
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.data.resolved.members?.[this.interaction.data.target_id] ?? null
+        },
+      },
+    })
+  }
 
   /**
    * @returns Get the `user` who caused the interaction
    */
   get me(): APIUser {
-    if (this.interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (this.interaction.data.type !== ApplicationCommandType.User) return null!
     return this.interaction.member?.user || this.interaction.user!
-  }
-
-  /**
-   * Gets the user object for a user context menu command interaction.
-   * @returns The resolved user object.
-   */
-  get user(): APIUser {
-    if (this.interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (this.interaction.data.type !== ApplicationCommandType.User) return null!
-    return this.interaction.data.resolved.users[this.interaction.data.target_id]!
-  }
-
-  /**
-   * Gets the guild member object for a user context menu command interaction.
-   * @returns Returns the guild member object only if the interaction is a user context menu command interaction in a guild and the guild member object is present.
-   */
-  get member(): APIInteractionDataResolvedGuildMember | null {
-    if (this.interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (this.interaction.data.type !== ApplicationCommandType.User) return null!
-    return this.interaction.data.resolved.members?.[this.interaction.data.target_id] ?? null
   }
 
   // Response
@@ -513,6 +704,24 @@ export class MenuCommandContext {
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
       data: res,
+    }
+  }
+}
+
+export class ApplicationCommandContextUser extends ApplicationCommandContextMenu {
+  constructor(interaction: APIApplicationCommandInteraction) {
+    super(interaction)
+    if (interaction.data.type !== ApplicationCommandType.User) {
+      throw new Error('interaction type not supported for this context')
+    }
+  }
+}
+
+export class ApplicationCommandContextMessage extends ApplicationCommandContextMenu {
+  constructor(interaction: APIApplicationCommandInteraction) {
+    super(interaction)
+    if (interaction.data.type !== ApplicationCommandType.Message) {
+      throw new Error('interaction type not supported for this context')
     }
   }
 }

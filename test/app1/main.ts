@@ -4,40 +4,76 @@ import {interactionHandler} from '#adapter/hono.ts'
 import {commandMapRegistry, DiscordInteraction, handler} from '#app'
 import {DiscordSnowflake} from '#lib/snowflake.ts'
 import {serve} from '#runtime'
-import {MessageFlags} from 'discord-api-types/v10'
+import {ComponentType, MessageFlags} from 'discord-api-types/v10'
 import {Hono} from 'hono'
 import {logger} from 'hono/logger'
 import {sleep} from '../utils.ts'
 import * as commands from './commands.ts'
 
 // Command handler
-// handler(hello, {
-//   chatInput(c) {
-//     console.log(c.interaction)
-//     return c.reply(`Hello ${c.user?.global_name}`)
-//   },
-// })
-
 handler(commands.hello, {
-  // chatInput(c) {
-  //   return c.replyDeferredEphemeral(async (c) => {
-  //     console.log(c.interaction.id, DiscordSnowflake.parseDate(c.interaction.id))
-  //     // console.log(c.interaction.token)
-  //     console.log(c.interaction.data)
-
-  //     await sleep(2000)
-  //     const msg1 = await c.reply({content: 'hello', flags: MessageFlags.Ephemeral})
-  //   })
-  // },
   chatInput() {
     return {
       command(c) {
-        console.log(c.interaction)
-        // return c.replyEphemeral(`hello ${c.user.username}`)
+        console.log(c)
 
+        return c.replyEphemeral(`hello ${c.me.username}`)
         return c.reply({
-          content: 'comp v2',
           flags: MessageFlags.IsComponentsV2,
+          components: [
+            {
+              type: ComponentType.TextDisplay,
+              content: `# Hello\n### ${c.me.global_name}`,
+            },
+          ],
+        })
+      },
+    }
+  },
+})
+
+handler(commands.hello, { // deferred
+  chatInput() {
+    return {
+      command(c) {
+        // return c.replyDeferred(async (c) => {
+        // console.log(c.interaction.id, DiscordSnowflake.parseDate(c.interaction.id))
+        // // console.log(c.interaction.token)
+        // console.log(c.interaction.data)
+        // await sleep(2000)
+        // const msg1 = await c.reply({content: 'hello', flags: MessageFlags.Ephemeral})
+        // })
+
+        const deferred = c.replyDeferred()
+        return deferred
+      },
+    }
+  },
+})
+
+handler(commands.hello, { // deferred
+  chatInput() {
+    return {
+      command(c) {
+        console.log(c)
+
+        return c.replyModal({
+          title: 'hello',
+          custom_id: 'modal-1',
+          components: [
+            {
+              type: ComponentType.Label,
+              label: 'Choice?',
+              component: {
+                type: ComponentType.StringSelect,
+                custom_id: 'choice_string',
+                options: [
+                  {label: '1', value: '1'},
+                  {label: '2', value: '2'},
+                ],
+              },
+            },
+          ],
         })
       },
     }
@@ -46,8 +82,17 @@ handler(commands.hello, {
 
 handler(commands.helloUser, {
   user(c) {
-    console.log(c.interaction)
-    return c.replyEphemeral(`hello ${c.user.username}`)
+    console.log(c)
+    // return c.replyEphemeral(`hello ${c.from.user.username}`)
+    return c.reply({
+      flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+      components: [
+        {
+          type: ComponentType.TextDisplay,
+          content: `## From:\n\`\`\`json\n${JSON.stringify(c, null, 2)}\`\`\``,
+        },
+      ],
+    })
   },
 })
 
