@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "keywords": [
-    "Discord",
-    "Discord interactions"
+    "discord",
+    "discord interactions"
   ],
   "license": "MIT",
   "author": "MAKS11060",
@@ -41,6 +41,11 @@
         "default": "./src/lib/serve/node.ts"
       }
     }
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./web": "./src/adapter/web.ts",
+    "./hono": "./src/adapter/hono.ts"
   },
   "scripts": {
     "fmt": "dprint fmt",
