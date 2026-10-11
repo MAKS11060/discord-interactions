@@ -17,7 +17,7 @@ const encoder = new TextEncoder()
  * @example
  * ```ts
  * const discordApp = new DiscordInteraction({
- *   publicKey: await importPublicKey(getEnvRequired('DISCORD_PUBLIC_KEY')),
+ *   publicKey: await importPublicKey(getEnvRequired('CLIENT_PUBLIC_KEY')),
  *   schema
  * })
  *

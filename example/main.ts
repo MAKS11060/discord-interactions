@@ -14,5 +14,5 @@ serve(async (req) => {
     return logger.log(response)
   }
 
-  return logger.log(new Response('404 Not Found', {status: 404}))
+  return logger.log(new Response('Not Found', {status: 404}))
 })

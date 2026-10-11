@@ -15,7 +15,7 @@ const encoder = new TextEncoder()
  * @example
  * ```ts
  * const discordApp = new DiscordInteraction({
- *   publicKey: await importPublicKey(getEnvRequired('DISCORD_PUBLIC_KEY')),
+ *   publicKey: await importPublicKey(getEnvRequired('CLIENT_PUBLIC_KEY')),
  *   schema
  * })
  *
@@ -26,7 +26,7 @@ const encoder = new TextEncoder()
  *     return await interactionHandler(req, discordApp)
  *   }
  *
- *   return Response.json('Not Found')
+ *   return new Response('Not Found', {status: 404})
  * })
  * ```
  */
