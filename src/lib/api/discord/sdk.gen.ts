@@ -46,6 +46,27 @@ import type {
   DeleteGuildApplicationCommandData,
   DeleteGuildApplicationCommandErrors,
   DeleteGuildApplicationCommandResponses,
+  DeleteOriginalWebhookMessageData,
+  DeleteOriginalWebhookMessageErrors,
+  DeleteOriginalWebhookMessageResponses,
+  DeleteWebhookByTokenData,
+  DeleteWebhookByTokenErrors,
+  DeleteWebhookByTokenResponses,
+  DeleteWebhookData,
+  DeleteWebhookErrors,
+  DeleteWebhookMessageData,
+  DeleteWebhookMessageErrors,
+  DeleteWebhookMessageResponses,
+  DeleteWebhookResponses,
+  ExecuteGithubCompatibleWebhookData,
+  ExecuteGithubCompatibleWebhookErrors,
+  ExecuteGithubCompatibleWebhookResponses,
+  ExecuteSlackCompatibleWebhookData,
+  ExecuteSlackCompatibleWebhookErrors,
+  ExecuteSlackCompatibleWebhookResponses,
+  ExecuteWebhookData,
+  ExecuteWebhookErrors,
+  ExecuteWebhookResponses,
   GetApplicationCommandData,
   GetApplicationCommandErrors,
   GetApplicationCommandResponses,
@@ -82,9 +103,21 @@ import type {
   GetOpenidConnectUserinfoData,
   GetOpenidConnectUserinfoErrors,
   GetOpenidConnectUserinfoResponses,
+  GetOriginalWebhookMessageData,
+  GetOriginalWebhookMessageErrors,
+  GetOriginalWebhookMessageResponses,
   GetPublicKeysData,
   GetPublicKeysErrors,
   GetPublicKeysResponses,
+  GetWebhookByTokenData,
+  GetWebhookByTokenErrors,
+  GetWebhookByTokenResponses,
+  GetWebhookData,
+  GetWebhookErrors,
+  GetWebhookMessageData,
+  GetWebhookMessageErrors,
+  GetWebhookMessageResponses,
+  GetWebhookResponses,
   ListApplicationCommandsData,
   ListApplicationCommandsErrors,
   ListApplicationCommandsResponses,
@@ -118,6 +151,18 @@ import type {
   UpdateMyApplicationData,
   UpdateMyApplicationErrors,
   UpdateMyApplicationResponses,
+  UpdateOriginalWebhookMessageData,
+  UpdateOriginalWebhookMessageErrors,
+  UpdateOriginalWebhookMessageResponses,
+  UpdateWebhookByTokenData,
+  UpdateWebhookByTokenErrors,
+  UpdateWebhookByTokenResponses,
+  UpdateWebhookData,
+  UpdateWebhookErrors,
+  UpdateWebhookMessageData,
+  UpdateWebhookMessageErrors,
+  UpdateWebhookMessageResponses,
+  UpdateWebhookResponses,
   UploadApplicationAttachmentData,
   UploadApplicationAttachmentErrors,
   UploadApplicationAttachmentResponses,
@@ -597,4 +642,183 @@ export const getOpenidConnectUserinfo = <ThrowOnError extends boolean = false>(
     security: [{name: 'Authorization', type: 'apiKey'}, {scheme: 'bearer', type: 'http'}],
     url: '/oauth2/userinfo',
     ...options,
+  })
+
+export const deleteWebhook = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteWebhookData, ThrowOnError>,
+): RequestResult<DeleteWebhookResponses, DeleteWebhookErrors, ThrowOnError> =>
+  (options.client ?? client).delete<DeleteWebhookResponses, DeleteWebhookErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}',
+    ...options,
+  })
+
+export const getWebhook = <ThrowOnError extends boolean = false>(
+  options: Options<GetWebhookData, ThrowOnError>,
+): RequestResult<GetWebhookResponses, GetWebhookErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetWebhookResponses, GetWebhookErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}',
+    ...options,
+  })
+
+export const updateWebhook = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateWebhookData, ThrowOnError>,
+): RequestResult<UpdateWebhookResponses, UpdateWebhookErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateWebhookResponses, UpdateWebhookErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+export const deleteWebhookByToken = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteWebhookByTokenData, ThrowOnError>,
+): RequestResult<DeleteWebhookByTokenResponses, DeleteWebhookByTokenErrors, ThrowOnError> =>
+  (options.client ?? client).delete<DeleteWebhookByTokenResponses, DeleteWebhookByTokenErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}',
+    ...options,
+  })
+
+export const getWebhookByToken = <ThrowOnError extends boolean = false>(
+  options: Options<GetWebhookByTokenData, ThrowOnError>,
+): RequestResult<GetWebhookByTokenResponses, GetWebhookByTokenErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetWebhookByTokenResponses, GetWebhookByTokenErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}',
+    ...options,
+  })
+
+export const updateWebhookByToken = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateWebhookByTokenData, ThrowOnError>,
+): RequestResult<UpdateWebhookByTokenResponses, UpdateWebhookByTokenErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateWebhookByTokenResponses, UpdateWebhookByTokenErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+export const executeWebhook = <ThrowOnError extends boolean = false>(
+  options: Options<ExecuteWebhookData, ThrowOnError>,
+): RequestResult<ExecuteWebhookResponses, ExecuteWebhookErrors, ThrowOnError> =>
+  (options.client ?? client).post<ExecuteWebhookResponses, ExecuteWebhookErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+export const executeGithubCompatibleWebhook = <ThrowOnError extends boolean = false>(
+  options: Options<ExecuteGithubCompatibleWebhookData, ThrowOnError>,
+): RequestResult<ExecuteGithubCompatibleWebhookResponses, ExecuteGithubCompatibleWebhookErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    ExecuteGithubCompatibleWebhookResponses,
+    ExecuteGithubCompatibleWebhookErrors,
+    ThrowOnError
+  >({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/github',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+export const deleteOriginalWebhookMessage = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteOriginalWebhookMessageData, ThrowOnError>,
+): RequestResult<DeleteOriginalWebhookMessageResponses, DeleteOriginalWebhookMessageErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    DeleteOriginalWebhookMessageResponses,
+    DeleteOriginalWebhookMessageErrors,
+    ThrowOnError
+  >({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/messages/@original',
+    ...options,
+  })
+
+export const getOriginalWebhookMessage = <ThrowOnError extends boolean = false>(
+  options: Options<GetOriginalWebhookMessageData, ThrowOnError>,
+): RequestResult<GetOriginalWebhookMessageResponses, GetOriginalWebhookMessageErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetOriginalWebhookMessageResponses, GetOriginalWebhookMessageErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/messages/@original',
+    ...options,
+  })
+
+export const updateOriginalWebhookMessage = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateOriginalWebhookMessageData, ThrowOnError>,
+): RequestResult<UpdateOriginalWebhookMessageResponses, UpdateOriginalWebhookMessageErrors, ThrowOnError> =>
+  (options.client ?? client).patch<
+    UpdateOriginalWebhookMessageResponses,
+    UpdateOriginalWebhookMessageErrors,
+    ThrowOnError
+  >({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/messages/@original',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+export const deleteWebhookMessage = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteWebhookMessageData, ThrowOnError>,
+): RequestResult<DeleteWebhookMessageResponses, DeleteWebhookMessageErrors, ThrowOnError> =>
+  (options.client ?? client).delete<DeleteWebhookMessageResponses, DeleteWebhookMessageErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}',
+    ...options,
+  })
+
+export const getWebhookMessage = <ThrowOnError extends boolean = false>(
+  options: Options<GetWebhookMessageData, ThrowOnError>,
+): RequestResult<GetWebhookMessageResponses, GetWebhookMessageErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetWebhookMessageResponses, GetWebhookMessageErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}',
+    ...options,
+  })
+
+export const updateWebhookMessage = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateWebhookMessageData, ThrowOnError>,
+): RequestResult<UpdateWebhookMessageResponses, UpdateWebhookMessageErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateWebhookMessageResponses, UpdateWebhookMessageErrors, ThrowOnError>({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  })
+
+export const executeSlackCompatibleWebhook = <ThrowOnError extends boolean = false>(
+  options: Options<ExecuteSlackCompatibleWebhookData, ThrowOnError>,
+): RequestResult<ExecuteSlackCompatibleWebhookResponses, ExecuteSlackCompatibleWebhookErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    ExecuteSlackCompatibleWebhookResponses,
+    ExecuteSlackCompatibleWebhookErrors,
+    ThrowOnError
+  >({
+    security: [{name: 'Authorization', type: 'apiKey'}],
+    url: '/webhooks/{webhook_id}/{webhook_token}/slack',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   })

@@ -31,6 +31,7 @@ export default defineConfig({
         include: [
           '/^[A-Z]+ \/oauth2*/',
           '/^[A-Z]+ \/applications\/*/',
+          '/^[A-Z]+ \/webhook\/*/',
         ],
       },
     },

@@ -7302,3 +7302,527 @@ export type GetOpenidConnectUserinfoResponses = {
 
 export type GetOpenidConnectUserinfoResponse =
   GetOpenidConnectUserinfoResponses[keyof GetOpenidConnectUserinfoResponses]
+
+export type DeleteWebhookData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+  }
+  query?: never
+  url: '/webhooks/{webhook_id}'
+}
+
+export type DeleteWebhookErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type DeleteWebhookError = DeleteWebhookErrors[keyof DeleteWebhookErrors]
+
+export type DeleteWebhookResponses = {
+  /**
+   * 204 response for delete_webhook
+   */
+  204: void
+}
+
+export type DeleteWebhookResponse = DeleteWebhookResponses[keyof DeleteWebhookResponses]
+
+export type GetWebhookData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+  }
+  query?: never
+  url: '/webhooks/{webhook_id}'
+}
+
+export type GetWebhookErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type GetWebhookError = GetWebhookErrors[keyof GetWebhookErrors]
+
+export type GetWebhookResponses = {
+  /**
+   * 200 response for get_webhook
+   */
+  200: ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse
+}
+
+export type GetWebhookResponse = GetWebhookResponses[keyof GetWebhookResponses]
+
+export type UpdateWebhookData = {
+  body: {
+    name?: string
+    avatar?: string | null
+    channel_id?: null | SnowflakeType
+  }
+  path: {
+    webhook_id: SnowflakeType
+  }
+  query?: never
+  url: '/webhooks/{webhook_id}'
+}
+
+export type UpdateWebhookErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type UpdateWebhookError = UpdateWebhookErrors[keyof UpdateWebhookErrors]
+
+export type UpdateWebhookResponses = {
+  /**
+   * 200 response for update_webhook
+   */
+  200: ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse
+}
+
+export type UpdateWebhookResponse = UpdateWebhookResponses[keyof UpdateWebhookResponses]
+
+export type DeleteWebhookByTokenData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: never
+  url: '/webhooks/{webhook_id}/{webhook_token}'
+}
+
+export type DeleteWebhookByTokenErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type DeleteWebhookByTokenError = DeleteWebhookByTokenErrors[keyof DeleteWebhookByTokenErrors]
+
+export type DeleteWebhookByTokenResponses = {
+  /**
+   * 204 response for delete_webhook_by_token
+   */
+  204: void
+}
+
+export type DeleteWebhookByTokenResponse = DeleteWebhookByTokenResponses[keyof DeleteWebhookByTokenResponses]
+
+export type GetWebhookByTokenData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: never
+  url: '/webhooks/{webhook_id}/{webhook_token}'
+}
+
+export type GetWebhookByTokenErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type GetWebhookByTokenError = GetWebhookByTokenErrors[keyof GetWebhookByTokenErrors]
+
+export type GetWebhookByTokenResponses = {
+  /**
+   * 200 response for get_webhook_by_token
+   */
+  200: ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse
+}
+
+export type GetWebhookByTokenResponse = GetWebhookByTokenResponses[keyof GetWebhookByTokenResponses]
+
+export type UpdateWebhookByTokenData = {
+  body: {
+    name?: string
+    avatar?: string | null
+  }
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: never
+  url: '/webhooks/{webhook_id}/{webhook_token}'
+}
+
+export type UpdateWebhookByTokenErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type UpdateWebhookByTokenError = UpdateWebhookByTokenErrors[keyof UpdateWebhookByTokenErrors]
+
+export type UpdateWebhookByTokenResponses = {
+  /**
+   * 200 response for update_webhook_by_token
+   */
+  200: ApplicationIncomingWebhookResponse | ChannelFollowerWebhookResponse | GuildIncomingWebhookResponse
+}
+
+export type UpdateWebhookByTokenResponse = UpdateWebhookByTokenResponses[keyof UpdateWebhookByTokenResponses]
+
+export type ExecuteWebhookData = {
+  body: IncomingWebhookRequestPartial | IncomingWebhookUpdateRequestPartial
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: {
+    wait?: boolean
+    thread_id?: SnowflakeType
+    with_components?: boolean
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}'
+}
+
+export type ExecuteWebhookErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type ExecuteWebhookError = ExecuteWebhookErrors[keyof ExecuteWebhookErrors]
+
+export type ExecuteWebhookResponses = {
+  /**
+   * 200 response for execute_webhook
+   */
+  200: MessageResponse
+  /**
+   * 204 response for execute_webhook
+   */
+  204: void
+}
+
+export type ExecuteWebhookResponse = ExecuteWebhookResponses[keyof ExecuteWebhookResponses]
+
+export type ExecuteGithubCompatibleWebhookData = {
+  body: GithubWebhook
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: {
+    wait?: boolean
+    thread_id?: SnowflakeType
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/github'
+}
+
+export type ExecuteGithubCompatibleWebhookErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type ExecuteGithubCompatibleWebhookError =
+  ExecuteGithubCompatibleWebhookErrors[keyof ExecuteGithubCompatibleWebhookErrors]
+
+export type ExecuteGithubCompatibleWebhookResponses = {
+  /**
+   * 204 response for execute_github_compatible_webhook
+   */
+  204: void
+}
+
+export type ExecuteGithubCompatibleWebhookResponse =
+  ExecuteGithubCompatibleWebhookResponses[keyof ExecuteGithubCompatibleWebhookResponses]
+
+export type DeleteOriginalWebhookMessageData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: {
+    thread_id?: SnowflakeType
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/messages/@original'
+}
+
+export type DeleteOriginalWebhookMessageErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type DeleteOriginalWebhookMessageError =
+  DeleteOriginalWebhookMessageErrors[keyof DeleteOriginalWebhookMessageErrors]
+
+export type DeleteOriginalWebhookMessageResponses = {
+  /**
+   * 204 response for delete_original_webhook_message
+   */
+  204: void
+}
+
+export type DeleteOriginalWebhookMessageResponse =
+  DeleteOriginalWebhookMessageResponses[keyof DeleteOriginalWebhookMessageResponses]
+
+export type GetOriginalWebhookMessageData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: {
+    thread_id?: SnowflakeType
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/messages/@original'
+}
+
+export type GetOriginalWebhookMessageErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type GetOriginalWebhookMessageError = GetOriginalWebhookMessageErrors[keyof GetOriginalWebhookMessageErrors]
+
+export type GetOriginalWebhookMessageResponses = {
+  /**
+   * 200 response for get_original_webhook_message
+   */
+  200: MessageResponse
+}
+
+export type GetOriginalWebhookMessageResponse =
+  GetOriginalWebhookMessageResponses[keyof GetOriginalWebhookMessageResponses]
+
+export type UpdateOriginalWebhookMessageData = {
+  body: IncomingWebhookUpdateRequestPartial
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: {
+    thread_id?: SnowflakeType
+    with_components?: boolean
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/messages/@original'
+}
+
+export type UpdateOriginalWebhookMessageErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type UpdateOriginalWebhookMessageError =
+  UpdateOriginalWebhookMessageErrors[keyof UpdateOriginalWebhookMessageErrors]
+
+export type UpdateOriginalWebhookMessageResponses = {
+  /**
+   * 200 response for update_original_webhook_message
+   */
+  200: MessageResponse
+}
+
+export type UpdateOriginalWebhookMessageResponse =
+  UpdateOriginalWebhookMessageResponses[keyof UpdateOriginalWebhookMessageResponses]
+
+export type DeleteWebhookMessageData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+    message_id: SnowflakeType
+  }
+  query?: {
+    thread_id?: SnowflakeType
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}'
+}
+
+export type DeleteWebhookMessageErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type DeleteWebhookMessageError = DeleteWebhookMessageErrors[keyof DeleteWebhookMessageErrors]
+
+export type DeleteWebhookMessageResponses = {
+  /**
+   * 204 response for delete_webhook_message
+   */
+  204: void
+}
+
+export type DeleteWebhookMessageResponse = DeleteWebhookMessageResponses[keyof DeleteWebhookMessageResponses]
+
+export type GetWebhookMessageData = {
+  body?: never
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+    message_id: SnowflakeType
+  }
+  query?: {
+    thread_id?: SnowflakeType
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}'
+}
+
+export type GetWebhookMessageErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type GetWebhookMessageError = GetWebhookMessageErrors[keyof GetWebhookMessageErrors]
+
+export type GetWebhookMessageResponses = {
+  /**
+   * 200 response for get_webhook_message
+   */
+  200: MessageResponse
+}
+
+export type GetWebhookMessageResponse = GetWebhookMessageResponses[keyof GetWebhookMessageResponses]
+
+export type UpdateWebhookMessageData = {
+  body: IncomingWebhookUpdateRequestPartial
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+    message_id: SnowflakeType
+  }
+  query?: {
+    thread_id?: SnowflakeType
+    with_components?: boolean
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}'
+}
+
+export type UpdateWebhookMessageErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type UpdateWebhookMessageError = UpdateWebhookMessageErrors[keyof UpdateWebhookMessageErrors]
+
+export type UpdateWebhookMessageResponses = {
+  /**
+   * 200 response for update_webhook_message
+   */
+  200: MessageResponse
+}
+
+export type UpdateWebhookMessageResponse = UpdateWebhookMessageResponses[keyof UpdateWebhookMessageResponses]
+
+export type ExecuteSlackCompatibleWebhookData = {
+  body: SlackWebhook
+  path: {
+    webhook_id: SnowflakeType
+    webhook_token: string
+  }
+  query?: {
+    wait?: boolean
+    thread_id?: SnowflakeType
+  }
+  url: '/webhooks/{webhook_id}/{webhook_token}/slack'
+}
+
+export type ExecuteSlackCompatibleWebhookErrors = {
+  /**
+   * Client ratelimited response
+   */
+  429: RatelimitedResponse
+  /**
+   * Client error response
+   */
+  '4XX': ErrorResponse
+}
+
+export type ExecuteSlackCompatibleWebhookError =
+  ExecuteSlackCompatibleWebhookErrors[keyof ExecuteSlackCompatibleWebhookErrors]
+
+export type ExecuteSlackCompatibleWebhookResponses = {
+  /**
+   * 200 response for execute_slack_compatible_webhook
+   */
+  200: string | null
+}
+
+export type ExecuteSlackCompatibleWebhookResponse =
+  ExecuteSlackCompatibleWebhookResponses[keyof ExecuteSlackCompatibleWebhookResponses]

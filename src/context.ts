@@ -1,3 +1,4 @@
+import * as discordRest from '#lib/api/discord/index.ts'
 import {
   type APIApplicationCommandAutocompleteInteraction,
   type APIApplicationCommandInteraction,
@@ -508,33 +509,26 @@ export class DeferredContext {
       signal?: AbortSignal
     },
   ) {
-    const res = await parseResponse(
-      discordApi.PATCH('/webhooks/{webhook_id}/{webhook_token}/messages/@original', {
-        params: {
+    const {data, error} = await discordRest.updateOriginalWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+      },
+      body: body as any,
+      signal: options?.signal,
+    })
+
+    return {
+      res: data!,
+      delete: async () => {
+        const {data, error, response} = await discordRest.deleteOriginalWebhookMessage({
           path: {
             webhook_id: this.interaction.application_id,
             webhook_token: this.interaction.token,
           },
-        },
-        body: body as any,
-        signal: options?.signal,
-      }),
-    )
+        })
 
-    return {
-      res,
-      delete: async () => {
-        const res = await parseResponse(
-          discordApi.DELETE('/webhooks/{webhook_id}/{webhook_token}/messages/@original', {
-            params: {
-              path: {
-                webhook_id: this.interaction.application_id,
-                webhook_token: this.interaction.token,
-              },
-            },
-          }),
-        )
-        return res.response.ok
+        return error ? false : response?.ok ?? false
       },
     }
   }
@@ -550,60 +544,52 @@ export class DeferredContext {
       signal?: AbortSignal
     },
   ) {
-    const res = await parseResponse(discordApi.POST('/webhooks/{webhook_id}/{webhook_token}', {
-      params: {
-        path: {
-          webhook_id: this.interaction.application_id,
-          webhook_token: this.interaction.token,
-        },
+    const {data, error} = await discordRest.executeWebhook({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
       },
       body: body as any,
       signal: options?.signal,
-    }))
+    })
+
+    if (!data || error) return null
 
     return {
-      res,
+      res: data!,
       edit: async (
         body: RESTPatchAPIInteractionFollowupJSONBody,
         options?: {
           signal?: AbortSignal
         },
       ) => {
-        const editRes = await parseResponse(
-          discordApi.PATCH('/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}', {
-            params: {
-              path: {
-                webhook_id: this.interaction.application_id,
-                webhook_token: this.interaction.token,
-                message_id: res.data.id,
-              },
-            },
-            body: body as any,
-            signal: options?.signal,
-          }),
-        )
+        const {data: edited, error} = await discordRest.updateWebhookMessage({
+          path: {
+            webhook_id: this.interaction.application_id,
+            webhook_token: this.interaction.token,
+            message_id: data?.id,
+          },
+          body: body as any,
+          signal: options?.signal,
+        })
 
-        return editRes.data
+        return edited!
       },
       delete: async (
         options?: {
           signal?: AbortSignal
         },
       ) => {
-        const editRes = await parseResponse(
-          discordApi.DELETE('/webhooks/{webhook_id}/{webhook_token}/messages/{message_id}', {
-            params: {
-              path: {
-                webhook_id: this.interaction.application_id,
-                webhook_token: this.interaction.token,
-                message_id: res.data.id,
-              },
-            },
-            signal: options?.signal,
-          }),
-        )
+        const {error, response} = await discordRest.deleteWebhookMessage({
+          path: {
+            webhook_id: this.interaction.application_id,
+            webhook_token: this.interaction.token,
+            message_id: data.id,
+          },
+          signal: options?.signal,
+        })
 
-        return editRes.response.ok
+        return response?.ok ?? false
       },
     }
   }
