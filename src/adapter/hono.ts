@@ -1,9 +1,9 @@
-import {concat} from '@std/bytes/concat'
 import type {APIInteraction} from 'discord-api-types/v10'
 import {createMiddleware} from 'hono/factory'
 import {InteractionError} from '../errors.ts'
 import type {DiscordInteraction} from '../interactions.ts'
 import {
+  concat,
   ERROR_BadRequestSignature,
   ERROR_ExecuteFailed,
   ERROR_MethodNotAllowed,
@@ -53,7 +53,7 @@ export const interactionHandler = (app: DiscordInteraction) => {
       return c.json(
         await app.execute(
           await c.req.json<APIInteraction>(),
-        ) as any, // hono can't forward a large type
+        ) as unknown, // hono can't forward a large type
       )
     } catch (e) {
       if (e instanceof InteractionError) {

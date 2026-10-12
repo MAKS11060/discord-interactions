@@ -1,7 +1,7 @@
-import {concat} from '@std/bytes/concat'
 import {InteractionError} from '../errors.ts'
 import type {DiscordInteraction} from '../interactions.ts'
 import {
+    concat,
   ERROR_BadRequestSignature,
   ERROR_ExecuteFailed,
   ERROR_MethodNotAllowed,
