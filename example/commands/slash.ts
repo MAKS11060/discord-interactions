@@ -1,5 +1,4 @@
-import {ApplicationCommandOptionType} from 'discord-api-types/payloads'
-import {schema} from './builder.ts'
+import {schema} from '../builder.ts'
 
 schema.slashCommand((t) =>
   t({

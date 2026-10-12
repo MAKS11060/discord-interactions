@@ -51,6 +51,9 @@ export class InteractionBuilder<T = object> {
   ): Definition {
     return handler(new SlashCommandDefinition<T>())
   }
+
+  slashSubcommand() {}
+  slashSubcommandGroup() {}
 }
 
 class SlashCommandDefinition<Types> {
