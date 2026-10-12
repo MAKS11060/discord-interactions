@@ -1,10 +1,16 @@
-import type {RESTPostAPIChatInputApplicationCommandsJSONBody} from 'discord-api-types/rest/v10'
+import type {RESTPostAPIApplicationCommandsJSONBody} from 'discord-api-types/rest/v10'
 import {
   type APIApplicationCommandOption,
   type APIApplicationCommandOptionChoice,
   type APIInteractionResponse,
+  type ApplicationCommandOptionAllowedChannelType,
   ApplicationCommandOptionType,
   ApplicationCommandType,
+  type ApplicationIntegrationType,
+  type EntryPointCommandHandlerType,
+  type FileUploadType,
+  type InteractionContextType,
+  type LocalizationMap,
 } from 'discord-api-types/v10'
 import type {APIAttachment, APIInteractionDataResolvedChannel, APIRole, APIUser} from 'discord-api-types/v10'
 import type {
@@ -31,21 +37,32 @@ type OptionValue<K extends OptionKind> = K extends 'String' ? string
   : K extends 'Boolean' ? boolean
   : string
 
+type ChoiceFields<Value> =
+  | {autocomplete: true; choices?: never}
+  | {autocomplete?: false; choices?: readonly APIApplicationCommandOptionChoice<Value>[]}
+
+type OptionSpecificFields<K extends OptionKind> = K extends 'String'
+  ? ChoiceFields<string> & {min_length?: number; max_length?: number}
+  : K extends 'Integer' | 'Number' ? ChoiceFields<number> & {min_value?: number; max_value?: number}
+  : K extends 'Channel' ? {channel_types?: readonly ApplicationCommandOptionAllowedChannelType[]}
+  : K extends 'Attachment' ? {file_types?: readonly FileUploadType[]}
+  : {}
+
 export type Arg<
   K extends OptionKind = OptionKind,
   V extends Primitive = Primitive,
   R extends boolean = boolean,
   Name extends string | undefined = undefined,
+  Fields extends object = {},
 > = {
   type: K
   name?: Name
   description?: string
   required: R extends true ? true : false | undefined
-  autocomplete?: boolean
   value?: V
-}
+} & Fields
 
-type AnyArg = Arg<OptionKind, Primitive, boolean, string | undefined>
+type AnyArg = Arg<OptionKind, Primitive, boolean, string | undefined, OptionSpecificFields<OptionKind>>
 
 export type ResolvedOption<A extends AnyArg> = {
   value: A['required'] extends true ? NonNullable<A['value']> : A['value'] | undefined
@@ -69,6 +86,16 @@ export type InteractionHandlerContext = {
 export type CommandDefinition = {
   name: string
   description: string
+  applicationType?: ApplicationCommandType
+  name_localizations?: LocalizationMap | null
+  description_localizations?: LocalizationMap | null
+  default_member_permissions?: string | null
+  dm_permission?: boolean
+  default_permission?: boolean
+  nsfw?: boolean
+  integration_types?: ApplicationIntegrationType[]
+  contexts?: InteractionContextType[]
+  handler?: EntryPointCommandHandlerType
   options?: APIApplicationCommandOption[]
   resolve?: (data: InteractionHandlerContext) => APIInteractionResponse | Promise<APIInteractionResponse>
   autocomplete?: (data: {
@@ -110,15 +137,19 @@ export interface CommandBuilder<Ctx extends object = object> {
 }
 
 type OptionFactory = {
-  <K extends OptionKind, const R extends boolean = false, const Name extends string | undefined = undefined>(
-    options: BuilderCommandOptions & {type: K; required?: R; name?: Name},
-  ): Arg<K, OptionValue<K>, R, Name>
+  <
+    K extends OptionKind,
+    const R extends boolean = false,
+    const Name extends string | undefined = undefined,
+  >(
+    options: BuilderCommandOptions & {type: K; required?: R; name?: Name} & OptionSpecificFields<K>,
+  ): Arg<K, OptionValue<K>, R, Name, OptionSpecificFields<K>>
   string<const R extends boolean = false, const Name extends string | undefined = undefined>(
-    options: BuilderCommandOptions & {required?: R; name?: Name},
-  ): Arg<'String', string, R, Name>
+    options: BuilderCommandOptions & {required?: R; name?: Name} & OptionSpecificFields<'String'>,
+  ): Arg<'String', string, R, Name, OptionSpecificFields<'String'>>
   integer<const R extends boolean = false, const Name extends string | undefined = undefined>(
-    options: BuilderCommandOptions & {required?: R; name?: Name},
-  ): Arg<'Integer', number, R, Name>
+    options: BuilderCommandOptions & {required?: R; name?: Name} & OptionSpecificFields<'Integer'>,
+  ): Arg<'Integer', number, R, Name, OptionSpecificFields<'Integer'>>
   boolean<const R extends boolean = false, const Name extends string | undefined = undefined>(
     options: BuilderCommandOptions & {required?: R; name?: Name},
   ): Arg<'Boolean', boolean, R, Name>
@@ -126,8 +157,8 @@ type OptionFactory = {
     options: BuilderCommandOptions & {required?: R; name?: Name},
   ): Arg<'User', string, R, Name>
   channel<const R extends boolean = false, const Name extends string | undefined = undefined>(
-    options: BuilderCommandOptions & {required?: R; name?: Name},
-  ): Arg<'Channel', string, R, Name>
+    options: BuilderCommandOptions & {required?: R; name?: Name} & OptionSpecificFields<'Channel'>,
+  ): Arg<'Channel', string, R, Name, OptionSpecificFields<'Channel'>>
   role<const R extends boolean = false, const Name extends string | undefined = undefined>(
     options: BuilderCommandOptions & {required?: R; name?: Name},
   ): Arg<'Role', string, R, Name>
@@ -135,22 +166,47 @@ type OptionFactory = {
     options: BuilderCommandOptions & {required?: R; name?: Name},
   ): Arg<'Mentionable', string, R, Name>
   number<const R extends boolean = false, const Name extends string | undefined = undefined>(
-    options: BuilderCommandOptions & {required?: R; name?: Name},
-  ): Arg<'Number', number, R, Name>
+    options: BuilderCommandOptions & {required?: R; name?: Name} & OptionSpecificFields<'Number'>,
+  ): Arg<'Number', number, R, Name, OptionSpecificFields<'Number'>>
   attachment<const R extends boolean = false, const Name extends string | undefined = undefined>(
-    options: BuilderCommandOptions & {required?: R; name?: Name},
-  ): Arg<'Attachment', string, R, Name>
+    options: BuilderCommandOptions & {required?: R; name?: Name} & OptionSpecificFields<'Attachment'>,
+  ): Arg<'Attachment', string, R, Name, OptionSpecificFields<'Attachment'>>
 }
 
 interface BuilderCommandOptions {
   name?: string
   description?: string
-  autocomplete?: boolean
 }
 
-type SlashCommandsCommand<Ctx extends object> = {
+type CommandMetadata = {
+  name_localizations?: LocalizationMap | null
+  description_localizations?: LocalizationMap | null
+  default_member_permissions?: string | null
+  dm_permission?: boolean
+  default_permission?: boolean
+  nsfw?: boolean
+  integration_types?: ApplicationIntegrationType[]
+  contexts?: InteractionContextType[]
+}
+
+type SlashCommandsCommand<Ctx extends object> = CommandMetadata & {
   name: string
   description?: string
+  commands?: CommandResult[]
+}
+
+type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = SlashCommandsCommand<Ctx> & {
+  args?: O
+  resolve?: (
+    context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
+    args: SlashCommandArgs<O>,
+    ctx: Ctx,
+  ) => APIInteractionResponse | Promise<APIInteractionResponse>
+  autocomplete?: (
+    context: ApplicationCommandAutocompleteContext,
+    ctx: Ctx,
+    args: SlashCommandArgs<O>,
+  ) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
 }
 
 type SlashCommandArgs<O extends Record<string, AnyArg>> = {
@@ -195,20 +251,16 @@ type SlashCommandContextOption<O extends Record<string, AnyArg>> = {
 type SlashCommandsTools<Ctx extends object> = {
   arg: OptionFactory
   command<const O extends Record<string, AnyArg> = {}>(
-    definition: SlashCommandsCommand<Ctx> & {
-      args?: O
-      resolve?: (
-        context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
-        args: SlashCommandArgs<O>,
-        ctx: Ctx,
-      ) => APIInteractionResponse | Promise<APIInteractionResponse>
-      autocomplete?: (
-        context: ApplicationCommandAutocompleteContext,
-        ctx: Ctx,
-        args: SlashCommandArgs<O>,
-      ) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
-    },
+    definition: SlashArgsCommand<Ctx, O>,
   ): CommandResult
+  subcommand<const O extends Record<string, AnyArg> = {}>(
+    definition: SlashArgsCommand<Ctx, O>,
+  ): CommandResult
+  group(definition: {
+    name: string
+    description?: string
+    commands: CommandResult[]
+  }): CommandResult
 }
 
 type SlashResult<Ctx extends object, O extends Record<string, AnyArg>> = {
@@ -259,7 +311,7 @@ export class InteractionBuilder<Ctx extends object = object> {
     return this
   }
 
-  toJSON(): RESTPostAPIChatInputApplicationCommandsJSONBody[] {
+  toJSON(): RESTPostAPIApplicationCommandsJSONBody[] {
     return this.#commands.map((command) => this.#toApplicationCommand(command))
   }
 
@@ -274,6 +326,14 @@ export class InteractionBuilder<Ctx extends object = object> {
     const tools: SlashCommandsTools<Ctx> = {
       arg: this.#tools().option,
       command: (definition) => this.#registerArgsCommand(definition),
+      subcommand: (definition) => this.#registerArgsCommand(definition, 'subcommand'),
+      group: ({name, description, commands}) =>
+        this.#publicResult({
+          name,
+          description: description ?? name,
+          type: 'group',
+          children: commands.map((command) => this.#definition(command)),
+        }),
     }
     const commands = builder(tools)
     for (const command of Object.values(commands)) {
@@ -330,13 +390,18 @@ export class InteractionBuilder<Ctx extends object = object> {
   message(
     builder: (
       t: CommandBuilder<Ctx>,
-    ) => {name: string; resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse},
+    ) => CommandMetadata & {
+      name: string
+      resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
+    },
   ): CommandResult {
     const result = builder(this.#tools())
     const definition: CommandDefinition = {
       name: result.name,
       description: '',
       type: 'command',
+      applicationType: ApplicationCommandType.Message,
+      ...this.#commandMetadata(result),
       resolve: result.resolve
         ? ({context, ctx}) => result.resolve!(context as ApplicationCommandContextMessage, ctx as Ctx)
         : undefined,
@@ -348,13 +413,18 @@ export class InteractionBuilder<Ctx extends object = object> {
   user(
     builder: (
       t: CommandBuilder,
-    ) => {name: string; resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse},
+    ) => CommandMetadata & {
+      name: string
+      resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
+    },
   ) {
     const result = builder(this.#tools())
     const definition: CommandDefinition = {
       name: result.name,
       description: '',
       type: 'command',
+      applicationType: ApplicationCommandType.User,
+      ...this.#commandMetadata(result),
       resolve: result.resolve
         ? ({context, ctx}) => result.resolve!(context as ApplicationCommandContextUser, ctx as Ctx)
         : undefined,
@@ -373,11 +443,10 @@ export class InteractionBuilder<Ctx extends object = object> {
       description: result.description ?? result.name,
       type,
       options: Object.entries(result.options ?? {}).map(([name, option]) => ({
+        ...option,
         type: optionType(option.type),
         name: option.name ?? name,
         description: option.description ?? option.name ?? name,
-        required: option.required,
-        autocomplete: option.autocomplete,
       } as APIApplicationCommandOption)),
       resolve: result.resolve
         ? ({context, ctx}) => result.resolve!(context as ApplicationCommandContextWithOptions<O>, ctx as Ctx)
@@ -390,20 +459,29 @@ export class InteractionBuilder<Ctx extends object = object> {
     return definition
   }
 
-  #registerArgsCommand<const O extends Record<string, AnyArg>>(
-    result: SlashCommandsCommand<Ctx> & {
-      args?: O
-      resolve?: (
-        context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
-        args: SlashCommandArgs<O>,
-        ctx: Ctx,
-      ) => APIInteractionResponse | Promise<APIInteractionResponse>
-      autocomplete?: (
-        context: ApplicationCommandAutocompleteContext,
-        ctx: Ctx,
-        args: SlashCommandArgs<O>,
-      ) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
+  primaryEntryPoint(
+    builder: (t: CommandBuilder<Ctx>) => CommandMetadata & {
+      name: string
+      description?: string
+      handler?: EntryPointCommandHandlerType
     },
+  ): CommandResult {
+    const result = builder(this.#tools())
+    const definition: CommandDefinition = {
+      name: result.name,
+      description: result.description ?? '',
+      type: 'command',
+      applicationType: ApplicationCommandType.PrimaryEntryPoint,
+      handler: result.handler,
+      ...this.#commandMetadata(result),
+    }
+    this.#commands.push(definition)
+    return this.#publicResult(definition)
+  }
+
+  #registerArgsCommand<const O extends Record<string, AnyArg>>(
+    result: SlashArgsCommand<Ctx, O>,
+    type: CommandDefinition['type'] = 'command',
   ): CommandResult {
     const args = result.args ?? {} as O
     const getArgs = <
@@ -447,13 +525,13 @@ export class InteractionBuilder<Ctx extends object = object> {
     const definition: CommandDefinition = {
       name: result.name,
       description: result.description ?? result.name,
-      type: 'command',
+      type,
+      ...this.#commandMetadata(result),
       options: Object.entries(args).map(([key, option]) => ({
+        ...option,
         type: optionType(option.type),
         name: option.name ?? key,
         description: option.description ?? option.name ?? key,
-        required: option.required,
-        autocomplete: option.autocomplete,
       } as APIApplicationCommandOption)),
       resolve: result.resolve
         ? ({context, ctx}) => {
@@ -471,8 +549,22 @@ export class InteractionBuilder<Ctx extends object = object> {
           return result.autocomplete!(context, ctx as Ctx, rawArgs as SlashCommandArgs<O>)
         }
         : undefined,
+      children: result.commands?.map((command) => this.#definition(command)),
     }
     return this.#publicResult(definition)
+  }
+
+  #commandMetadata(metadata: CommandMetadata): CommandMetadata {
+    return {
+      name_localizations: metadata.name_localizations,
+      description_localizations: metadata.description_localizations,
+      default_member_permissions: metadata.default_member_permissions,
+      dm_permission: metadata.dm_permission,
+      default_permission: metadata.default_permission,
+      nsfw: metadata.nsfw,
+      integration_types: metadata.integration_types,
+      contexts: metadata.contexts,
+    }
   }
 
   #definition(command: CommandResult | CommandDefinition): CommandDefinition {
@@ -490,11 +582,32 @@ export class InteractionBuilder<Ctx extends object = object> {
     }
   }
 
-  #toApplicationCommand(command: CommandDefinition): RESTPostAPIChatInputApplicationCommandsJSONBody {
+  #toApplicationCommand(command: CommandDefinition): RESTPostAPIApplicationCommandsJSONBody {
+    const metadata = this.#commandMetadata(command)
+    if (
+      command.applicationType === ApplicationCommandType.User
+      || command.applicationType === ApplicationCommandType.Message
+    ) {
+      return {
+        ...metadata,
+        type: command.applicationType,
+        name: command.name,
+      }
+    }
+
+    if (command.applicationType === ApplicationCommandType.PrimaryEntryPoint) {
+      return {
+        ...metadata,
+        type: ApplicationCommandType.PrimaryEntryPoint,
+        name: command.name,
+        description: command.description,
+        handler: command.handler,
+      }
+    }
+
     return {
-      type: command.type === 'command' && command.children?.length
-        ? ApplicationCommandType.ChatInput
-        : ApplicationCommandType.ChatInput,
+      ...metadata,
+      type: ApplicationCommandType.ChatInput,
       name: command.name,
       description: command.description,
       ...(command.options?.length ? {options: command.options} : {}),
@@ -524,8 +637,8 @@ export class InteractionBuilder<Ctx extends object = object> {
   }
 
   #tools(): CommandBuilder<Ctx> {
-    const makeOption = <K extends OptionKind>(options: BuilderCommandOptions & {type: K}) =>
-      options as Arg<K, OptionValue<K>>
+    const makeOption = <K extends OptionKind>(options: BuilderCommandOptions & {type: K} & object) =>
+      options as Arg<K, OptionValue<K>, boolean, string | undefined, object>
     const option = Object.assign(makeOption, {
       string: (options: BuilderCommandOptions) => makeOption({...options, type: 'String' as const}),
       integer: (options: BuilderCommandOptions) => makeOption({...options, type: 'Integer' as const}),
