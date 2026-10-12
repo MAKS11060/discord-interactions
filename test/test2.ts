@@ -273,7 +273,7 @@ test('upload test commands', async (t) => {
     },
   ]
 
-  printSchema(commands, {showOptions: true})
+  // printSchema(commands, {showOptions: true})
 
   const {data, error} = await discordRest.bulkSetApplicationCommands({
     auth: (await getToken()).access_token,
@@ -283,6 +283,8 @@ test('upload test commands', async (t) => {
   })
   console.dir(error, {depth: null})
   console.log(data)
+
+  printSchema(data, {showOptions: true})
 })
 
 test('Test 291904', async (t) => {

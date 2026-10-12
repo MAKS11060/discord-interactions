@@ -6,6 +6,7 @@ import {
   ApplicationCommandOptionType,
   ApplicationCommandType,
 } from 'discord-api-types/v10'
+import type {APIAttachment, APIInteractionDataResolvedChannel, APIRole, APIUser} from 'discord-api-types/v10'
 import type {
   ApplicationCommandAutocompleteContext,
   ApplicationCommandContextChatInput,
@@ -34,15 +35,17 @@ export type Arg<
   K extends OptionKind = OptionKind,
   V extends Primitive = Primitive,
   R extends boolean = boolean,
+  Name extends string | undefined = undefined,
 > = {
   type: K
-  description: string
+  name?: Name
+  description?: string
   required: R extends true ? true : false | undefined
   autocomplete?: boolean
   value?: V
 }
 
-type AnyArg = Arg<OptionKind, Primitive>
+type AnyArg = Arg<OptionKind, Primitive, boolean, string | undefined>
 
 export type ResolvedOption<A extends AnyArg> = {
   value: A['required'] extends true ? NonNullable<A['value']> : A['value'] | undefined
@@ -107,27 +110,105 @@ export interface CommandBuilder<Ctx extends object = object> {
 }
 
 type OptionFactory = {
-  <K extends OptionKind, const R extends boolean = false>(
-    options: BuilderCommandOptions & {type: K; required?: R},
-  ): Arg<K, OptionValue<K>, R>
-  string<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'String', string, R>
-  integer<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'Integer', number, R>
-  boolean<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'Boolean', boolean, R>
-  user<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'User', string, R>
-  channel<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'Channel', string, R>
-  role<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'Role', string, R>
-  mentionable<const R extends boolean = false>(
-    options: BuilderCommandOptions & {required?: R},
-  ): Arg<'Mentionable', string, R>
-  number<const R extends boolean = false>(options: BuilderCommandOptions & {required?: R}): Arg<'Number', number, R>
-  attachment<const R extends boolean = false>(
-    options: BuilderCommandOptions & {required?: R},
-  ): Arg<'Attachment', string, R>
+  <K extends OptionKind, const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {type: K; required?: R; name?: Name},
+  ): Arg<K, OptionValue<K>, R, Name>
+  string<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'String', string, R, Name>
+  integer<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Integer', number, R, Name>
+  boolean<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Boolean', boolean, R, Name>
+  user<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'User', string, R, Name>
+  channel<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Channel', string, R, Name>
+  role<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Role', string, R, Name>
+  mentionable<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Mentionable', string, R, Name>
+  number<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Number', number, R, Name>
+  attachment<const R extends boolean = false, const Name extends string | undefined = undefined>(
+    options: BuilderCommandOptions & {required?: R; name?: Name},
+  ): Arg<'Attachment', string, R, Name>
 }
 
 interface BuilderCommandOptions {
-  description: string
+  name?: string
+  description?: string
   autocomplete?: boolean
+}
+
+type SlashCommandsCommand<Ctx extends object> = {
+  name: string
+  description?: string
+}
+
+type SlashCommandArgs<O extends Record<string, AnyArg>> = {
+  [K in keyof O]: O[K]['required'] extends true ? SlashCommandArgValue<O[K]>
+    : SlashCommandArgValue<O[K]> | null
+}
+
+type SlashCommandArgValue<A extends AnyArg> = A['type'] extends 'String' ? string
+  : A['type'] extends 'Integer' | 'Number' ? number
+  : A['type'] extends 'Boolean' ? boolean
+  : A['type'] extends 'User' ? APIUser
+  : A['type'] extends 'Channel' ? APIInteractionDataResolvedChannel
+  : A['type'] extends 'Role' ? APIRole
+  : A['type'] extends 'Mentionable' ? APIUser | APIRole
+  : A['type'] extends 'Attachment' ? APIAttachment
+  : never
+
+type ArgOptionType<A extends AnyArg> = A['type'] extends 'String' ? ApplicationCommandOptionType.String
+  : A['type'] extends 'Integer' ? ApplicationCommandOptionType.Integer
+  : A['type'] extends 'Number' ? ApplicationCommandOptionType.Number
+  : A['type'] extends 'Boolean' ? ApplicationCommandOptionType.Boolean
+  : A['type'] extends 'User' ? ApplicationCommandOptionType.User
+  : A['type'] extends 'Channel' ? ApplicationCommandOptionType.Channel
+  : A['type'] extends 'Role' ? ApplicationCommandOptionType.Role
+  : A['type'] extends 'Mentionable' ? ApplicationCommandOptionType.Mentionable
+  : ApplicationCommandOptionType.Attachment
+
+type ArgDiscordName<A extends AnyArg, Key extends string> = NonNullable<A['name']> extends never ? Key
+  : NonNullable<A['name']>
+
+type SlashCommandContextOptionForArg<Name extends string, A extends AnyArg> = A extends AnyArg
+  ? {type: ArgOptionType<A>; name: Name; required: A['required']}
+  : never
+
+type SlashCommandContextOption<O extends Record<string, AnyArg>> = {
+  [K in keyof O]: SlashCommandContextOptionForArg<
+    ArgDiscordName<O[K], Extract<K, string>>,
+    O[K]
+  >
+}[keyof O]
+
+type SlashCommandsTools<Ctx extends object> = {
+  arg: OptionFactory
+  command<const O extends Record<string, AnyArg> = {}>(
+    definition: SlashCommandsCommand<Ctx> & {
+      args?: O
+      resolve?: (
+        context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
+        args: SlashCommandArgs<O>,
+        ctx: Ctx,
+      ) => APIInteractionResponse | Promise<APIInteractionResponse>
+      autocomplete?: (
+        context: ApplicationCommandAutocompleteContext,
+        ctx: Ctx,
+        args: SlashCommandArgs<O>,
+      ) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
+    },
+  ): CommandResult
 }
 
 type SlashResult<Ctx extends object, O extends Record<string, AnyArg>> = {
@@ -185,6 +266,20 @@ export class InteractionBuilder<Ctx extends object = object> {
   /** Used by DiscordInteraction; command lookup is intentionally kept outside this builder. */
   get commands(): readonly CommandDefinition[] {
     return this.#commands
+  }
+
+  slashCommands(
+    builder: (t: SlashCommandsTools<Ctx>) => Record<string, CommandResult>,
+  ): Record<string, CommandResult> {
+    const tools: SlashCommandsTools<Ctx> = {
+      arg: this.#tools().option,
+      command: (definition) => this.#registerArgsCommand(definition),
+    }
+    const commands = builder(tools)
+    for (const command of Object.values(commands)) {
+      this.#commands.push(this.#definition(command))
+    }
+    return commands
   }
 
   slashCommand<const O extends Record<string, AnyArg>>(
@@ -279,8 +374,8 @@ export class InteractionBuilder<Ctx extends object = object> {
       type,
       options: Object.entries(result.options ?? {}).map(([name, option]) => ({
         type: optionType(option.type),
-        name,
-        description: option.description,
+        name: option.name ?? name,
+        description: option.description ?? option.name ?? name,
         required: option.required,
         autocomplete: option.autocomplete,
       } as APIApplicationCommandOption)),
@@ -293,6 +388,91 @@ export class InteractionBuilder<Ctx extends object = object> {
       children: result.commands?.map((command) => this.#definition(command)),
     }
     return definition
+  }
+
+  #registerArgsCommand<const O extends Record<string, AnyArg>>(
+    result: SlashCommandsCommand<Ctx> & {
+      args?: O
+      resolve?: (
+        context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
+        args: SlashCommandArgs<O>,
+        ctx: Ctx,
+      ) => APIInteractionResponse | Promise<APIInteractionResponse>
+      autocomplete?: (
+        context: ApplicationCommandAutocompleteContext,
+        ctx: Ctx,
+        args: SlashCommandArgs<O>,
+      ) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
+    },
+  ): CommandResult {
+    const args = result.args ?? {} as O
+    const getArgs = <
+      Option extends {type: ApplicationCommandOptionType; name: string; required?: boolean},
+    >(context: ApplicationCommandContextChatInput<Option>) => {
+      const values: Record<string, unknown> = {}
+      for (const [key, arg] of Object.entries(args)) {
+        const name = arg.name ?? key
+        switch (arg.type) {
+          case 'String':
+            values[key] = context.getString(name as never)
+            break
+          case 'Integer':
+            values[key] = context.getInteger(name as never)
+            break
+          case 'Number':
+            values[key] = context.getNumber(name as never)
+            break
+          case 'Boolean':
+            values[key] = context.getBoolean(name as never)
+            break
+          case 'User':
+            values[key] = context.getUser(name as never)
+            break
+          case 'Channel':
+            values[key] = context.getChannel(name as never)
+            break
+          case 'Role':
+            values[key] = context.getRole(name as never)
+            break
+          case 'Mentionable':
+            values[key] = context.getMentionable(name as never)
+            break
+          case 'Attachment':
+            values[key] = context.getAttachment(name as never)
+            break
+        }
+      }
+      return values as SlashCommandArgs<O>
+    }
+    const definition: CommandDefinition = {
+      name: result.name,
+      description: result.description ?? result.name,
+      type: 'command',
+      options: Object.entries(args).map(([key, option]) => ({
+        type: optionType(option.type),
+        name: option.name ?? key,
+        description: option.description ?? option.name ?? key,
+        required: option.required,
+        autocomplete: option.autocomplete,
+      } as APIApplicationCommandOption)),
+      resolve: result.resolve
+        ? ({context, ctx}) => {
+          const commandContext = context as unknown as ApplicationCommandContextChatInput<
+            SlashCommandContextOption<O>
+          >
+          return result.resolve!(commandContext, getArgs(commandContext), ctx as Ctx)
+        }
+        : undefined,
+      autocomplete: result.autocomplete
+        ? ({context, ctx, options}) => {
+          const rawArgs = Object.fromEntries(
+            Object.entries(args).map(([key, arg]) => [key, options[arg.name ?? key]?.value]),
+          )
+          return result.autocomplete!(context, ctx as Ctx, rawArgs as SlashCommandArgs<O>)
+        }
+        : undefined,
+    }
+    return this.#publicResult(definition)
   }
 
   #definition(command: CommandResult | CommandDefinition): CommandDefinition {
