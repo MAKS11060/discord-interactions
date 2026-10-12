@@ -59,8 +59,10 @@ test('Test 607811', async (t) => {
 
   const [command] = interactionBuilder.toJSON()
   assert.equal(command?.name, 'hello')
+  assert.ok(command?.type === ApplicationCommandType.ChatInput)
+  if (command?.type !== ApplicationCommandType.ChatInput) return
   assert.deepEqual(
-    command?.options?.map((option) => [option.type, option.name]),
+    command.options?.map((option) => [option.type, option.name]),
     [[3, 'user'], [4, 'count'], [10, 'number'], [5, 'flag'], [6, 'member'], [7, 'channel'], [8, 'role'], [
       9,
       'mentionable',
@@ -101,4 +103,21 @@ test('Test 607811', async (t) => {
   })
   assert.deepEqual(result, {type: 4, data: {content: 'User Ada say: Hello Ada'}})
   assert.equal(context.getNumber('number'), 4.5)
+})
+
+test('Context menu commands accept flat definitions', () => {
+  const interactionBuilder = new InteractionBuilder()
+  interactionBuilder.user({
+    name: 'user-context',
+    resolve: (context) => context.reply(context.to.user.username),
+  })
+  interactionBuilder.message({
+    name: 'message-context',
+    resolve: (context) => context.reply('message selected'),
+  })
+
+  assert.deepEqual(interactionBuilder.toJSON().map((command) => [command.type, command.name]), [
+    [ApplicationCommandType.User, 'user-context'],
+    [ApplicationCommandType.Message, 'message-context'],
+  ])
 })

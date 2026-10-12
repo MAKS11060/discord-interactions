@@ -1,7 +1,7 @@
 import {ApplicationIntegrationType, InteractionContextType} from 'discord-api-types/v10'
 import {schema} from '../builder.ts'
 
-schema.message((t) => ({
+schema.message({
   name: 'message-context',
   name_localizations: {'en-US': 'message-context'},
   default_member_permissions: '8',
@@ -11,4 +11,4 @@ schema.message((t) => ({
   integration_types: [ApplicationIntegrationType.GuildInstall],
   contexts: [InteractionContextType.Guild],
   resolve: (context) => context.reply('Selected a message'),
-}))
+})

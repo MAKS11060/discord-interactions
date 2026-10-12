@@ -263,23 +263,6 @@ type SlashCommandsTools<Ctx extends object> = {
   }): CommandResult
 }
 
-type SlashResult<Ctx extends object, O extends Record<string, AnyArg>> = {
-  name: string
-  description?: string
-  options?: O
-  resolve?: SlashCommandDefinition<Ctx, O>['resolve']
-  autocomplete?(
-    context: ApplicationCommandAutocompleteContext,
-    ctx: Ctx,
-    options: ResolvedOptions<O>,
-  ): APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
-  commands?: Array<CommandResult | CommandDefinition>
-}
-
-type SlashResultWithOptions<Ctx extends object, O extends Record<string, AnyArg>> =
-  & {options: { [K in keyof O]: O[K] }}
-  & Omit<SlashResult<Ctx, O>, 'options'>
-
 export type CommandResult = {
   name: string
   description?: string
@@ -342,20 +325,6 @@ export class InteractionBuilder<Ctx extends object = object> {
     return commands
   }
 
-  slashCommand<const O extends Record<string, AnyArg>>(
-    builder: (t: CommandBuilder<Ctx>) => SlashResultWithOptions<Ctx, O> | SlashCommandDefinition<Ctx, O>,
-  ): CommandResult
-  slashCommand(
-    builder: (t: CommandBuilder<Ctx>) => SlashResult<Ctx, Record<never, never>>,
-  ): CommandResult
-  slashCommand(
-    builder: (t: CommandBuilder<Ctx>) => SlashResult<Ctx, Record<string, AnyArg>>,
-  ): CommandResult {
-    const result = this.#registerSlash(builder, 'command')
-    this.#commands.push(result)
-    return this.#publicResult(result)
-  }
-
   slashSubcommand(
     builder: (t: CommandBuilder<Ctx>) => SlashSubcommandDefinition,
   ): CommandResult
@@ -388,22 +357,19 @@ export class InteractionBuilder<Ctx extends object = object> {
   }
 
   message(
-    builder: (
-      t: CommandBuilder<Ctx>,
-    ) => CommandMetadata & {
+    config: CommandMetadata & {
       name: string
       resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
     },
   ): CommandResult {
-    const result = builder(this.#tools())
     const definition: CommandDefinition = {
-      name: result.name,
+      name: config.name,
       description: '',
       type: 'command',
       applicationType: ApplicationCommandType.Message,
-      ...this.#commandMetadata(result),
-      resolve: result.resolve
-        ? ({context, ctx}) => result.resolve!(context as ApplicationCommandContextMessage, ctx as Ctx)
+      ...this.#commandMetadata(config),
+      resolve: config.resolve
+        ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextMessage, ctx as Ctx)
         : undefined,
     }
     this.#commands.push(definition)
@@ -411,69 +377,39 @@ export class InteractionBuilder<Ctx extends object = object> {
   }
 
   user(
-    builder: (
-      t: CommandBuilder,
-    ) => CommandMetadata & {
+    config: CommandMetadata & {
       name: string
       resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
     },
   ) {
-    const result = builder(this.#tools())
     const definition: CommandDefinition = {
-      name: result.name,
+      name: config.name,
       description: '',
       type: 'command',
       applicationType: ApplicationCommandType.User,
-      ...this.#commandMetadata(result),
-      resolve: result.resolve
-        ? ({context, ctx}) => result.resolve!(context as ApplicationCommandContextUser, ctx as Ctx)
+      ...this.#commandMetadata(config),
+      resolve: config.resolve
+        ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextUser, ctx as Ctx)
         : undefined,
     }
     this.#commands.push(definition)
     return this.#publicResult(definition)
   }
 
-  #registerSlash<const O extends Record<string, AnyArg>>(
-    builder: (t: CommandBuilder<Ctx>) => SlashResult<Ctx, O>,
-    type: CommandDefinition['type'],
-  ): CommandDefinition {
-    const result = builder(this.#tools())
-    const definition: CommandDefinition = {
-      name: result.name,
-      description: result.description ?? result.name,
-      type,
-      options: Object.entries(result.options ?? {}).map(([name, option]) => ({
-        ...option,
-        type: optionType(option.type),
-        name: option.name ?? name,
-        description: option.description ?? option.name ?? name,
-      } as APIApplicationCommandOption)),
-      resolve: result.resolve
-        ? ({context, ctx}) => result.resolve!(context as ApplicationCommandContextWithOptions<O>, ctx as Ctx)
-        : undefined,
-      autocomplete: result.autocomplete
-        ? ({context, ctx, options}) => result.autocomplete!(context, ctx as Ctx, options as ResolvedOptions<O>)
-        : undefined,
-      children: result.commands?.map((command) => this.#definition(command)),
-    }
-    return definition
-  }
-
   primaryEntryPoint(
-    builder: (t: CommandBuilder<Ctx>) => CommandMetadata & {
+    config: CommandMetadata & {
       name: string
       description?: string
       handler?: EntryPointCommandHandlerType
     },
   ): CommandResult {
-    const result = builder(this.#tools())
     const definition: CommandDefinition = {
-      name: result.name,
-      description: result.description ?? '',
+      name: config.name,
+      description: config.description ?? '',
       type: 'command',
       applicationType: ApplicationCommandType.PrimaryEntryPoint,
-      handler: result.handler,
-      ...this.#commandMetadata(result),
+      handler: config.handler,
+      ...this.#commandMetadata(config),
     }
     this.#commands.push(definition)
     return this.#publicResult(definition)

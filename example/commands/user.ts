@@ -1,7 +1,7 @@
 import {ApplicationIntegrationType, InteractionContextType} from 'discord-api-types/v10'
 import {schema} from '../builder.ts'
 
-schema.user((t) => ({
+schema.user({
   name: 'user-context',
   name_localizations: {'en-US': 'user-context'},
   default_member_permissions: null,
@@ -18,4 +18,4 @@ schema.user((t) => ({
     InteractionContextType.PrivateChannel,
   ],
   resolve: (context) => context.reply(`Selected ${context.to.user.username}`),
-}))
+})

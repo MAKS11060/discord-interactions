@@ -1,7 +1,7 @@
 import {ApplicationIntegrationType, EntryPointCommandHandlerType, InteractionContextType} from 'discord-api-types/v10'
 import {schema} from '../builder.ts'
 
-schema.primaryEntryPoint((t) => ({
+schema.primaryEntryPoint({
   name: 'activity',
   name_localizations: {'en-US': 'activity'},
   description: 'Launch the activity',
@@ -18,4 +18,4 @@ schema.primaryEntryPoint((t) => ({
     InteractionContextType.PrivateChannel,
   ],
   handler: EntryPointCommandHandlerType.AppHandler,
-}))
+})
