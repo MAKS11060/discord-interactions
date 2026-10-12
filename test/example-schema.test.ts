@@ -20,6 +20,7 @@ test('example commands build the complete REST command schema', () => {
       'all-options',
       'activity',
       'command-tree',
+      'hello',
       'message-context',
       'user-context',
     ].sort(),
@@ -91,19 +92,17 @@ test('example commands build the complete REST command schema', () => {
 
 test('argument builder restricts fields to supported option types', () => {
   const builder = new InteractionBuilder()
-  builder.slashCommands((t) => ({
-    invalid: t.command({
-      name: 'invalid',
-      args: {
-        // @ts-expect-error Boolean options do not support autocomplete.
-        boolean: t.arg.boolean({autocomplete: true}),
-        // @ts-expect-error User options do not support choices.
-        user: t.arg.user({choices: [{name: 'Ada', value: 'ada'}]}),
-        // @ts-expect-error Channel options do not support autocomplete.
-        channel: t.arg.channel({autocomplete: true}),
-        // @ts-expect-error String choices must use string values.
-        string: t.arg.string({choices: [{name: 'one', value: 1}]}),
-      },
-    }),
-  }))
+  builder.slashCommands((t) => [t.command({
+    name: 'invalid',
+    args: {
+      // @ts-expect-error Boolean options do not support autocomplete.
+      boolean: t.arg.boolean({autocomplete: true}),
+      // @ts-expect-error User options do not support choices.
+      user: t.arg.user({choices: [{name: 'Ada', value: 'ada'}]}),
+      // @ts-expect-error Channel options do not support autocomplete.
+      channel: t.arg.channel({autocomplete: true}),
+      // @ts-expect-error String choices must use string values.
+      string: t.arg.string({choices: [{name: 'one', value: 1}]}),
+    },
+  })])
 })

@@ -189,14 +189,14 @@ type CommandMetadata = {
   contexts?: InteractionContextType[]
 }
 
-type SlashCommandsCommand<Ctx extends object> = CommandMetadata & {
+type SlashCommandsCommand = CommandMetadata & {
   name: string
   description?: string
-  commands?: CommandResult[]
 }
 
-type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = SlashCommandsCommand<Ctx> & {
+type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = SlashCommandsCommand & {
   args?: O
+  commands?: CommandResult[]
   resolve?: (
     context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
     args: SlashCommandArgs<O>,
@@ -253,7 +253,14 @@ type SlashCommandsTools<Ctx extends object> = {
   command<const O extends Record<string, AnyArg> = {}>(
     definition: SlashArgsCommand<Ctx, O>,
   ): CommandResult
+  declareCommand<const O extends Record<string, AnyArg> = {}>(
+    definition: SlashArgsCommand<Ctx, O>,
+    children?: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+  ): CommandResult
   subcommand<const O extends Record<string, AnyArg> = {}>(
+    definition: SlashArgsCommand<Ctx, O>,
+  ): CommandResult
+  declareSubcommand<const O extends Record<string, AnyArg> = {}>(
     definition: SlashArgsCommand<Ctx, O>,
   ): CommandResult
   group(definition: {
@@ -261,7 +268,16 @@ type SlashCommandsTools<Ctx extends object> = {
     description?: string
     commands: CommandResult[]
   }): CommandResult
+  declareSubcommandGroup(
+    definition: {name: string; description?: string},
+    children: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+  ): CommandResult
 }
+
+type SlashCommandDeclarationTools<Ctx extends object> = Pick<
+  SlashCommandsTools<Ctx>,
+  'arg' | 'declareCommand' | 'declareSubcommand' | 'declareSubcommandGroup'
+>
 
 export type CommandResult = {
   name: string
@@ -303,13 +319,69 @@ export class InteractionBuilder<Ctx extends object = object> {
     return this.#commands
   }
 
+  get arg(): OptionFactory {
+    return this.#tools().option
+  }
+
   slashCommands(
-    builder: (t: SlashCommandsTools<Ctx>) => Record<string, CommandResult>,
-  ): Record<string, CommandResult> {
-    const tools: SlashCommandsTools<Ctx> = {
+    commands:
+      | readonly CommandResult[]
+      | ((tools: SlashCommandsTools<Ctx>) => readonly CommandResult[]),
+  ): CommandResult[] {
+    const tools = this.#slashCommandsTools()
+    const declared = typeof commands === 'function' ? commands(tools) : commands
+    const registered = [...declared]
+    for (const command of registered) {
+      this.#registerSlashCommand(command)
+    }
+    return registered
+  }
+
+  declareCommand<const O extends Record<string, AnyArg> = {}>(
+    config: SlashArgsCommand<Ctx, O>,
+    children?: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+  ): CommandResult {
+    const childCommands = children?.(this.#slashCommandDeclarationTools())
+    return this.#buildArgsCommand(
+      childCommands ? {...config, commands: childCommands} : config,
+      'command',
+    )
+  }
+
+  declareSubcommand<const O extends Record<string, AnyArg> = {}>(
+    config: SlashArgsCommand<Ctx, O>,
+  ): CommandResult {
+    return this.#buildArgsCommand(config, 'subcommand')
+  }
+
+  declareSubcommandGroup(
+    config: {name: string; description?: string},
+    children: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+  ): CommandResult {
+    return this.#publicResult({
+      name: config.name,
+      description: config.description ?? config.name,
+      type: 'group',
+      children: children(this.#slashCommandDeclarationTools()).map((command) => this.#definition(command)),
+    })
+  }
+
+  #slashCommandDeclarationTools(): SlashCommandDeclarationTools<Ctx> {
+    return {
+      arg: this.arg,
+      declareCommand: (config, children) => this.declareCommand(config, children),
+      declareSubcommand: (config) => this.declareSubcommand(config),
+      declareSubcommandGroup: (config, children) => this.declareSubcommandGroup(config, children),
+    }
+  }
+
+  #slashCommandsTools(): SlashCommandsTools<Ctx> {
+    return {
       arg: this.#tools().option,
-      command: (definition) => this.#registerArgsCommand(definition),
-      subcommand: (definition) => this.#registerArgsCommand(definition, 'subcommand'),
+      command: (definition) => this.#buildArgsCommand(definition),
+      declareCommand: (definition, children) => this.declareCommand(definition, children),
+      subcommand: (definition) => this.#buildArgsCommand(definition, 'subcommand'),
+      declareSubcommand: (definition) => this.declareSubcommand(definition),
       group: ({name, description, commands}) =>
         this.#publicResult({
           name,
@@ -317,12 +389,8 @@ export class InteractionBuilder<Ctx extends object = object> {
           type: 'group',
           children: commands.map((command) => this.#definition(command)),
         }),
+      declareSubcommandGroup: (definition, children) => this.declareSubcommandGroup(definition, children),
     }
-    const commands = builder(tools)
-    for (const command of Object.values(commands)) {
-      this.#commands.push(this.#definition(command))
-    }
-    return commands
   }
 
   slashSubcommand(
@@ -361,8 +429,27 @@ export class InteractionBuilder<Ctx extends object = object> {
       name: string
       resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
     },
+  ): CommandResult
+  message(command: CommandResult): CommandResult
+  message(
+    config:
+      | CommandResult
+      | (CommandMetadata & {
+        name: string
+        resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
+      }),
   ): CommandResult {
-    const definition: CommandDefinition = {
+    const command = this.#isCommandResult(config) ? config : this.declareMessage(config)
+    return this.#registerRootCommand(command, ApplicationCommandType.Message)
+  }
+
+  declareMessage(
+    config: CommandMetadata & {
+      name: string
+      resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
+    },
+  ): CommandResult {
+    return this.#publicResult({
       name: config.name,
       description: '',
       type: 'command',
@@ -371,9 +458,7 @@ export class InteractionBuilder<Ctx extends object = object> {
       resolve: config.resolve
         ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextMessage, ctx as Ctx)
         : undefined,
-    }
-    this.#commands.push(definition)
-    return this.#publicResult(definition)
+    })
   }
 
   user(
@@ -381,8 +466,27 @@ export class InteractionBuilder<Ctx extends object = object> {
       name: string
       resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
     },
-  ) {
-    const definition: CommandDefinition = {
+  ): CommandResult
+  user(command: CommandResult): CommandResult
+  user(
+    config:
+      | CommandResult
+      | (CommandMetadata & {
+        name: string
+        resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
+      }),
+  ): CommandResult {
+    const command = this.#isCommandResult(config) ? config : this.declareUser(config)
+    return this.#registerRootCommand(command, ApplicationCommandType.User)
+  }
+
+  declareUser(
+    config: CommandMetadata & {
+      name: string
+      resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
+    },
+  ): CommandResult {
+    return this.#publicResult({
       name: config.name,
       description: '',
       type: 'command',
@@ -391,9 +495,7 @@ export class InteractionBuilder<Ctx extends object = object> {
       resolve: config.resolve
         ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextUser, ctx as Ctx)
         : undefined,
-    }
-    this.#commands.push(definition)
-    return this.#publicResult(definition)
+    })
   }
 
   primaryEntryPoint(
@@ -402,20 +504,82 @@ export class InteractionBuilder<Ctx extends object = object> {
       description?: string
       handler?: EntryPointCommandHandlerType
     },
+  ): CommandResult
+  primaryEntryPoint(command: CommandResult): CommandResult
+  primaryEntryPoint(
+    config:
+      | CommandResult
+      | (CommandMetadata & {
+        name: string
+        description?: string
+        handler?: EntryPointCommandHandlerType
+      }),
   ): CommandResult {
-    const definition: CommandDefinition = {
+    const command = this.#isCommandResult(config) ? config : this.declarePrimaryEntryPoint(config)
+    return this.#registerRootCommand(command, ApplicationCommandType.PrimaryEntryPoint)
+  }
+
+  declarePrimaryEntryPoint(
+    config: CommandMetadata & {
+      name: string
+      description?: string
+      handler?: EntryPointCommandHandlerType
+    },
+  ): CommandResult {
+    return this.#publicResult({
       name: config.name,
       description: config.description ?? '',
       type: 'command',
       applicationType: ApplicationCommandType.PrimaryEntryPoint,
       handler: config.handler,
       ...this.#commandMetadata(config),
-    }
-    this.#commands.push(definition)
-    return this.#publicResult(definition)
+    })
   }
 
-  #registerArgsCommand<const O extends Record<string, AnyArg>>(
+  #registerRootCommand(command: CommandResult, applicationType?: ApplicationCommandType): CommandResult {
+    const definition = this.#definition(command)
+    if (definition.type !== 'command' || definition.applicationType !== applicationType) {
+      throw new Error(`Expected a ${applicationType ?? 'chat input'} root command`)
+    }
+    this.#commands.push(definition)
+    return command
+  }
+
+  #registerSlashCommand(command: CommandResult): void {
+    const definition = this.#definition(command)
+    if (
+      definition.type !== 'command'
+      || (definition.applicationType !== undefined && definition.applicationType !== ApplicationCommandType.ChatInput)
+    ) {
+      throw new Error('slashCommands only accepts root chat input commands')
+    }
+    this.#validateSlashCommand(definition)
+    this.#commands.push(definition)
+  }
+
+  #validateSlashCommand(command: CommandDefinition): void {
+    if (command.children?.length && command.options?.length) {
+      throw new Error(`Slash command "${command.name}" cannot have both options and subcommands`)
+    }
+    for (const child of command.children ?? []) {
+      if (child.type === 'group') {
+        if (
+          child.options?.length || child.resolve
+          || child.children?.some((nested) => nested.type !== 'subcommand' || nested.children?.length)
+        ) {
+          throw new Error(`Subcommand group "${child.name}" may only contain subcommands`)
+        }
+      } else if (child.type !== 'subcommand' || child.children?.length) {
+        throw new Error(`Slash command "${command.name}" may only contain subcommands and groups`)
+      }
+    }
+  }
+
+  #isCommandResult(value: object): value is CommandResult {
+    return commandDefinition in value && value[commandDefinition] !== undefined
+  }
+
+  #buildArgsCommand<const O extends Record<string, AnyArg>>(
     result: SlashArgsCommand<Ctx, O>,
     type: CommandDefinition['type'] = 'command',
   ): CommandResult {
@@ -426,38 +590,54 @@ export class InteractionBuilder<Ctx extends object = object> {
       const values: Record<string, unknown> = {}
       for (const [key, arg] of Object.entries(args)) {
         const name = arg.name ?? key
-        switch (arg.type) {
-          case 'String':
-            values[key] = context.getString(name as never)
-            break
-          case 'Integer':
-            values[key] = context.getInteger(name as never)
-            break
-          case 'Number':
-            values[key] = context.getNumber(name as never)
-            break
-          case 'Boolean':
-            values[key] = context.getBoolean(name as never)
-            break
-          case 'User':
-            values[key] = context.getUser(name as never)
-            break
-          case 'Channel':
-            values[key] = context.getChannel(name as never)
-            break
-          case 'Role':
-            values[key] = context.getRole(name as never)
-            break
-          case 'Mentionable':
-            values[key] = context.getMentionable(name as never)
-            break
-          case 'Attachment':
-            values[key] = context.getAttachment(name as never)
-            break
-        }
+        Object.defineProperty(values, key, {
+          configurable: true,
+          enumerable: true,
+          get() {
+            let value: unknown
+            switch (arg.type) {
+              case 'String':
+                value = context.getString(name as never)
+                break
+              case 'Integer':
+                value = context.getInteger(name as never)
+                break
+              case 'Number':
+                value = context.getNumber(name as never)
+                break
+              case 'Boolean':
+                value = context.getBoolean(name as never)
+                break
+              case 'User':
+                value = context.getUser(name as never)
+                break
+              case 'Channel':
+                value = context.getChannel(name as never)
+                break
+              case 'Role':
+                value = context.getRole(name as never)
+                break
+              case 'Mentionable':
+                value = context.getMentionable(name as never)
+                break
+              case 'Attachment':
+                value = context.getAttachment(name as never)
+                break
+            }
+            // cache result
+            Object.defineProperty(values, key, {
+              configurable: true,
+              enumerable: true,
+              value,
+              writable: false,
+            })
+            return value
+          },
+        })
       }
       return values as SlashCommandArgs<O>
     }
+
     const definition: CommandDefinition = {
       name: result.name,
       description: result.description ?? result.name,
@@ -487,6 +667,7 @@ export class InteractionBuilder<Ctx extends object = object> {
         : undefined,
       children: result.commands?.map((command) => this.#definition(command)),
     }
+
     return this.#publicResult(definition)
   }
 

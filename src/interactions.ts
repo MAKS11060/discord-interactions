@@ -36,6 +36,8 @@ export class DiscordInteraction<Ctx extends object = object> {
   }
 
   async execute(interaction: APIInteraction, ctx?: Ctx): Promise<APIInteractionResponse> {
+    // console.dir(interaction, {depth: null})
+
     if (interaction.type === InteractionType.Ping) {
       return {type: InteractionResponseType.Pong}
     }
