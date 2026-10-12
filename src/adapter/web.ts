@@ -1,7 +1,8 @@
+import type {APIInteraction} from 'discord-api-types/v10'
 import {InteractionError} from '../errors.ts'
-import type {DiscordInteraction} from '../interactions.ts'
+import {DiscordInteraction, DiscordInteractions} from '../interactions.ts'
 import {
-    concat,
+  concat,
   ERROR_BadRequestSignature,
   ERROR_ExecuteFailed,
   ERROR_MethodNotAllowed,
@@ -28,11 +29,16 @@ const encoder = new TextEncoder()
  *
  *   return new Response('Not Found', {status: 404})
  * })
+ *
+ * // For multiple applications, create the registry once:
+ * const discordApps = new DiscordInteractions([
+ *   {clientId: 'application-id', publicKey, schema},
+ * ])
  * ```
  */
-export const interactionHandler = async (
+export const interactionHandler = async <Ctx extends object>(
   request: Request,
-  app: DiscordInteraction,
+  apps: DiscordInteraction<Ctx> | DiscordInteractions<Ctx>,
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return Response.json(ERROR_MethodNotAllowed, {status: 405})
@@ -45,7 +51,36 @@ export const interactionHandler = async (
     return Response.json(ERROR_BadRequestSignature, {status: 401})
   }
 
-  const body = await request.clone().bytes()
+  const blob = await request.blob()
+  const body = await blob.bytes()
+  let app: DiscordInteraction
+  let interaction: APIInteraction | undefined
+
+  if (apps instanceof DiscordInteractions) {
+    let payload: unknown
+    try {
+      payload = JSON.parse(await blob.text())
+    } catch (error) {
+      if (error instanceof SyntaxError) return Response.json(ERROR_BadRequestSignature, {status: 401})
+      throw error
+    }
+    if (
+      payload === undefined
+      || typeof payload !== 'object'
+      || payload === null
+      || !('application_id' in payload)
+      || typeof payload.application_id !== 'string'
+    ) {
+      return Response.json(ERROR_BadRequestSignature, {status: 401})
+    }
+    const selectedApp = apps.get(payload.application_id)
+    if (!selectedApp) return Response.json(ERROR_BadRequestSignature, {status: 401})
+    app = selectedApp
+    interaction = payload as APIInteraction
+  } else {
+    app = apps
+  }
+
   const valid = await crypto.subtle.verify(
     app.publicKey.algorithm,
     app.publicKey,
@@ -59,9 +94,7 @@ export const interactionHandler = async (
   // execute
   try {
     return Response.json(
-      await app.execute(
-        await request.json(),
-      ),
+      await app.execute(interaction ?? JSON.parse(await blob.text()) as APIInteraction),
     )
   } catch (e) {
     if (e instanceof InteractionError) {

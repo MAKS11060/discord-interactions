@@ -19,11 +19,18 @@ import {
 } from './context.ts'
 import {InteractionError} from './errors.ts'
 
+export type DiscordInteractionOptions<Ctx extends object = object> = {
+  publicKey: CryptoKey
+  clientId?: string
+  schema: InteractionBuilder<Ctx>
+}
+
 export class DiscordInteraction<Ctx extends object = object> {
   readonly publicKey: CryptoKey
+  readonly clientId?: string
   readonly schema: InteractionBuilder<Ctx>
 
-  constructor(options: {publicKey: CryptoKey; schema: InteractionBuilder<Ctx>}) {
+  constructor(options: DiscordInteractionOptions<Ctx>) {
     if (
       options.publicKey.type !== 'public'
       || options.publicKey.algorithm.name !== 'Ed25519'
@@ -32,6 +39,7 @@ export class DiscordInteraction<Ctx extends object = object> {
       throw new InteractionError('Invalid publicKey format')
     }
     this.publicKey = options.publicKey
+    this.clientId = options.clientId
     this.schema = options.schema
   }
 
@@ -114,6 +122,24 @@ export class DiscordInteraction<Ctx extends object = object> {
       options = childOption.options ?? []
     }
     return command
+  }
+}
+
+export class DiscordInteractions<Ctx extends object = object> {
+  readonly #apps: Map<string, DiscordInteraction<Ctx>>
+
+  constructor(apps: Iterable<DiscordInteractionOptions<Ctx> & {clientId: string}>) {
+    this.#apps = new Map()
+    for (const options of apps) {
+      if (this.#apps.has(options.clientId)) {
+        throw new InteractionError(`Duplicate Discord application clientId: ${options.clientId}`)
+      }
+      this.#apps.set(options.clientId, new DiscordInteraction(options))
+    }
+  }
+
+  get(clientId: string): DiscordInteraction<Ctx> | undefined {
+    return this.#apps.get(clientId)
   }
 }
 

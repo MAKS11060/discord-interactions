@@ -1,7 +1,7 @@
 import type {APIInteraction} from 'discord-api-types/v10'
 import {createMiddleware} from 'hono/factory'
 import {InteractionError} from '../errors.ts'
-import type {DiscordInteraction} from '../interactions.ts'
+import {type DiscordInteraction, DiscordInteractions} from '../interactions.ts'
 import {
   concat,
   ERROR_BadRequestSignature,
@@ -25,10 +25,34 @@ const encoder = new TextEncoder()
  * app.post('/api/discord/interactions', interactionHandler(discordApp))
  * ```
  */
-export const interactionHandler = (app: DiscordInteraction) => {
+export const interactionHandler = (apps: DiscordInteraction | DiscordInteractions) => {
   return createMiddleware(async (c, next) => {
     if (c.req.method !== 'POST') {
       return c.json(ERROR_MethodNotAllowed, {status: 405})
+    }
+
+    let app: DiscordInteraction
+    let interaction: APIInteraction | undefined
+
+    // multi apps
+    if (apps instanceof DiscordInteractions) {
+      const payload = await c.req.json()
+
+      if (
+        payload === undefined
+        || typeof payload !== 'object'
+        || payload === null
+        || !('application_id' in payload)
+        || typeof payload.application_id !== 'string'
+      ) {
+        return c.json(ERROR_BadRequestSignature, {status: 401})
+      }
+      const selectedApp = apps.get(payload.application_id)
+      if (!selectedApp) return c.json(ERROR_BadRequestSignature, {status: 401})
+      app = selectedApp
+      interaction = payload as APIInteraction
+    } else {
+      app = apps
     }
 
     // verify
@@ -52,7 +76,7 @@ export const interactionHandler = (app: DiscordInteraction) => {
     try {
       return c.json(
         await app.execute(
-          await c.req.json<APIInteraction>(),
+          interaction ?? await c.req.json<APIInteraction>(),
         ) as unknown, // hono can't forward a large type
       )
     } catch (e) {
