@@ -52,6 +52,7 @@
     "lint": "dprint check && tsc --noEmit",
     "tc": "tsc --noEmit",
     "tcw": "tsc --noEmit --watch",
+    "cli": "node --env-file-if-exists=.env --import tsx ./cli/index.ts",
     "dev": "deno run -A --env-file --watch-hmr  --unstable-no-legacy-abort ./example/main.ts",
     "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
     "dev:bun": "bun --hot ./example/main.ts",

@@ -1,101 +1,127 @@
 <h1 align="center">Discord Interactions</h1>
 <div align="center">
-  <a href="https://jsr.io/@maks11060/discord-interactions">
-    <img src="https://jsr.io/badges/@maks11060/discord-interactions">
+  <a href="https://www.npmjs.com/package/@maks11060/discord-interactions">
+    <img src="https://img.shields.io/npm/v/@maks11060/discord-interactions">
   </a>
   <a href="https://github.com/MAKS11060/discord-interactions/actions/workflows/ci.yml">
     <img src="https://github.com/MAKS11060/discord-interactions/actions/workflows/ci.yml/badge.svg">
   </a>
 </div>
 
-### Library for handling **Discord Interactions**.
-
-Handle slash command, user and chat command.
-[Overview of Interactions](https://discord.com/developers/docs/interactions/overview)
+A TypeScript library for handling Discord slash commands, user and message context menu commands, and interactions.
+See Discord's [Interactions overview](https://discord.com/developers/docs/interactions/overview).
 
 ## Quick Start
 
-1. Create a new application on the [Discord Developer Portal](https://discord.com/developers/applications).
-2. Add your application to your Discord server by visiting the following URL and replacing `your_client_id` with your
-   actual client ID:
-   - `https://discord.com/oauth2/authorize?client_id=your_client_id`
-3. Copy the `PUBLIC KEY` from your application's settings page and add it to your `.env` file.
-4. Copy the `CLIENT_ID` and `CLIENT_SECRET` from the OAuth2 page of your application's settings and add them to your
-   `.env` file.
-
-### Environment
-
-For local development. Run for init `.env` file
-
-```sh
-cp .env.example .env
-```
+1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications).
+2. In **General Information**, copy the application ID and public key. In **OAuth2**, copy the client secret.
+3. Configure an HTTPS interactions endpoint in the Developer Portal.
+4. Add the credentials to your environment:
 
 ```env
-# Discord application settings
-# CLIENT_ID=        # Required for deploying commands
-# CLIENT_SECRET=    # Required for deploying commands
-CLIENT_PUBLIC_KEY=  # Required for verifying requests
+CLIENT_ID=your-application-id
+CLIENT_SECRET=your-client-secret
+CLIENT_PUBLIC_KEY=your-application-public-key
 ```
 
-## Install from [JSR](https://jsr.io/@maks11060/discord-interactions)
-
-```sh
-pnpm add @maks11060/discord-interactions
-```
-
-## Usage
-
-use `interactionHandler` from `/web` to use any server based on [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request) / [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response)
+5. Create a command schema and interaction handler:
 
 ```ts
-// main.ts
-import {serve} from '#serve'
+import {DiscordInteraction, importPublicKey, InteractionBuilder} from '@maks11060/discord-interactions'
 import {interactionHandler} from '@maks11060/discord-interactions/web'
-import {app} from './app.ts'
 
-serve(async (req: Request): Promise<Response> => {
-  const url = new URL(req.url)
+const schema = new InteractionBuilder()
+const clientPublicKey = process.env.CLIENT_PUBLIC_KEY
 
-  if (req.method === 'POST' && url.pathname === '/api/discord/interactions') {
-    const response = await interactionHandler(req, app)
-    return response
-  }
+if (!clientPublicKey) throw new Error('CLIENT_PUBLIC_KEY is required')
 
-  return new Response('Not Found', {status: 404})
-})
-```
+schema.slashCommands((t) => [
+  t.command({
+    name: 'hello',
+    description: 'Say hello',
+    args: {
+      name: t.arg.string({description: 'Who to greet', required: true}),
+    },
+    resolve: (context, args) => context.reply(`Hello, ${args.name}!`),
+  }),
+])
 
-Init interaction app
-
-```ts
-// app.ts
-import {DiscordInteraction, importPublicKey} from '#app'
-import {getEnvRequired} from '#env'
-import {schema} from './builder.ts'
-
-import './schema.ts' // load schema
-
-export const app = new DiscordInteraction({
-  publicKey: await importPublicKey(getEnvRequired('CLIENT_PUBLIC_KEY')),
+const discordApp = new DiscordInteraction({
+  publicKey: await importPublicKey(clientPublicKey),
   schema,
 })
+
+export const handleRequest = (request: Request) => interactionHandler(request, discordApp)
 ```
 
-Init schema builder for commands
+Route Discord's interactions URL to `handleRequest` using your server framework. The handler verifies Discord's request
+signature before executing a command. Your endpoint must be publicly reachable over HTTPS.
+
+The schema defines handlers, but commands must also be registered with Discord to appear in the client. Use Discord's
+application command API for registration; the repository CLI currently lists commands, while `push` is planned.
+
+## Install from npm
+
+```sh
+npm install @maks11060/discord-interactions
+```
+
+The package also provides framework adapters:
 
 ```ts
-// builder.ts
-import {InteractionBuilder} from '#app'
-
-export const schema = new InteractionBuilder()
+import {interactionHandler} from '@maks11060/discord-interactions/web'
 ```
 
-Use `schema` for define **slashCommand** / **userCommand** / **messageCommand**
+Use the `/web` adapter with a `Request`/`Response` server such as Node.js, Deno, or Bun. Use `/hono` to mount a handler
+as Hono middleware:
 
 ```ts
-// schema.ts
-import {schema} from './builder.ts'
+import {interactionHandler} from '@maks11060/discord-interactions/hono'
 
-schema // TODO
+app.post('/api/discord/interactions', interactionHandler(discordApp))
 ```
+
+## Define commands
+
+Use an `InteractionBuilder` to define commands and combine them into a schema. Argument types are inferred in the
+`resolve` callback. Declarations can be kept separate from registration and reused across schemas:
+
+```ts
+const schema = new InteractionBuilder()
+
+const ping = schema.declareCommand({
+  name: 'ping',
+  description: 'Check whether the bot is responding',
+  resolve: (context) => context.reply('Pong!'),
+})
+
+schema.slashCommands([ping])
+```
+
+The builder also supports subcommands, subcommand groups, context menu commands, and primary entry point commands.
+Inside `slashCommands`, options are built with `t.arg.string()`, `t.arg.integer()`, `t.arg.user()`, and the other Discord
+option helpers. For reusable declarations, use `schema.arg`.
+
+## CLI
+
+In this repository, the CLI loads credentials from `.env`:
+
+```sh
+pnpm cli -- me
+pnpm cli -- list
+pnpm cli -- list --guild 123456789012345678
+```
+
+`me` checks the application credentials and confirms that `CLIENT_PUBLIC_KEY` matches Discord. `list` displays registered
+global commands; `--guild <id>` lists commands for a server. `ls`, `whoami`, and `login` are aliases.
+
+## Examples
+
+The [example directory](./example) contains a complete server setup, command definitions for all option types, context
+menu commands, and command groups.
+
+## TODO
+
+- Add CLI `pull` and `push` commands.
+- Support multiple applications in the CLI.
+- Add a `.discord.json` file for CLI settings and `push` paths.
