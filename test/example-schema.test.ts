@@ -1,4 +1,8 @@
-import {ApplicationCommandOptionType, ApplicationCommandType, type RESTPutAPIApplicationCommandsJSONBody} from 'discord-api-types/v10'
+import {
+  ApplicationCommandOptionType,
+  ApplicationCommandType,
+  type RESTPutAPIApplicationCommandsJSONBody,
+} from 'discord-api-types/v10'
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {schema} from '../example/builder.ts'
@@ -102,21 +106,4 @@ test('argument builder restricts fields to supported option types', () => {
       },
     }),
   }))
-})
-
-test('Test 121298', async (t) => {
-
-  const commands: RESTPutAPIApplicationCommandsJSONBody= [{
-    type: ApplicationCommandType.ChatInput,
-    name: "",
-    description: "",
-
-    options: [
-      {
-        type: ApplicationCommandOptionType.Subcommand,
-
-      }
-    ]
-  }]
-
 })
