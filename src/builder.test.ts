@@ -50,6 +50,8 @@ test('Test 607811', async (t) => {
       c.getRole('role') satisfies APIRole | null
       c.getMentionable('mentionable') satisfies APIUser | APIRole | null
       c.getAttachment('file') satisfies APIAttachment | null
+      // @ts-expect-error The getter name must refer to an option of the matching type.
+      c.getInteger('user')
 
       return c.reply(`User ${c.from.user.global_name} say: Hello ${args.text}`)
     },

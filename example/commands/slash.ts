@@ -77,7 +77,7 @@ const allOptions = schema.declareCommand({
   },
   resolve: (context, args) => {
     // console.log(context)
-    context.getInteger('integer')
+    console.log(context.getInteger('integer'))
     return context.reply(`Received ${args.integer}`)
   },
 })

@@ -174,7 +174,6 @@ type OptionFactory = {
 }
 
 interface BuilderCommandOptions {
-  name?: string
   description?: string
 }
 
@@ -224,18 +223,23 @@ type SlashCommandArgValue<A extends AnyArg> = A['type'] extends 'String' ? strin
   : A['type'] extends 'Attachment' ? APIAttachment
   : never
 
-type ArgOptionType<A extends AnyArg> = A['type'] extends 'String' ? ApplicationCommandOptionType.String
-  : A['type'] extends 'Integer' ? ApplicationCommandOptionType.Integer
-  : A['type'] extends 'Number' ? ApplicationCommandOptionType.Number
-  : A['type'] extends 'Boolean' ? ApplicationCommandOptionType.Boolean
-  : A['type'] extends 'User' ? ApplicationCommandOptionType.User
-  : A['type'] extends 'Channel' ? ApplicationCommandOptionType.Channel
-  : A['type'] extends 'Role' ? ApplicationCommandOptionType.Role
-  : A['type'] extends 'Mentionable' ? ApplicationCommandOptionType.Mentionable
-  : ApplicationCommandOptionType.Attachment
+type ArgOptionTypes = {
+  String: ApplicationCommandOptionType.String
+  Integer: ApplicationCommandOptionType.Integer
+  Number: ApplicationCommandOptionType.Number
+  Boolean: ApplicationCommandOptionType.Boolean
+  User: ApplicationCommandOptionType.User
+  Channel: ApplicationCommandOptionType.Channel
+  Role: ApplicationCommandOptionType.Role
+  Mentionable: ApplicationCommandOptionType.Mentionable
+  Attachment: ApplicationCommandOptionType.Attachment
+}
 
-type ArgDiscordName<A extends AnyArg, Key extends string> = NonNullable<A['name']> extends never ? Key
-  : NonNullable<A['name']>
+type ArgOptionType<A extends AnyArg> = ArgOptionTypes[A['type']]
+
+type ArgDiscordName<A extends AnyArg, Key extends string> = [Extract<A['name'], string>] extends [never] ? Key
+  : string extends Extract<A['name'], string> ? Key
+  : Extract<A['name'], string>
 
 type SlashCommandContextOptionForArg<Name extends string, A extends AnyArg> = A extends AnyArg
   ? {type: ArgOptionType<A>; name: Name; required: A['required']}
