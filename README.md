@@ -57,8 +57,8 @@ export const handleRequest = (request: Request) => interactionHandler(request, d
 Route Discord's interactions URL to `handleRequest` using your server framework. The handler verifies Discord's request
 signature before executing a command. Your endpoint must be publicly reachable over HTTPS.
 
-The schema defines handlers, but commands must also be registered with Discord to appear in the client. Use Discord's
-application command API for registration; the repository CLI currently lists commands, while `push` is planned.
+The schema defines handlers, but commands must also be registered with Discord to appear in the client. Use the CLI's
+`push` command to register and update application commands.
 
 ## Install from npm
 
@@ -107,21 +107,28 @@ option helpers. For reusable declarations, use `schema.arg`.
 In this repository, the CLI loads credentials from `.env`:
 
 ```sh
+pnpm cli -- init --schema ./example/builder.ts
+pnpm cli -- push --all
+pnpm cli -- push --name ping
 pnpm cli -- me
 pnpm cli -- list
 pnpm cli -- list --guild 123456789012345678
 ```
 
 `me` checks the application credentials and confirms that `CLIENT_PUBLIC_KEY` matches Discord. `list` displays registered
-global commands; `--guild <id>` lists commands for a server. `ls`, `whoami`, and `login` are aliases.
+global commands; `--guild <id>` lists commands for a server. `init` creates `.discord.json` without overwriting an
+existing file. Its optional `--schema` value is stored as an application schema path; `CLIENT_ID`,
+`CLIENT_PUBLIC_KEY`, and `CLIENT_SECRET` are copied into that entry when both the ID and public key are set.
+
+The config contains an `applications` array and a `$schema` URL. Each application can define `schema`, `clientId`,
+`clientSecret`, and `publicKey`. `push` lists the configured applications and, when run interactively, lets you select
+an application and either all commands or selected commands. Use `--all` for bulk synchronization (commands missing
+from the schema are removed from Discord) or repeat `--name <name>` to upsert selected commands without removing the
+others. `--schema <path>` overrides the configured schema path. Credentials can come from the config or `.env`;
+`CLIENT_ID` and `CLIENT_SECRET` are required to push. The checked-in JSON Schema is generated from the Zod config schema
+with `pnpm generate:discord-schema`. `ls`, `whoami`, and `login` are aliases.
 
 ## Examples
 
 The [example directory](./example) contains a complete server setup, command definitions for all option types, context
 menu commands, and command groups.
-
-## TODO
-
-- Add CLI `pull` and `push` commands.
-- Support multiple applications in the CLI.
-- Add a `.discord.json` file for CLI settings and `push` paths.

@@ -39,6 +39,18 @@ const createDependencies = (): CliDependencies & {calls: string[]} => {
         calls.push(`guild:${accessToken}:${clientId}:${guildId}`)
         return {data: []}
       },
+      createCommand: async (_accessToken, _clientId, body) => {
+        calls.push(`create:${body.name}`)
+        return {data: {}}
+      },
+      updateCommand: async (_accessToken, _clientId, commandId, body) => {
+        calls.push(`update:${commandId}:${body.name}`)
+        return {data: {}}
+      },
+      bulkSetCommands: async (_accessToken, _clientId, body) => {
+        calls.push(`bulk:${body?.length ?? 0}`)
+        return {data: []}
+      },
     },
   }
   return Object.assign(dependencies, {calls})

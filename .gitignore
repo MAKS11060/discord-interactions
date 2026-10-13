@@ -5,4 +5,4 @@ dist
 *.tgz
 
 .env
-.discord
+.discord.json

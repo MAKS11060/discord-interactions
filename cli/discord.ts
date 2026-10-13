@@ -15,6 +15,9 @@ type Authorization = {
 }
 
 type CommandList = Awaited<ReturnType<typeof discordRest.listApplicationCommands>>['data']
+type CreateCommandBody = Parameters<typeof discordRest.createApplicationCommand>[0]['body']
+type UpdateCommandBody = Parameters<typeof discordRest.updateApplicationCommand>[0]['body']
+type BulkSetCommandBody = Parameters<typeof discordRest.bulkSetApplicationCommands>[0]['body']
 
 export type DiscordApi = {
   getAuthorization: (accessToken: string) => Promise<{data?: Authorization; error?: unknown}>
@@ -24,6 +27,22 @@ export type DiscordApi = {
     clientId: string,
     guildId: string,
   ) => Promise<{data?: CommandList; error?: unknown}>
+  createCommand: (
+    accessToken: string,
+    clientId: string,
+    body: CreateCommandBody,
+  ) => Promise<{data?: unknown; error?: unknown}>
+  updateCommand: (
+    accessToken: string,
+    clientId: string,
+    commandId: string,
+    body: UpdateCommandBody,
+  ) => Promise<{data?: unknown; error?: unknown}>
+  bulkSetCommands: (
+    accessToken: string,
+    clientId: string,
+    body: BulkSetCommandBody,
+  ) => Promise<{data?: unknown; error?: unknown}>
 }
 
 export type CliDependencies = {
@@ -42,6 +61,24 @@ const discordApi: DiscordApi = {
     discordRest.listGuildApplicationCommands({
       auth: accessToken,
       path: {application_id: clientId, guild_id: guildId},
+    }),
+  createCommand: (accessToken, clientId, body) =>
+    discordRest.createApplicationCommand({
+      auth: accessToken,
+      path: {application_id: clientId},
+      body,
+    }),
+  updateCommand: (accessToken, clientId, commandId, body) =>
+    discordRest.updateApplicationCommand({
+      auth: accessToken,
+      path: {application_id: clientId, command_id: commandId},
+      body,
+    }),
+  bulkSetCommands: (accessToken, clientId, body) =>
+    discordRest.bulkSetApplicationCommands({
+      auth: accessToken,
+      path: {application_id: clientId},
+      body,
     }),
 }
 
@@ -63,16 +100,21 @@ const assertApiSuccess = (error: unknown): void => {
   if (error !== undefined) throw new Error(`Discord API request failed: ${getApiErrorMessage(error)}`)
 }
 
-const createDependencies = (): CliDependencies => {
-  let token: OAuth2TokenResponse | undefined
+export const createCliDependencies = (): CliDependencies => {
+  const tokens = new Map<string, OAuth2TokenResponse>()
   return {
     getToken: async (clientId, clientSecret) => {
-      token ??= await oauth2ClientCredentials(createDiscordOauth2({
-        clientId,
-        clientSecret,
-        scope: ['identify', 'applications.commands.update'],
-        redirectUri: '',
-      }))
+      const key = `${clientId}:${clientSecret}`
+      let token = tokens.get(key)
+      if (!token) {
+        token = await oauth2ClientCredentials(createDiscordOauth2({
+          clientId,
+          clientSecret,
+          scope: ['identify', 'applications.commands.update'],
+          redirectUri: '',
+        }))
+        tokens.set(key, token)
+      }
       return token
     },
     discordApi,
@@ -86,7 +128,7 @@ const getCredentials = (env: NodeJS.ProcessEnv) => ({
 
 export const showApplicationInfo = async (
   env: NodeJS.ProcessEnv = process.env,
-  dependencies: CliDependencies = createDependencies(),
+  dependencies: CliDependencies = createCliDependencies(),
 ): Promise<void> => {
   const {clientId, clientSecret} = getCredentials(env)
   const publicKey = getRequiredEnv(env, 'CLIENT_PUBLIC_KEY')
@@ -120,7 +162,7 @@ export const showApplicationInfo = async (
 export const listApplicationCommands = async (
   env: NodeJS.ProcessEnv = process.env,
   guildId?: string,
-  dependencies: CliDependencies = createDependencies(),
+  dependencies: CliDependencies = createCliDependencies(),
 ): Promise<void> => {
   const {clientId, clientSecret} = getCredentials(env)
   const token = await dependencies.getToken(clientId, clientSecret)
