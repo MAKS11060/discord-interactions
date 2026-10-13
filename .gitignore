@@ -1,9 +1,8 @@
 node_modules
 dist
 
-.*.json
+# build
+*.tgz
 
 .env
 .discord
-.tmp
-
