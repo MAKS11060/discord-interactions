@@ -48,6 +48,9 @@
     "./web": "./src/adapter/web.ts",
     "./hono": "./src/adapter/hono.ts"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "fmt": "dprint fmt",
     "lint": "dprint check && tsc --noEmit",
