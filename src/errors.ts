@@ -7,3 +7,17 @@ export class InteractionError extends Error {
     this.status = status
   }
 }
+
+export class ComponentBuilderError extends InteractionError {
+  constructor(message: string) {
+    super(message, 400)
+  }
+}
+
+export function componentError(message: string): never {
+  throw new ComponentBuilderError(message)
+}
+
+export function reportComponentError(error: unknown): void {
+  console.error('Failed to build Components V2 message:', error)
+}
