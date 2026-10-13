@@ -1,10 +1,11 @@
 {
   "name": "discord-interactions",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "keywords": [
     "discord",
-    "discord interactions"
+    "discord interactions",
+    "interactions builder"
   ],
   "license": "MIT",
   "author": "MAKS11060",
@@ -52,30 +53,65 @@
     "lint": "dprint check && tsc --noEmit",
     "tc": "tsc --noEmit",
     "tcw": "tsc --noEmit --watch",
+    "prepare": "git config core.hooksPath .hooks",
     "cli": "node --env-file-if-exists=.env --import tsx ./cli/index.ts",
     "dev": "deno run -A --env-file --watch-hmr  --unstable-no-legacy-abort ./example/main.ts",
     "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
     "dev:bun": "bun --hot ./example/main.ts",
-    "prepare": "git config core.hooksPath .hooks",
+    "build": "tsdown",
+    "build:pkg": "pnpm lint && pnpm transform-publish-config --write && pnpm pack",
     "openapi-ts": "openapi-ts"
   },
   "dependencies": {
     "@maks11060/oauth2": "jsr:^0.0.2",
-    "@std/bytes": "jsr:^1.0.6",
-    "discord-api-types": "^0.38.56",
-    "zod": "catalog:"
+    "discord-api-types": "^0.38.56"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.0.0-next-20260930190945",
     "@hono/node-server": "^2.1.4",
+    "@maks11060/transform-publish-config": "^0.0.1",
     "@types/bun": "catalog:",
     "@types/deno": "catalog:",
     "@types/node": "catalog:",
+    "tsdown": "^0.23.1",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "hono": "catalog:"
   },
-  "packageManager": "pnpm@12.11.2"
+  "packageManager": "pnpm@12.11.2",
+  "publishConfig": {
+    "imports": {
+      "#adapter/*": {
+        "types": "./dist/adapter/*.d.ts",
+        "default": "./dist/adapter/*.mjs"
+      },
+      "#lib/*": {
+        "types": "./dist/lib/*.d.ts",
+        "default": "./dist/lib/*.mjs"
+      },
+      "#app": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "#env": {},
+      "#serve": {}
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "./web": {
+        "types": "./dist/adapter/web.d.ts",
+        "default": "./dist/adapter/web.mjs"
+      },
+      "./hono": {
+        "types": "./dist/adapter/hono.d.ts",
+        "default": "./dist/adapter/hono.mjs"
+      }
+    }
+  }
 }

@@ -9,21 +9,17 @@ import {defineConfig} from '@hey-api/openapi-ts'
  * @see https://heyapi.dev/openapi-ts/configuration
  */
 
-const sharedOutput = (path: string) => ({
-  path,
-  module: {extension: '.ts' as const},
-  postProcess: [{command: 'dprint', args: ['fmt', '{{path}}']}],
-})
-
-const sharedPlugins = [
-  {name: '@hey-api/typescript' as const, enums: 'javascript' as const},
-  {name: '@hey-api/sdk' as const},
-]
-
 export default defineConfig({
   input: 'https://raw.githubusercontent.com/discord/discord-api-spec/main/specs/openapi.json',
-  output: sharedOutput('src/lib/api/discord'),
-  plugins: sharedPlugins,
+  output: {
+    path: 'src/lib/api/discord',
+    module: {extension: '.ts' as const},
+    postProcess: [{command: 'dprint', args: ['fmt', '{{path}}']}],
+  },
+  plugins: [
+    {name: '@hey-api/typescript', enums: 'javascript'},
+    {name: '@hey-api/sdk'},
+  ],
   parser: {
     filters: {
       orphans: true,
