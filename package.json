@@ -45,6 +45,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./fmt": "./src/fmt.ts",
     "./web": "./src/adapter/web.ts",
     "./hono": "./src/adapter/hono.ts"
   },
