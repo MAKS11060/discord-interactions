@@ -21,6 +21,7 @@ import {
   type APIUserInteractionDataResolved,
   ApplicationCommandOptionType,
   ApplicationCommandType,
+  ComponentType,
   InteractionResponseType,
   InteractionType,
   MessageFlags,
@@ -66,10 +67,6 @@ const normalizeReply = <
   if (input.content instanceof Fmt) input.content = input.content.toString()
   return input as any
 }
-
-// name satisfies {test: ''; content}
-
-// APIInteractionResponseCallbackData
 
 // Context
 export class ApplicationCommandContextChatInput<
@@ -428,10 +425,29 @@ export class ApplicationCommandAutocompleteContext<
 }
 
 export class MessageComponentContext {
+  interaction!: APIMessageComponentInteraction
   constructor(interaction: APIMessageComponentInteraction) {
     if (interaction.type !== InteractionType.MessageComponent) {
       throw new Error('interaction type not supported for this context')
     }
+
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+  }
+
+  /**
+   * Gets the type of the message component.
+   * @returns The type of the message component.
+   */
+  get type(): ComponentType {
+    return this.interaction.data.component_type
+  }
+
+  /**
+   * Gets the custom ID of the message component.
+   * @returns The custom ID of the message component, which is a string with a maximum length of 100 characters.
+   */
+  get customId(): string {
+    return this.interaction.data.custom_id
   }
 }
 

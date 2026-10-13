@@ -12,12 +12,25 @@ import {
   type InteractionContextType,
   type LocalizationMap,
 } from 'discord-api-types/v10'
-import type {APIAttachment, APIInteractionDataResolvedChannel, APIRole, APIUser} from 'discord-api-types/v10'
+import type {
+  APIAttachment,
+  APIInteractionDataResolvedChannel,
+  APIInteractionResponseChannelMessageWithSource,
+  APIInteractionResponseDeferredChannelMessageWithSource,
+  APIInteractionResponseDeferredMessageUpdate,
+  APIInteractionResponseLaunchActivity,
+  APIInteractionResponseUpdateMessage,
+  APIModalInteractionResponse,
+  APIRole,
+  APIUser,
+} from 'discord-api-types/v10'
 import type {
   ApplicationCommandAutocompleteContext,
   ApplicationCommandContextChatInput,
   ApplicationCommandContextMessage,
   ApplicationCommandContextUser,
+  MaybePromise,
+  MessageComponentContext,
 } from './context.ts'
 
 type Primitive = string | number | boolean
@@ -194,18 +207,75 @@ type SlashCommandsCommand = CommandMetadata & {
 }
 
 type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = SlashCommandsCommand & {
+  /**
+   * @example
+   * ```ts
+   * schema.slashCommands(t => [
+   *   t.command({
+   *     name: 'hello',
+   *     description: 'say hello to',
+   *     args: { // define the args/options that will get into the handler
+   *       text: t.arg.string({name: 'user', required: true}),
+   *     },
+   *     resolve: (c, args) => {
+   *       return c.reply(`User ${Fmt.mention(c.from)} say: Hello ${args.text}`)
+   *     }
+   *   })
+   * ])
+   * ```
+   */
   args?: O
   commands?: CommandResult[]
+
+  /**
+   * The main command handler
+   * @example
+   * ```ts
+   * // sending plain or formatted text
+   * resolve: (c) => {
+   *   return c.reply(`Hello ${Fmt.mention(c.from.user)}`)
+   * }
+   * ```
+   * @example
+   * ```ts
+   * // use the message() function to send a message to the v2 component.
+   * resolve: (c) => {
+   *   return c.reply(message(t => [
+   *     t.text
+   *   ]))
+   * }
+   * ```
+   */
   resolve?: (
     context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
     args: SlashCommandArgs<O>,
     ctx: Ctx,
-  ) => APIInteractionResponse | Promise<APIInteractionResponse>
+  ) => MaybePromise<APIInteractionResponse>
+
+  /**
+   * @example
+   * ```ts
+   * autocomplete: (c) => {
+   *   return c.suggest(['One', 'Two'])
+   * }
+   * ```
+   */
   autocomplete?: (
     context: ApplicationCommandAutocompleteContext,
     ctx: Ctx,
     args: SlashCommandArgs<O>,
-  ) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
+  ) => MaybePromise<APIApplicationCommandOptionChoice[]>
+
+  messageComponent?: (
+    context: MessageComponentContext,
+  ) => MaybePromise<
+    | APIInteractionResponseChannelMessageWithSource
+    | APIInteractionResponseDeferredChannelMessageWithSource
+    | APIInteractionResponseDeferredMessageUpdate
+    | APIInteractionResponseLaunchActivity
+    | APIInteractionResponseUpdateMessage
+    | APIModalInteractionResponse
+  >
 }
 
 type SlashCommandArgs<O extends Record<string, AnyArg>> = {

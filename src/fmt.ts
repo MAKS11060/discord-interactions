@@ -424,7 +424,22 @@ export class Fmt {
 // tagged template + functional wrappers
 // ---------------------------------------------------------------------------
 
-export function t(
+/**
+ * @example
+ * ```ts
+ * const text = t`hello`.bold()
+ * // or
+ * const text = Fmt.join([
+ *   t`hello`.bold(),
+ *   Fmt.mention('1234567890'),
+ *   t`at`,
+ *   Fmt.timestamp(Date.now(), 'relative'),
+ *   t`\n`,
+ *   t`const timeString = \`${new Date().toISOString()}\``.code('ts'),
+ * ])
+ * ```
+ */
+export function fmt(
   strings: TemplateStringsArray,
   ...values: unknown[]
 ): Fmt {
@@ -439,6 +454,7 @@ export function t(
   return result
 }
 
+export {fmt as t}
 export const b = (v: unknown) => Fmt.of(v).bold()
 export const i = (v: unknown) => Fmt.of(v).italic()
 export const u = (v: unknown) => Fmt.of(v).underline()

@@ -90,6 +90,19 @@ const allOptions = schema.declareCommand({
 const hello = schema.declareCommand({
   name: 'hello',
   resolve: (c) => {
+    const text = Fmt.join([
+      t`hello`.bold(),
+      Fmt.mention('1234567890'),
+      t`at`,
+      Fmt.timestamp(Date.now(), 'relative'),
+      t`\n`,
+      t`const timeString = \`${new Date().toISOString()}\``.code('ts'),
+    ])
+
+    return c.reply(text)
+
+    // return c.reply(`Hello ${Fmt.mention(c.from.user)} ${Fmt.timestamp(new Date(), 'relative')}`)
+
     return c.reply(message((t) => [
       t.text`Hello ${Fmt.mention(c.from)}`,
       t.separator({spacing: 'large'}),
