@@ -5,6 +5,7 @@ import {
   type APIApplicationCommandInteractionDataOption,
   type APIApplicationCommandOption,
   type APIAttachment,
+  type APIChannel,
   type APIInteractionDataOptionBase,
   type APIInteractionDataResolvedChannel,
   type APIInteractionDataResolvedGuildMember,
@@ -27,6 +28,7 @@ import {
   type RESTPatchAPIInteractionOriginalResponseJSONBody,
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
+import {Fmt, i} from './fmt.ts'
 
 export type MaybePromise<T> = Promise<T> | T
 export type OptionToObject<T extends APIApplicationCommandOption> = {
@@ -51,6 +53,24 @@ type GetOptionsResult<
   ? Option extends {required: true} ? Result : Result | null
   : never
 
+const normalizeReply = <
+  const T extends string | Fmt | {content?: string | Fmt | undefined},
+>(input: T):
+  & (T extends (string | Fmt) ? {content: string} : Omit<T, 'content'> & {content?: string | undefined})
+  & Record<string, string> =>
+{
+  if (typeof input === 'string') return {content: String(input)} as any
+  if (input instanceof Fmt) return {content: input.toString()} as any
+
+  // override Fmt in object
+  if (input.content instanceof Fmt) input.content = input.content.toString()
+  return input as any
+}
+
+// name satisfies {test: ''; content}
+
+// APIInteractionResponseCallbackData
+
 // Context
 export class ApplicationCommandContextChatInput<
   Option extends {type: ApplicationCommandOptionType; name: string; required?: boolean} = APIApplicationCommandOption,
@@ -63,14 +83,19 @@ export class ApplicationCommandContextChatInput<
    */
   readonly from!: {
     /**
-     * @returns Get the `user` who caused the interaction
+     * @returns The `user` who caused the interaction
      */
     readonly user: APIUser
 
     /**
-     * @returns Get the `member` who caused the interaction
+     * @returns The `member` who caused the interaction, guild only
      */
     readonly member?: APIInteractionGuildMember
+
+    /**
+     * @returns The `channel` it was sent from
+     */
+    readonly channel?: Partial<APIChannel> & Pick<APIChannel, 'id' | 'type'>
   }
 
   constructor(
@@ -96,6 +121,10 @@ export class ApplicationCommandContextChatInput<
           return this.interaction.member ?? null
         },
       },
+      channel: {
+        enumerable: true,
+        get: () => this.interaction.channel ?? null,
+      },
     })
   }
 
@@ -120,13 +149,13 @@ export class ApplicationCommandContextChatInput<
 
   // for pretty log
   get [Symbol.toStringTag]() {
-    return `app:${this.interaction.application_id} id:${this.interaction.id} user:${this.me.username}`
+    return `app:${this.interaction.application_id} user:${this.me.username}`
   }
 
   // Request
 
   /**
-   * @returns Get the `user` who caused the interaction
+   * @returns The `user` who caused the interaction
    */
   get me(): APIUser {
     return this.interaction.member?.user ?? this.interaction.user!
@@ -279,19 +308,19 @@ export class ApplicationCommandContextChatInput<
   }
 
   // Response
-  reply(content: string): APIInteractionResponseChannelMessageWithSource
+  reply(content: string | Fmt): APIInteractionResponseChannelMessageWithSource
   reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
-  reply(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
+  reply(data: string | Fmt | APIInteractionResponseCallbackData): APIInteractionResponse {
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
-      data: typeof data === 'string' ? {content: data} : data,
+      data: normalizeReply(data),
     }
   }
 
   replyEphemeral(content: string): APIInteractionResponseChannelMessageWithSource
   replyEphemeral(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
   replyEphemeral(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
-    const res = typeof data === 'string' ? {content: data} : data
+    const res = normalizeReply(data)
     res.flags = MessageFlags.Ephemeral
 
     return {
@@ -342,12 +371,12 @@ export class ApplicationCommandAutocompleteContext<
    */
   readonly from!: {
     /**
-     * @returns Get the `user` who caused the interaction
+     * @returns The `user` who caused the interaction
      */
     readonly user: APIUser
 
     /**
-     * @returns Get the `member` who caused the interaction
+     * @returns The `member` who caused the interaction
      */
     readonly member?: APIInteractionGuildMember
   }
@@ -376,14 +405,26 @@ export class ApplicationCommandAutocompleteContext<
   // Request
 
   /**
-   * @returns Get the `user` who caused the interaction
+   * @returns The `user` who caused the interaction
    */
   get me(): APIUser {
     return this.interaction.member?.user ?? this.interaction.user!
   }
 
   // Response
-  // TODO: impl method for reply
+  /** Returns the list for auto-completion and truncates it to the limit of `25` */
+  suggest(suggestions: Iterable<string | number | {value: string | number; name?: string}>) {
+    return Array.from(Iterator.from(suggestions).take(25), (v) =>
+      typeof v === 'object'
+        ? {value: v.value, name: v.name ?? String(v.value)}
+        : {value: v, name: String(v)})
+      .slice(0, 25)
+  }
+
+  /** Returns empty list */
+  empty() {
+    return []
+  }
 }
 
 export class MessageComponentContext {
@@ -402,12 +443,12 @@ export class ModalSubmitContext {
    */
   readonly from!: {
     /**
-     * @returns Get the `user` who caused the interaction
+     * @returns The `user` who caused the interaction
      */
     readonly user: APIUser
 
     /**
-     * @returns Get the `member` who caused the interaction
+     * @returns The `member` who caused the interaction
      */
     readonly member?: APIInteractionGuildMember
   }
@@ -438,7 +479,7 @@ export class ModalSubmitContext {
   // Request
 
   /**
-   * @returns Get the `user` who caused the interaction
+   * @returns The `user` who caused the interaction
    */
   get me(): APIUser {
     return this.interaction.member?.user ?? this.interaction.user!
@@ -477,7 +518,7 @@ export class DeferredContext {
         webhook_id: this.interaction.application_id,
         webhook_token: this.interaction.token,
       },
-      body: body as any,
+      body: normalizeReply(body as any),
       signal: options?.signal,
     })
 
@@ -512,7 +553,7 @@ export class DeferredContext {
         webhook_id: this.interaction.application_id,
         webhook_token: this.interaction.token,
       },
-      body: body as any,
+      body: normalizeReply(body as any),
       signal: options?.signal,
     })
 
@@ -567,12 +608,12 @@ class ApplicationCommandContextMenu {
    */
   readonly from!: {
     /**
-     * @returns Get the `user` who caused the interaction
+     * @returns The `user` who caused the interaction
      */
     readonly user: APIUser
 
     /**
-     * @returns Get the `member` who caused the interaction
+     * @returns The `member` who caused the interaction
      */
     readonly member?: APIInteractionGuildMember
   }
@@ -582,13 +623,13 @@ class ApplicationCommandContextMenu {
    */
   readonly to!: {
     /**
-     * Gets the user object for a user context menu command interaction.
+     * the `user` object for which the interaction is triggered, via the user's context menu.
      * @returns The resolved user object.
      */
     readonly user: APIUser
 
     /**
-     * Gets the guild member object for a user context menu command interaction.
+     * The guild `member` object for which the interaction is triggered, via the user's context menu.
      * @returns Returns the guild member object only if the interaction is a user context menu command interaction in a guild and the guild member object is present.
      */
     readonly member?: APIInteractionDataResolvedGuildMember
@@ -634,26 +675,26 @@ class ApplicationCommandContextMenu {
   }
 
   /**
-   * @returns Get the `user` who caused the interaction
+   * @returns The `user` who caused the interaction
    */
   get me(): APIUser {
     return this.interaction.member?.user || this.interaction.user!
   }
 
   // Response
-  reply(content: string): APIInteractionResponseChannelMessageWithSource
+  reply(content: string | Fmt): APIInteractionResponseChannelMessageWithSource
   reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
-  reply(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
+  reply(data: string | Fmt | APIInteractionResponseCallbackData): APIInteractionResponse {
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
-      data: typeof data === 'string' ? {content: data} : data,
+      data: normalizeReply(data),
     }
   }
 
   replyEphemeral(content: string): APIInteractionResponseChannelMessageWithSource
   replyEphemeral(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
   replyEphemeral(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
-    const res = typeof data === 'string' ? {content: data} : data
+    const res = normalizeReply(data)
     res.flags = MessageFlags.Ephemeral
 
     return {

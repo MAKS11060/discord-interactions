@@ -1,21 +1,6 @@
 import {ApplicationIntegrationType, ChannelType, InteractionContextType} from 'discord-api-types/v10'
+import {Fmt, t} from '../../src/fmt.ts'
 import {schema} from '../builder.ts'
-
-/* schema.slashCommands((t) => [
-  t.command({
-    name: 'test',
-    args: {
-      integer: schema.arg.integer({
-        required: true,
-      }),
-    },
-    resolve: (c, args) => {
-      c.getInteger('')
-
-      return c.reply('W')
-    },
-  }),
-]) */
 
 const allOptions = schema.declareCommand({
   name: 'all-options',
@@ -75,10 +60,29 @@ const allOptions = schema.declareCommand({
       file_types: ['image', '.pdf'],
     }),
   },
-  resolve: (context, args) => {
-    // console.log(context)
-    console.log(context.getInteger('integer'))
-    return context.reply(`Received ${args.integer}`)
+  resolve: (c, args) => {
+    // console.dir(c.interaction, {depth: null})
+    const text = Fmt.join([
+      t`hello`.bold(),
+      Fmt.mention(c.from.user),
+
+      t`at`,
+      Fmt.timestamp(Date.now(), 'relative'),
+
+      t`\n`,
+      t`const timeString = \`${new Date().toISOString()}\``.code('ts'),
+
+      t`\n`,
+      t`${JSON.stringify(args, null, 2)}`.code('json'),
+    ])
+
+    return c.reply(text)
+  },
+
+  autocomplete: (c) => {
+    console.log(c.interaction.data)
+    const values = new Array(30).entries().map((v) => v[0] + 1 as number).toArray()
+    return c.suggest(values)
   },
 })
 
