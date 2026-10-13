@@ -107,12 +107,12 @@ option helpers. For reusable declarations, use `schema.arg`.
 In this repository, the CLI loads credentials from `.env`:
 
 ```sh
-pnpm cli -- init --schema ./example/builder.ts
-pnpm cli -- push --all
-pnpm cli -- push --name ping
-pnpm cli -- me
-pnpm cli -- list
-pnpm cli -- list --guild 123456789012345678
+pnpm discord init --schema ./example/builder.ts
+pnpm discord push --all
+pnpm discord push --name ping
+pnpm discord me
+pnpm discord list
+pnpm discord list --guild 123456789012345678
 ```
 
 `me` checks the application credentials and confirms that `CLIENT_PUBLIC_KEY` matches Discord. `list` displays registered

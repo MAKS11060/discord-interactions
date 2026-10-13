@@ -1,26 +1,66 @@
 #!/usr/bin/env -S deno run -A --env-file
 
-import {createInterface} from 'node:readline/promises'
+import {checkbox, select} from '@inquirer/prompts'
+import {resolve} from 'node:path'
+import {pathToFileURL} from 'node:url'
 import {parseArgs} from 'node:util'
 import {type DiscordApplicationConfig, initDiscordConfig, readDiscordConfig} from './config.ts'
 import {listApplicationCommands, showApplicationInfo} from './discord.ts'
 import {loadCommandsFromSchema, pushApplicationCommands} from './push.ts'
 
-const help = `Usage: pnpm cli -- <command> [options]
+const help = `Usage: pnpm discord <command> [options]
 
 Commands:
-  init                         Create .discord.json if it does not exist
-  push                         Register or update application commands
-  me, i, whoim, whoami, login  Show application info and verify CLIENT_PUBLIC_KEY
-  list, ls                     List registered application commands
+  init       Create .discord.json if it does not exist
+  push       Create or update application commands
+  list, ls   List registered application commands
+  me         Show application info (aliases: i, whoim, whoami, login)
+
+Run "pnpm discord <command> --help" for command-specific options.
+`
+
+const commandHelp: Record<string, string> = {
+  init: `Usage: pnpm discord init [-s <path>]
+
+Create .discord.json in the current directory. Existing files are left unchanged.
 
 Options:
-  -s, --schema <path>          Schema module path (init or push)
-      --all                    Replace all registered commands for each app
-      --name <name>            Create or update one command (repeatable)
-      --guild <id>             List commands registered for a guild
-  -h, --help                   Show this help
-`
+  -s, --schema <path>  Add an application entry with this schema module path
+  -h, --help           Show this help
+`,
+  push: `Usage: pnpm discord push [options]
+
+Interactively select an application, then synchronize all or selected commands.
+
+Options:
+  -s, --schema <path>  Override the schema module path
+      --all            Replace all registered commands for configured applications
+      --name <name>    Upsert a command by name (repeatable; non-interactive)
+  -h, --help           Show this help
+`,
+  list: `Usage: pnpm discord list [--guild <id>]
+
+List registered global application commands, or commands for one guild.
+
+Options:
+      --guild <id>  List commands registered for a guild
+  -h, --help        Show this help
+`,
+  ls: `Usage: pnpm discord ls [--guild <id>]
+
+Alias for "pnpm discord list".
+`,
+  me: `Usage: pnpm discord me
+
+Show application information and verify CLIENT_PUBLIC_KEY.
+Aliases: i, whoim, whoami, login
+
+Options:
+  -h, --help  Show this help
+`,
+}
+
+const meCommands = new Set(['me', 'i', 'whoim', 'whoami', 'login'])
 
 export const runCli = async (args: string[] = process.argv.slice(2)): Promise<void> => {
   const {positionals, values} = parseArgs({
@@ -35,22 +75,24 @@ export const runCli = async (args: string[] = process.argv.slice(2)): Promise<vo
     allowPositionals: true,
   })
 
+  const command = positionals[0]?.toLowerCase()
   if (values.help) {
-    console.log(help)
+    console.log(command ? commandHelp[meCommands.has(command) ? 'me' : command] ?? help : help)
     return
   }
   if (positionals.length !== 1) throw new Error(help)
 
-  const command = positionals[0]?.toLowerCase()
   if (command === 'init') {
-    if (values.all || values.name || values.guild) throw new Error('init only supports --schema')
+    if (values.all || values.name || values.guild) throw new Error(`${commandHelp.init}`)
     await initDiscordConfig({schemaPath: values.schema})
     return
   }
 
   if (command === 'push') {
-    if (values.guild) throw new Error('--guild can only be used with list/ls')
-    if (values.all && values.name?.length) throw new Error('Use either --all or --name, not both')
+    if (values.guild) throw new Error(`--guild is only available for list\n\n${commandHelp.push}`)
+    if (values.all && values.name?.length) {
+      throw new Error(`Use either --all or --name, not both\n\n${commandHelp.push}`)
+    }
     await runPush({
       schemaPath: values.schema,
       all: values.all,
@@ -59,9 +101,9 @@ export const runCli = async (args: string[] = process.argv.slice(2)): Promise<vo
     return
   }
 
-  if (command === 'me' || command === 'i' || command === 'whoim' || command === 'whoami' || command === 'login') {
+  if (command && meCommands.has(command)) {
     if (values.guild || values.schema || values.all || values.name) {
-      throw new Error('me does not accept --guild, --schema, --all, or --name')
+      throw new Error(`me does not accept those options\n\n${commandHelp.me}`)
     }
     await showApplicationInfo()
     return
@@ -69,7 +111,7 @@ export const runCli = async (args: string[] = process.argv.slice(2)): Promise<vo
 
   if (command === 'list' || command === 'ls') {
     if (values.schema || values.all || values.name) {
-      throw new Error('list only supports --guild')
+      throw new Error(`list only supports --guild\n\n${commandHelp[command]}`)
     }
     await listApplicationCommands(process.env, values.guild)
     return
@@ -122,69 +164,60 @@ async function runPush(options: {
     throw new Error('Interactive push requires a TTY; use --all or --name <name>')
   }
 
-  const input = createInterface({input: process.stdin, output: process.stdout})
-  try {
-    const selectedApplication = applications.length === 1
-      ? applications[0]!
-      : applications[
-        await promptIndex(
-          input,
-          'Select an application number: ',
-          applications.length,
-        )
-      ]
-    if (!selectedApplication) throw new Error('No application selected')
-    const schemaPath = options.schemaPath ?? selectedApplication.schema
-    const commands = await loadCommandsFromSchema(schemaPath)
-    if (commands.length === 0) throw new Error(`No commands found in schema "${schemaPath}"`)
+  const selectedApplication = applications.length === 1
+    ? applications[0]!
+    : await select({
+      message: 'Select an application',
+      pageSize: 10,
+      choices: applications.map((application, index) => ({
+        name: `${application.clientId ?? '(no clientId)'} — ${options.schemaPath ?? application.schema}`,
+        value: index,
+      })),
+    }).then((index) => applications[index])
+  if (!selectedApplication) throw new Error('No application selected')
 
-    console.log('Commands:')
-    console.log('  1. All commands')
-    commands.forEach((command, index) => console.log(`  ${index + 2}. ${command.name}`))
-    const selection = (await input.question('Select 1 for all or command numbers separated by commas: ')).trim()
-    if (selection === '1') {
-      await pushApplicationCommands(selectedApplication, process.env, {
-        ...options,
-        schemaPath,
-        all: true,
-      })
-      return
-    }
+  const schemaPath = options.schemaPath ?? selectedApplication.schema
+  const commands = await loadCommandsFromSchema(schemaPath)
+  const action = await select({
+    message: 'What should be synchronized?',
+    pageSize: 10,
+    choices: [
+      {name: 'All commands (replace registered commands)', value: 'all'},
+      {name: 'Choose commands to create or update', value: 'selected'},
+    ],
+  })
 
-    const indexes = selection.split(',').map((part) => Number(part.trim()) - 2)
-    if (
-      indexes.length === 0
-      || indexes.some((index) => !Number.isInteger(index) || index < 0 || index >= commands.length)
-    ) {
-      throw new Error('Invalid command selection')
-    }
-    const names = [...new Set(indexes.map((index) => commands[index]!.name))]
+  if (action === 'all') {
     await pushApplicationCommands(selectedApplication, process.env, {
       ...options,
       schemaPath,
-      names,
+      all: true,
     })
-  } finally {
-    input.close()
+    return
   }
+
+  const names = await checkbox({
+    message: 'Select commands to create or update',
+    pageSize: 10,
+    required: true,
+    choices: commands.map((command) => ({
+      name: command.name,
+      value: command.name,
+    })),
+  })
+  await pushApplicationCommands(selectedApplication, process.env, {
+    ...options,
+    schemaPath,
+    names,
+  })
 }
 
-async function promptIndex(
-  input: ReturnType<typeof createInterface>,
-  prompt: string,
-  length: number,
-): Promise<number> {
-  const value = Number((await input.question(prompt)).trim())
-  if (!Number.isInteger(value) || value < 1 || value > length) {
-    throw new Error(`Select a number between 1 and ${length}`)
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    await runCli()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(message)
+    process.exitCode = 1
   }
-  return value - 1
-}
-
-try {
-  await runCli()
-} catch (error) {
-  const message = error instanceof Error ? error.message : String(error)
-  console.error(message)
-  process.exitCode = 1
 }

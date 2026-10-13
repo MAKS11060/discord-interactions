@@ -79,16 +79,6 @@ const allOptions = schema.declareCommand({
 
     return c.reply(text)
   },
-  resolve: (c) => {
-    return c.reply(message((t) => [
-      t.text`Hello ${Fmt.mention(c.from)}`,
-      // t.separator({spacing: 'large'}),
-      t.row((t) => [
-        t.userSelect({id: 'usr:sel:1'}),
-        t.button.primary({id: 'btn:1'}),
-      ]),
-    ]))
-  },
 
   autocomplete: (c) => {
     console.log(c.interaction.data)
@@ -105,7 +95,11 @@ const hello = schema.declareCommand({
       t.separator({spacing: 'large'}),
       t.row((t) => [
         t.userSelect({id: 'usr:sel:1'}),
-        t.button.primary({id: 'btn:1'}),
+      ]),
+      t.separator({spacing: 'large'}),
+      t.row((t) => [
+        t.button.primary({id: 'btn:1', label: 'a'}),
+        t.button.secondary({id: 'btn:2', label: 'b'}),
       ]),
     ]))
   },
@@ -117,17 +111,7 @@ const direct = schema.declareSubcommand({
   args: {
     value: schema.arg.string({description: 'Subcommand value', required: true}),
   },
-  // resolve: (context, args) => context.reply(`Direct: ${args.value}`),
-  resolve: (c) => {
-    return c.reply(message((t) => [
-      t.text`Hello ${Fmt.mention(c.from)}`,
-      t.separator({spacing: 'large'}),
-      t.row((t) => [
-        t.userSelect({id: 'usr:sel:1'}),
-        t.button.primary({id: 'btn:1'}),
-      ]),
-    ]))
-  },
+  resolve: (context, args) => context.reply(`Direct: ${args.value}`),
 })
 
 const manage = schema.declareSubcommandGroup({

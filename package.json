@@ -59,6 +59,7 @@
     "tcw": "tsc --noEmit --watch",
     "prepare": "git config core.hooksPath .hooks",
     "cli": "node --env-file-if-exists=.env --import tsx ./cli/index.ts",
+    "discord": "node --env-file-if-exists=.env --import tsx ./cli/index.ts",
     "generate:discord-schema": "tsx ./scripts/generate-discord-schema.ts",
     "dev": "deno run -A --env-file --watch-hmr --unstable-no-legacy-abort ./example/main.ts",
     "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
@@ -74,6 +75,7 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.0.0-next-20260930190945",
     "@hono/node-server": "^2.1.4",
+    "@inquirer/prompts": "^8.7.3",
     "@maks11060/transform-publish-config": "^0.0.1",
     "@types/bun": "catalog:",
     "@types/deno": "catalog:",
