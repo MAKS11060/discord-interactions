@@ -1,5 +1,6 @@
 import {ApplicationIntegrationType, ChannelType, InteractionContextType} from 'discord-api-types/v10'
-import {Fmt, t} from '../../src/fmt.ts'
+import {message} from '../../src/components.ts'
+import {c, Fmt, t} from '../../src/fmt.ts'
 import {schema} from '../builder.ts'
 
 const allOptions = schema.declareCommand({
@@ -78,6 +79,16 @@ const allOptions = schema.declareCommand({
 
     return c.reply(text)
   },
+  resolve: (c) => {
+    return c.reply(message((t) => [
+      t.text`Hello ${Fmt.mention(c.from)}`,
+      // t.separator({spacing: 'large'}),
+      t.row((t) => [
+        t.userSelect({id: 'usr:sel:1'}),
+        t.button.primary({id: 'btn:1'}),
+      ]),
+    ]))
+  },
 
   autocomplete: (c) => {
     console.log(c.interaction.data)
@@ -88,7 +99,16 @@ const allOptions = schema.declareCommand({
 
 const hello = schema.declareCommand({
   name: 'hello',
-  resolve: (context) => context.reply('Hi!'),
+  resolve: (c) => {
+    return c.reply(message((t) => [
+      t.text`Hello ${Fmt.mention(c.from)}`,
+      t.separator({spacing: 'large'}),
+      t.row((t) => [
+        t.userSelect({id: 'usr:sel:1'}),
+        t.button.primary({id: 'btn:1'}),
+      ]),
+    ]))
+  },
 })
 
 const direct = schema.declareSubcommand({
@@ -97,7 +117,17 @@ const direct = schema.declareSubcommand({
   args: {
     value: schema.arg.string({description: 'Subcommand value', required: true}),
   },
-  resolve: (context, args) => context.reply(`Direct: ${args.value}`),
+  // resolve: (context, args) => context.reply(`Direct: ${args.value}`),
+  resolve: (c) => {
+    return c.reply(message((t) => [
+      t.text`Hello ${Fmt.mention(c.from)}`,
+      t.separator({spacing: 'large'}),
+      t.row((t) => [
+        t.userSelect({id: 'usr:sel:1'}),
+        t.button.primary({id: 'btn:1'}),
+      ]),
+    ]))
+  },
 })
 
 const manage = schema.declareSubcommandGroup({
