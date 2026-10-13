@@ -280,10 +280,10 @@ export class Fmt {
    * Mention a user.
    *
    * @example
-   * Md.mention('1234567890').toString()
+   * Fmt.mention('1234567890').toString()
    * // → '<@1234567890>'
    *
-   * t`Hi, ${Md.mention(userId)}!`.toString()
+   * t`Hi, ${Fmt.mention(userId)}!`.toString()
    * // → 'Hi, <@1234567890>!'
    *
    * @remarks
@@ -298,16 +298,17 @@ export class Fmt {
     } else if (typeof userId === 'object' && 'id' in userId?.user) {
       return Fmt.empty().custom(`<@${userId.user.id}>`)
     }
+    throw new Error('userId not found')
   }
 
   /**
    * Mention a role.
    *
    * @example
-   * Md.mentionRole('1234567890').toString()
+   * Fmt.mentionRole('1234567890').toString()
    * // → '<@&1234567890>'
    *
-   * t`Role ${Md.mentionRole(roleId)} is now mentioned`.toString()
+   * t`Role ${Fmt.mentionRole(roleId)} is now mentioned`.toString()
    * // → 'Role <@&1234567890> is now mentioned'
    *
    * @remarks
@@ -323,10 +324,10 @@ export class Fmt {
    * Mention a channel.
    *
    * @example
-   * Md.mentionChannel('1234567890').toString()
+   * Fmt.mentionChannel('1234567890').toString()
    * // → '<#1234567890>'
    *
-   * t`See ${Md.mentionChannel(channelId)}`.toString()
+   * t`See ${Fmt.mentionChannel(channelId)}`.toString()
    * // → 'See <#1234567890>'
    *
    * @remarks
@@ -342,13 +343,13 @@ export class Fmt {
    * Custom server emoji (not a Unicode one).
    *
    * @example
-   * Md.emoji('cat', '1234567890').toString()
+   * Fmt.emoji('cat', '1234567890').toString()
    * // → '<:cat:1234567890>'
    *
-   * Md.emoji('cat', '1234567890', true).toString()
+   * Fmt.emoji('cat', '1234567890', true).toString()
    * // → '<a:cat:1234567890>'
    *
-   * t`Look ${Md.emoji('cat', id)} at this`.toString()
+   * t`Look ${Fmt.emoji('cat', id)} at this`.toString()
    * // → 'Look <:cat:1234567890> at this'
    *
    * @remarks
@@ -370,13 +371,13 @@ export class Fmt {
    * @example
    * const d = new Date('2026-10-13T12:00:00Z')
    *
-   * Md.timestamp(d, 'shortTime').toString()     // → '<t:1760356800:t>'  → '3:00 PM'
-   * Md.timestamp(d, 'longTime').toString()      // → '<t:1760356800:T>'  → '3:00:00 PM'
-   * Md.timestamp(d, 'shortDate').toString()     // → '<t:1760356800:d>'  → '10/13/2026'
-   * Md.timestamp(d, 'longDate').toString()      // → '<t:1760356800:D>'  → 'October 13, 2026'
-   * Md.timestamp(d, 'shortDateTime').toString() // → '<t:1760356800:f>'  → 'October 13, 2026 at 3:00 PM'
-   * Md.timestamp(d, 'longDateTime').toString()  // → '<t:1760356800:F>'  → 'Tuesday, October 13, 2026 at 3:00 PM'
-   * Md.timestamp(d, 'relative').toString()      // → '<t:1760356800:R>'  → 'in 2 minutes'
+   * Fmt.timestamp(d, 'shortTime').toString()     // → '<t:1760356800:t>'  → '3:00 PM'
+   * Fmt.timestamp(d, 'longTime').toString()      // → '<t:1760356800:T>'  → '3:00:00 PM'
+   * Fmt.timestamp(d, 'shortDate').toString()     // → '<t:1760356800:d>'  → '10/13/2026'
+   * Fmt.timestamp(d, 'longDate').toString()      // → '<t:1760356800:D>'  → 'October 13, 2026'
+   * Fmt.timestamp(d, 'shortDateTime').toString() // → '<t:1760356800:f>'  → 'October 13, 2026 at 3:00 PM'
+   * Fmt.timestamp(d, 'longDateTime').toString()  // → '<t:1760356800:F>'  → 'Tuesday, October 13, 2026 at 3:00 PM'
+   * Fmt.timestamp(d, 'relative').toString()      // → '<t:1760356800:R>'  → 'in 2 minutes'
    *
    * @remarks
    * Timestamp display style in Discord.
