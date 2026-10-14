@@ -7,9 +7,10 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 concurrency:
-  group: typecheck-${{ github.workflow }}-${{ github.ref }}
+  group: publish-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -58,6 +59,19 @@ jobs:
           git add package.json
           git commit -m "chore: bump version to $VERSION [skip ci]"
           git push origin HEAD:main
+
+      - name: Install dependencies and Build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build --if-present
+
+      # - name: Publish Package
+      #   run: pnpm publish --no-git-checks --tag ${{ steps.parse.outputs.npm_tag }}
+
+      # - name: Publish Release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     generate_release_notes: true
 
 # on:
 #   push:
