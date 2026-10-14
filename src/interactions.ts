@@ -8,7 +8,13 @@ import {
   InteractionResponseType,
   InteractionType,
 } from 'discord-api-types/v10'
-import {type Arg, type CommandDefinition, InteractionBuilder, type ResolvedOption} from './builder.ts'
+import {
+  type Arg,
+  type BuilderConfig,
+  type CommandDefinition,
+  InteractionBuilder,
+  type ResolvedOption,
+} from './builder.ts'
 import {
   ApplicationCommandAutocompleteContext,
   ApplicationCommandContextChatInput,
@@ -19,18 +25,24 @@ import {
 } from './context.ts'
 import {InteractionError} from './errors.ts'
 
-export type DiscordInteractionOptions<Ctx extends object = object> = {
+export type DiscordInteractionOptions<
+  Ctx extends object = object,
+  Config extends BuilderConfig = BuilderConfig,
+> = {
   publicKey: CryptoKey
   clientId?: string
-  schema: InteractionBuilder<Ctx>
+  schema: InteractionBuilder<Ctx, Config>
 }
 
-export class DiscordInteraction<Ctx extends object = object> {
+export class DiscordInteraction<
+  Ctx extends object = object,
+  Config extends BuilderConfig = BuilderConfig,
+> {
   readonly publicKey: CryptoKey
   readonly clientId?: string
-  readonly schema: InteractionBuilder<Ctx>
+  readonly schema: InteractionBuilder<Ctx, Config>
 
-  constructor(options: DiscordInteractionOptions<Ctx>) {
+  constructor(options: DiscordInteractionOptions<Ctx, Config>) {
     if (
       options.publicKey.type !== 'public'
       || options.publicKey.algorithm.name !== 'Ed25519'
@@ -95,9 +107,18 @@ export class DiscordInteraction<Ctx extends object = object> {
         data: {choices: []},
       }
     }
+
     if (interaction.type === InteractionType.MessageComponent) {
-      const ctx = new MessageComponentContext(interaction)
+      const context = new MessageComponentContext<Config>(interaction)
+      const component = this.schema.findMessageComponent(context.customId)
+      if (component) {
+        const response = await component.resolve(context, ctx as Ctx)
+        if (response) return response
+      }
+
+      return context.replyEphemeral('The handler for this component was not found')
     }
+
     if (interaction.type === InteractionType.ModalSubmit) {
       const ctx = new ModalSubmitContext(interaction)
     }
@@ -125,10 +146,13 @@ export class DiscordInteraction<Ctx extends object = object> {
   }
 }
 
-export class DiscordInteractions<Ctx extends object = object> {
-  readonly #apps: Map<string, DiscordInteraction<Ctx>>
+export class DiscordInteractions<
+  Ctx extends object = object,
+  Config extends BuilderConfig = BuilderConfig,
+> {
+  readonly #apps: Map<string, DiscordInteraction<Ctx, Config>>
 
-  constructor(apps: Iterable<DiscordInteractionOptions<Ctx> & {clientId: string}>) {
+  constructor(apps: Iterable<DiscordInteractionOptions<Ctx, Config> & {clientId: string}>) {
     this.#apps = new Map()
     for (const options of apps) {
       if (this.#apps.has(options.clientId)) {
@@ -138,7 +162,7 @@ export class DiscordInteractions<Ctx extends object = object> {
     }
   }
 
-  get(clientId: string): DiscordInteraction<Ctx> | undefined {
+  get(clientId: string): DiscordInteraction<Ctx, Config> | undefined {
     return this.#apps.get(clientId)
   }
 }

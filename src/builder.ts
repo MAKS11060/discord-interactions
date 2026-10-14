@@ -12,18 +12,7 @@ import {
   type InteractionContextType,
   type LocalizationMap,
 } from 'discord-api-types/v10'
-import type {
-  APIAttachment,
-  APIInteractionDataResolvedChannel,
-  APIInteractionResponseChannelMessageWithSource,
-  APIInteractionResponseDeferredChannelMessageWithSource,
-  APIInteractionResponseDeferredMessageUpdate,
-  APIInteractionResponseLaunchActivity,
-  APIInteractionResponseUpdateMessage,
-  APIModalInteractionResponse,
-  APIRole,
-  APIUser,
-} from 'discord-api-types/v10'
+import type {APIAttachment, APIInteractionDataResolvedChannel, APIRole, APIUser} from 'discord-api-types/v10'
 import type {
   ApplicationCommandAutocompleteContext,
   ApplicationCommandContextChatInput,
@@ -110,12 +99,12 @@ export type CommandDefinition = {
   contexts?: InteractionContextType[]
   handler?: EntryPointCommandHandlerType
   options?: APIApplicationCommandOption[]
-  resolve?: (data: InteractionHandlerContext) => APIInteractionResponse | Promise<APIInteractionResponse>
+  resolve?: (data: InteractionHandlerContext) => MaybePromise<APIInteractionResponse>
   autocomplete?: (data: {
     context: ApplicationCommandAutocompleteContext
     ctx: unknown
     options: Record<string, ResolvedOption<AnyArg>>
-  }) => APIApplicationCommandOptionChoice[] | Promise<APIApplicationCommandOptionChoice[]>
+  }) => MaybePromise<APIApplicationCommandOptionChoice[]>
   children?: CommandDefinition[]
   type: 'command' | 'subcommand' | 'group'
 }
@@ -206,7 +195,10 @@ type SlashCommandsCommand = CommandMetadata & {
   description?: string
 }
 
-type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = SlashCommandsCommand & {
+type SlashArgsCommand<
+  Ctx extends object,
+  O extends Record<string, AnyArg>,
+> = SlashCommandsCommand & {
   /**
    * @example
    * ```ts
@@ -225,6 +217,7 @@ type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = Sl
    * ```
    */
   args?: O
+  // customId?: Ids
   commands?: CommandResult[]
 
   /**
@@ -246,11 +239,11 @@ type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = Sl
    * }
    * ```
    */
-  resolve?: (
+  resolve?(
     context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
     args: SlashCommandArgs<O>,
     ctx: Ctx,
-  ) => MaybePromise<APIInteractionResponse>
+  ): MaybePromise<APIInteractionResponse>
 
   /**
    * @example
@@ -260,22 +253,11 @@ type SlashArgsCommand<Ctx extends object, O extends Record<string, AnyArg>> = Sl
    * }
    * ```
    */
-  autocomplete?: (
+  autocomplete?(
     context: ApplicationCommandAutocompleteContext,
     ctx: Ctx,
     args: SlashCommandArgs<O>,
-  ) => MaybePromise<APIApplicationCommandOptionChoice[]>
-
-  messageComponent?: (
-    context: MessageComponentContext,
-  ) => MaybePromise<
-    | APIInteractionResponseChannelMessageWithSource
-    | APIInteractionResponseDeferredChannelMessageWithSource
-    | APIInteractionResponseDeferredMessageUpdate
-    | APIInteractionResponseLaunchActivity
-    | APIInteractionResponseUpdateMessage
-    | APIModalInteractionResponse
-  >
+  ): MaybePromise<APIApplicationCommandOptionChoice[]>
 }
 
 type SlashCommandArgs<O extends Record<string, AnyArg>> = {
@@ -377,8 +359,42 @@ const optionType = (kind: OptionKind): ApplicationCommandOptionType => {
   return types[kind]
 }
 
-export class InteractionBuilder<Ctx extends object = object> {
+/* WIP */
+export interface BuilderConfig {
+  /** Global `customIds` registry */
+  customIds?: Record<string, string>
+}
+
+export type MessageComponentMatcher = string | readonly string[] | ((customId: string) => boolean)
+
+export type MessageComponentDefinition<
+  Ctx extends object = object,
+  Config extends BuilderConfig = BuilderConfig,
+> = {
+  customId: MessageComponentMatcher
+  resolve: (context: MessageComponentContext<Config>, ctx: Ctx) => MaybePromise<APIInteractionResponse | void>
+}
+
+type MessageComponentTools<Ctx extends object, Config extends BuilderConfig> = {
+  component: (
+    definition: MessageComponentDefinition<Ctx, Config>,
+  ) => MessageComponentDefinition<Ctx, Config>
+}
+
+type ConfigCustomIds<Config extends BuilderConfig> = Config extends {customIds: infer Ids} ? Ids
+  : Record<string, string>
+
+export class InteractionBuilder<
+  Ctx extends object = object,
+  const Config extends BuilderConfig = BuilderConfig,
+> {
   #commands: CommandDefinition[] = []
+  #messageComponents: MessageComponentDefinition<Ctx, Config>[] = []
+  readonly customIds: ConfigCustomIds<Config>
+
+  constructor(readonly config?: Config) {
+    this.customIds = (config?.customIds ?? {}) as ConfigCustomIds<Config>
+  }
 
   toSchema(): this {
     return this
@@ -409,6 +425,35 @@ export class InteractionBuilder<Ctx extends object = object> {
       this.#registerSlashCommand(command)
     }
     return registered
+  }
+
+  component(
+    definition: MessageComponentDefinition<Ctx, Config>,
+  ): MessageComponentDefinition<Ctx, Config> {
+    return definition
+  }
+
+  messageComponents(
+    components:
+      | readonly MessageComponentDefinition<Ctx, Config>[]
+      | ((tools: MessageComponentTools<Ctx, Config>) => readonly MessageComponentDefinition<Ctx, Config>[]),
+  ): MessageComponentDefinition<Ctx, Config>[] {
+    const tools: MessageComponentTools<Ctx, Config> = {
+      component: (definition) => this.component(definition),
+    }
+    const registered = typeof components === 'function' ? components(tools) : components
+    this.#messageComponents.push(...registered)
+    return [...registered]
+  }
+
+  findMessageComponent(customId: string): MessageComponentDefinition<Ctx, Config> | undefined {
+    const exactMatch = this.#messageComponents.find(({customId: matcher}) =>
+      typeof matcher === 'string'
+        ? matcher === customId
+        : Array.isArray(matcher) && matcher.includes(customId)
+    )
+    if (exactMatch) return exactMatch
+    return this.#messageComponents.find(({customId: matcher}) => typeof matcher === 'function' && matcher(customId))
   }
 
   declareCommand<const O extends Record<string, AnyArg> = {}>(

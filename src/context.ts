@@ -13,7 +13,11 @@ import {
   type APIInteractionResponse,
   type APIInteractionResponseCallbackData,
   type APIInteractionResponseChannelMessageWithSource,
+  type APIInteractionResponseDeferredChannelMessageWithSource,
+  type APIInteractionResponseDeferredMessageUpdate,
+  type APIInteractionResponseUpdateMessage,
   type APIMessageComponentInteraction,
+  type APIModalInteractionResponse,
   type APIModalInteractionResponseCallbackData,
   type APIModalSubmitInteraction,
   type APIRole,
@@ -29,6 +33,8 @@ import {
   type RESTPatchAPIInteractionOriginalResponseJSONBody,
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
+import type {BuilderConfig} from './builder.ts'
+import type {Message} from './components.ts'
 import {Fmt, i} from './fmt.ts'
 
 export type MaybePromise<T> = Promise<T> | T
@@ -55,13 +61,17 @@ type GetOptionsResult<
   : never
 
 const normalizeReply = <
-  const T extends string | Fmt | {content?: string | Fmt | undefined},
+  const T extends string | Fmt | Message | {
+    content?: string | Fmt | undefined
+  },
 >(input: T):
   & (T extends (string | Fmt) ? {content: string} : Omit<T, 'content'> & {content?: string | undefined})
   & Record<string, string> =>
 {
   if (typeof input === 'string') return {content: String(input)} as any
   if (input instanceof Fmt) return {content: input.toString()} as any
+  // Message with components
+  if (typeof input === 'object' && 'components' in input) return {...input} as any
 
   // override Fmt in object
   if (input.content instanceof Fmt) input.content = input.content.toString()
@@ -113,10 +123,7 @@ export class ApplicationCommandContextChatInput<
       },
       member: {
         enumerable: true,
-        get: () => {
-          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
-          return this.interaction.member ?? null
-        },
+        get: () => this.interaction.member ?? null,
       },
       channel: {
         enumerable: true,
@@ -424,14 +431,63 @@ export class ApplicationCommandAutocompleteContext<
   }
 }
 
-export class MessageComponentContext {
+type AnyString = string & {}
+type GetCustomIds<T extends BuilderConfig> = T extends {customIds: {[k: PropertyKey]: infer K}} ? K | AnyString
+  : string
+
+export class MessageComponentContext<Config extends BuilderConfig = BuilderConfig> {
   interaction!: APIMessageComponentInteraction
+
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns The `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns The `member` who caused the interaction, guild only
+     */
+    readonly member?: APIInteractionGuildMember
+
+    /**
+     * @returns The `channel` it was sent from
+     */
+    readonly channel?: Partial<APIChannel> & Pick<APIChannel, 'id' | 'type'>
+  }
+
   constructor(interaction: APIMessageComponentInteraction) {
     if (interaction.type !== InteractionType.MessageComponent) {
       throw new Error('interaction type not supported for this context')
     }
 
     Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => this.interaction.member ?? null,
+      },
+      channel: {
+        enumerable: true,
+        get: () => this.interaction.channel ?? null,
+      },
+    })
+  }
+
+  // #region Request
+
+  /**
+   * @returns The `user` who caused the interaction
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
   }
 
   /**
@@ -446,9 +502,58 @@ export class MessageComponentContext {
    * Gets the custom ID of the message component.
    * @returns The custom ID of the message component, which is a string with a maximum length of 100 characters.
    */
-  get customId(): string {
-    return this.interaction.data.custom_id
+  get customId(): GetCustomIds<Config> {
+    return this.interaction.data.custom_id as GetCustomIds<Config> // optional typed
   }
+  // #endregion
+
+  // #region Response
+  // Response
+  reply(content: string | Fmt | Message): APIInteractionResponseChannelMessageWithSource
+  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  reply(data: string | Fmt | Message | APIInteractionResponseCallbackData): APIInteractionResponse {
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: normalizeReply(data),
+    }
+  }
+
+  replyEphemeral(content: string | Fmt | Message): APIInteractionResponseChannelMessageWithSource {
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: {
+        ...normalizeReply(content),
+        flags: MessageFlags.Ephemeral,
+      },
+    }
+  }
+
+  update(content: string | Fmt | Message): APIInteractionResponseUpdateMessage
+  update(data: APIInteractionResponseCallbackData): APIInteractionResponseUpdateMessage
+  update(data: string | Fmt | Message | APIInteractionResponseCallbackData): APIInteractionResponseUpdateMessage {
+    return {
+      type: InteractionResponseType.UpdateMessage,
+      data: normalizeReply(data),
+    }
+  }
+
+  deferReply(
+    defer: (deferredContext: DeferredContext) => MaybePromise<void>,
+  ): APIInteractionResponseDeferredChannelMessageWithSource {
+    defer(new DeferredContext(this.interaction, {type: InteractionResponseType.DeferredChannelMessageWithSource}))
+
+    return {type: InteractionResponseType.DeferredChannelMessageWithSource}
+  }
+
+  deferUpdate(
+    defer: (deferredContext: DeferredContext) => MaybePromise<void>,
+  ): APIInteractionResponseDeferredMessageUpdate {
+    defer(new DeferredContext(this.interaction, {type: InteractionResponseType.DeferredMessageUpdate}))
+
+    return {type: InteractionResponseType.DeferredMessageUpdate}
+  }
+
+  // #endregion
 }
 
 export class ModalSubmitContext {
@@ -510,10 +615,13 @@ export class ModalSubmitContext {
 
 // Deferred messages
 export class DeferredContext {
-  readonly interaction!: APIApplicationCommandInteraction;
+  readonly interaction!: APIApplicationCommandInteraction | APIMessageComponentInteraction;
   [deferredResponse]!: APIInteractionResponse
 
-  constructor(interaction: APIApplicationCommandInteraction, response: APIInteractionResponse) {
+  constructor(
+    interaction: APIApplicationCommandInteraction | APIMessageComponentInteraction,
+    response: APIInteractionResponse,
+  ) {
     Object.defineProperty(this, 'interaction', {value: interaction})
     this[deferredResponse] = response
   }
@@ -612,6 +720,27 @@ export class DeferredContext {
         return response?.ok ?? false
       },
     }
+  }
+
+  async deleteFollowup() {
+    const res = await discordRest.deleteWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+        message_id: this.interaction.message?.id!,
+      },
+    })
+    console.log(res.response?.status)
+  }
+
+  async deleteOrigin() {
+    const res = await discordRest.deleteOriginalWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+      },
+    })
+    console.log(res.response?.status)
   }
 }
 

@@ -1,4 +1,5 @@
 import type {APIInteraction} from 'discord-api-types/v10'
+import type {BuilderConfig} from '../builder.ts'
 import {InteractionError} from '../errors.ts'
 import {DiscordInteraction, DiscordInteractions} from '../interactions.ts'
 import {
@@ -36,9 +37,12 @@ const encoder = new TextEncoder()
  * ])
  * ```
  */
-export const interactionHandler = async <Ctx extends object>(
+export const interactionHandler = async <
+  Ctx extends object,
+  Config extends BuilderConfig,
+>(
   request: Request,
-  apps: DiscordInteraction<Ctx> | DiscordInteractions<Ctx>,
+  apps: DiscordInteraction<Ctx, Config> | DiscordInteractions<Ctx, Config>,
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return Response.json(ERROR_MethodNotAllowed, {status: 405})
@@ -53,7 +57,7 @@ export const interactionHandler = async <Ctx extends object>(
 
   const blob = await request.blob()
   const body = await blob.bytes()
-  let app: DiscordInteraction
+  let app: DiscordInteraction<Ctx, Config>
   let interaction: APIInteraction | undefined
 
   if (apps instanceof DiscordInteractions) {

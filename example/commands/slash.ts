@@ -1,6 +1,11 @@
-import {ApplicationIntegrationType, ChannelType, InteractionContextType} from 'discord-api-types/v10'
+import {
+  ApplicationIntegrationType,
+  ChannelType,
+  InteractionContextType,
+  InteractionResponseType,
+} from 'discord-api-types/v10'
 import {message} from '../../src/components.ts'
-import {c, Fmt, t} from '../../src/fmt.ts'
+import {c, Fmt, fmt, t} from '../../src/fmt.ts'
 import {schema} from '../builder.ts'
 
 const allOptions = schema.declareCommand({
@@ -63,6 +68,8 @@ const allOptions = schema.declareCommand({
   },
   resolve: (c, args) => {
     // console.dir(c.interaction, {depth: null})
+    return c.reply(`Received ${args.integer}`)
+
     const text = Fmt.join([
       t`hello`.bold(),
       Fmt.mention(c.from.user),
@@ -107,12 +114,12 @@ const hello = schema.declareCommand({
       t.text`Hello ${Fmt.mention(c.from)}`,
       t.separator({spacing: 'large'}),
       t.row((t) => [
-        t.userSelect({id: 'usr:sel:1'}),
+        t.userSelect({id: schema.customIds.helloSelect}),
       ]),
       t.separator({spacing: 'large'}),
       t.row((t) => [
-        t.button.primary({id: 'btn:1', label: 'a'}),
-        t.button.secondary({id: 'btn:2', label: 'b'}),
+        t.button.primary({id: schema.customIds.helloDetail, label: 'a'}),
+        t.button.secondary({id: schema.customIds.helloSecondary, label: 'b'}),
       ]),
     ]))
   },
@@ -174,3 +181,113 @@ const commandTree = schema.declareCommand({
 }, () => [direct, manage, inspect])
 
 schema.slashCommands([allOptions, hello, commandTree])
+
+// tests
+schema.slashCommands((t) => [
+  t.command({
+    name: 'test1',
+    resolve: (c) => {
+      return c.reply(message((t) => [
+        t.text`test 1`,
+        t.row((t) => [
+          t.button.primary({id: schema.customIds.btn1, label: 'Btn 1'}),
+          t.button.primary({id: schema.customIds.btn2, label: 'Btn 2'}),
+        ]),
+      ]))
+    },
+  }),
+])
+
+schema.slashCommands((t) => [
+  t.command({
+    name: 'test2',
+    args: {
+      text: t.arg.string({required: true}),
+      text2: t.arg.string({required: false}),
+    },
+    resolve: (c, args) => {
+      args.text satisfies string
+      args.text2 satisfies string | null
+
+      return c.reply(message((t) => [
+        t.text`test 2`,
+        t.row((t) => [
+          t.button.primary({id: schema.customIds.btnReply, label: 'reply'}),
+          t.button.primary({id: schema.customIds.btnReplyEphemeral, label: 'replyEphemeral'}),
+          t.button.primary({id: schema.customIds.btnUpdate, label: 'update'}),
+          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete'}),
+
+          t.button.danger({id: 'derefReply', label: 'derefReply'}),
+          t.button.danger({id: 'derefUpdate', label: 'derefUpdate'}),
+        ]),
+      ]))
+    },
+  }),
+])
+
+schema.messageComponents((components) => [
+  components.component({
+    customId: [
+      schema.customIds.helloDetail,
+      schema.customIds.helloSecondary,
+      schema.customIds.helloSelect,
+    ],
+    resolve: (c) =>
+      c.reply(
+        t`data: \n`.concat(
+          t`${
+            JSON.stringify({
+              customId: c.customId,
+            })
+          }`.code('json'),
+        ),
+      ),
+  }),
+  components.component({
+    customId: [schema.customIds.btn1, schema.customIds.btn2],
+    resolve: (c) =>
+      c.replyEphemeral(Fmt.join([
+        fmt`id: ${fmt`${c.customId}`.bold()}`,
+      ], '\n')),
+  }),
+  components.component({
+    customId: schema.customIds.btnReply,
+    resolve: (c) =>
+      c.reply(message((t) => [
+        t.text`New message`,
+        t.row((t) => [
+          t.button.primary({id: 'reply:123', label: 'reply'}),
+          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete this message'}),
+        ]),
+      ])),
+  }),
+  components.component({
+    customId: schema.customIds.btnReplyEphemeral,
+    resolve: (c) =>
+      c.replyEphemeral(message((t) => [
+        t.text`New ephemeral message`,
+      ])),
+  }),
+  components.component({
+    customId: schema.customIds.btnUpdate,
+    resolve: (c) =>
+      c.update(message((t) => [
+        t.text`Update parent message success`,
+        t.row((t) => [
+          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete this message'}),
+        ]),
+      ])),
+  }),
+  components.component({
+    customId: (id) => id.startsWith('reply:'),
+    resolve: (c) => c.reply('Handled a component from a reply message'),
+  }),
+  components.component({
+    customId: schema.customIds.btnDelete,
+    resolve: (c) =>
+      c.deferUpdate(async (def) => {
+        await def.deleteFollowup()
+        await def.deleteFollowup()
+      }),
+  }),
+])
