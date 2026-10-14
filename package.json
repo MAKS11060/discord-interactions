@@ -65,7 +65,7 @@
     "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
     "dev:bun": "bun --hot ./example/main.ts",
     "build": "tsdown",
-    "build:pkg": "pnpm lint && pnpm transform-publish-config --write && pnpm pack",
+    "build:pkg": "pnpm lint && pnpm build && pnpm transform-publish-config --extension mjs,d.mts --write && pnpm pack",
     "openapi-ts": "openapi-ts"
   },
   "dependencies": {
@@ -92,15 +92,15 @@
   "publishConfig": {
     "imports": {
       "#adapter/*": {
-        "types": "./dist/adapter/*.d.ts",
+        "types": "./dist/adapter/*.d.mts",
         "default": "./dist/adapter/*.mjs"
       },
       "#lib/*": {
-        "types": "./dist/lib/*.d.ts",
+        "types": "./dist/lib/*.d.mts",
         "default": "./dist/lib/*.mjs"
       },
       "#app": {
-        "types": "./dist/index.d.ts",
+        "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
       },
       "#env": {},
@@ -108,15 +108,19 @@
     },
     "exports": {
       ".": {
-        "types": "./dist/index.d.ts",
+        "types": "./dist/index.d.mts",
         "default": "./dist/index.mjs"
       },
+      "./fmt": {
+        "types": "./dist/fmt.d.mts",
+        "default": "./dist/fmt.mjs"
+      },
       "./web": {
-        "types": "./dist/adapter/web.d.ts",
+        "types": "./dist/adapter/web.d.mts",
         "default": "./dist/adapter/web.mjs"
       },
       "./hono": {
-        "types": "./dist/adapter/hono.d.ts",
+        "types": "./dist/adapter/hono.d.mts",
         "default": "./dist/adapter/hono.mjs"
       }
     }
