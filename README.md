@@ -1,143 +1,127 @@
-<h1 align="center">Discord Interactions</h1>
-<div align="center">
-  <a href="https://www.npmjs.com/package/@maks11060/discord-interactions">
-    <img src="https://img.shields.io/npm/v/@maks11060/discord-interactions">
-  </a>
-  <a href="https://github.com/MAKS11060/discord-interactions/actions/workflows/ci.yml">
-    <img src="https://github.com/MAKS11060/discord-interactions/actions/workflows/ci.yml/badge.svg">
-  </a>
-</div>
+# Discord Interactions
 
-A TypeScript library for handling Discord slash commands, user and message context menu commands, and interactions.
-See Discord's [Interactions overview](https://discord.com/developers/docs/interactions/overview).
+A TypeScript library for Discord application commands, message components, and interactions.
 
-## Quick Start
+## Install
 
-1. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications).
-2. In **General Information**, copy the application ID and public key. In **OAuth2**, copy the client secret.
-3. Configure an HTTPS interactions endpoint in the Developer Portal.
-4. Add the credentials to your environment:
-
-```env
-CLIENT_ID=your-application-id
-CLIENT_SECRET=your-client-secret
-CLIENT_PUBLIC_KEY=your-application-public-key
+```sh
+npm install @maks11060/discord-interactions
 ```
 
-5. Create a command schema and interaction handler:
+For the Hono adapter, install `hono` as well.
+
+## Quick start
+
+Create an application in the [Discord Developer Portal](https://discord.com/developers/applications) and configure its
+HTTPS interactions endpoint. Use the application's public key to verify requests:
 
 ```ts
 import {DiscordInteraction, importPublicKey, InteractionBuilder} from '@maks11060/discord-interactions'
 import {interactionHandler} from '@maks11060/discord-interactions/web'
 
 const schema = new InteractionBuilder()
-const clientPublicKey = process.env.CLIENT_PUBLIC_KEY
-
-if (!clientPublicKey) throw new Error('CLIENT_PUBLIC_KEY is required')
-
 schema.slashCommands((t) => [
   t.command({
     name: 'hello',
     description: 'Say hello',
-    args: {
-      name: t.arg.string({description: 'Who to greet', required: true}),
-    },
+    args: {name: t.arg.string({required: true})},
     resolve: (context, args) => context.reply(`Hello, ${args.name}!`),
   }),
 ])
 
-const discordApp = new DiscordInteraction({
-  publicKey: await importPublicKey(clientPublicKey),
+const publicKey = process.env.CLIENT_PUBLIC_KEY
+if (!publicKey) throw new Error('CLIENT_PUBLIC_KEY is required')
+
+const app = new DiscordInteraction({
+  publicKey: await importPublicKey(publicKey),
   schema,
 })
 
-export const handleRequest = (request: Request) => interactionHandler(request, discordApp)
+export const handleRequest = (request: Request) => interactionHandler(request, app)
 ```
 
-When a schema declares a `Context` with `t.$type<Context>()`, pass the context as the third argument to the web adapter:
+Register commands with Discord using the CLI's `push` command; defining them in a schema alone does not publish them.
+
+## Context
+
+Declare a typed context in the schema. Pass a value or a factory as the adapter's final argument. Factories run once per
+request:
 
 ```ts
-interactionHandler(request, discordApp, {logger: console.log})
+type Context = {logger: typeof console.log}
+
+const schema = new InteractionBuilder((t) => ({
+  Context: t.$type<Context>(),
+  CustomId: {delete: 'global:delete'},
+}))
+
+interactionHandler(request, app, () => ({logger: console.log}))
 ```
 
-The context may also be a factory, which is called for each interaction. A default passed to `t.$type<Context>(default)`
-makes the adapter argument optional and is used when no context is supplied.
+When a default context is supplied, the adapter argument is optional and the schema default is used:
 
-Route Discord's interactions URL to `handleRequest` using your server framework. The handler verifies Discord's request
-signature before executing a command. Your endpoint must be publicly reachable over HTTPS.
-
-The schema defines handlers, but commands must also be registered with Discord to appear in the client. Use the CLI's
-`push` command to register and update application commands.
-
-## Install from npm
-
-```sh
-npm install @maks11060/discord-interactions
+```ts
+const schema = new InteractionBuilder((t) => ({
+  Context: t.$type<Context>({logger: console.log}),
+}))
 ```
 
-The package also provides framework adapters:
+## Message components
+
+Register component handlers on the builder. Match a custom ID exactly, against a list, or with a predicate:
+
+```ts
+schema.messageComponents((t) => [
+  t.component({
+    customId: schema.customIds.delete,
+    resolve: (context) =>
+      context.deferUpdate(async (deferred) => {
+        await deferred.deleteFollowup()
+      }),
+  }),
+  t.component({
+    customId: (id) => id.startsWith('reply:'),
+    resolve: (context) => context.reply('Button pressed'),
+  }),
+])
+```
+
+Handlers are global to the schema, so they work for components on reply and follow-up messages too.
+
+## Adapters
+
+The `/web` entry point handles standard `Request` and `Response` objects (Node.js, Deno, or Bun):
 
 ```ts
 import {interactionHandler} from '@maks11060/discord-interactions/web'
+const response = await interactionHandler(request, app)
 ```
 
-Use the `/web` adapter with a `Request`/`Response` server such as Node.js, Deno, or Bun. Use `/hono` to mount a handler
-as Hono middleware:
+The `/hono` entry point returns Hono middleware:
 
 ```ts
 import {interactionHandler} from '@maks11060/discord-interactions/hono'
-
-app.post('/api/discord/interactions', interactionHandler(discordApp, {logger: console.log}))
+hono.post('/api/discord/interactions', interactionHandler(discordApp))
 ```
 
-## Define commands
+## Package entry points
 
-Use an `InteractionBuilder` to define commands and combine them into a schema. Argument types are inferred in the
-`resolve` callback. Declarations can be kept separate from registration and reused across schemas:
-
-```ts
-const schema = new InteractionBuilder()
-
-const ping = schema.declareCommand({
-  name: 'ping',
-  description: 'Check whether the bot is responding',
-  resolve: (context) => context.reply('Pong!'),
-})
-
-schema.slashCommands([ping])
-```
-
-The builder also supports subcommands, subcommand groups, context menu commands, and primary entry point commands.
-Inside `slashCommands`, options are built with `t.arg.string()`, `t.arg.integer()`, `t.arg.user()`, and the other Discord
-option helpers. For reusable declarations, use `schema.arg`.
+| Import path                            | Contents                                                              |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `@maks11060/discord-interactions`      | Builder, interaction handlers, message builder, and public-key helper |
+| `@maks11060/discord-interactions/fmt`  | `Fmt` formatting utilities                                            |
+| `@maks11060/discord-interactions/web`  | Web `Request`/`Response` adapter                                      |
+| `@maks11060/discord-interactions/hono` | Hono middleware adapter                                               |
 
 ## CLI
 
-In this repository, the CLI loads credentials from `.env`:
+In a checkout of this repository, run the CLI with `pnpm discord`. It reads credentials from `.env` and application
+settings from `.discord.json`:
 
 ```sh
-pnpm discord init --schema ./example/builder.ts
+pnpm discord init --schema ./src/schema.ts
 pnpm discord push --all
-pnpm discord push --name ping
-pnpm discord me
-pnpm discord list
-pnpm discord list --guild 123456789012345678
+pnpm discord push --name hello
 ```
 
-`me` checks the application credentials and confirms that `CLIENT_PUBLIC_KEY` matches Discord. `list` displays registered
-global commands; `--guild <id>` lists commands for a server. `init` creates `.discord.json` without overwriting an
-existing file. Its optional `--schema` value is stored as an application schema path; `CLIENT_ID`,
-`CLIENT_PUBLIC_KEY`, and `CLIENT_SECRET` are copied into that entry when both the ID and public key are set.
-
-The config contains an `applications` array and a `$schema` URL. Each application can define `schema`, `clientId`,
-`clientSecret`, and `publicKey`. `push` lists the configured applications and, when run interactively, lets you select
-an application and either all commands or selected commands. Use `--all` for bulk synchronization (commands missing
-from the schema are removed from Discord) or repeat `--name <name>` to upsert selected commands without removing the
-others. `--schema <path>` overrides the configured schema path. Credentials can come from the config or `.env`;
-`CLIENT_ID` and `CLIENT_SECRET` are required to push. The checked-in JSON Schema is generated from the Zod config schema
-with `pnpm generate:discord-schema`. `ls`, `whoami`, and `login` are aliases.
-
-## Examples
-
-The [example directory](./example) contains a complete server setup, command definitions for all option types, context
-menu commands, and command groups.
+Use `pnpm discord --help` for the available commands and options.
