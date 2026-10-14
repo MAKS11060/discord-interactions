@@ -14,6 +14,7 @@ import {
   type CommandDefinition,
   type ConfigContext,
   InteractionBuilder,
+  type IsContextRequired,
   type ResolvedOption,
 } from './builder.ts'
 import {
@@ -31,6 +32,14 @@ export type DiscordInteractionOptions<Config extends BuilderConfig = BuilderConf
   clientId?: string
   schema: InteractionBuilder<Config>
 }
+
+export type InteractionContextArgument<Config extends BuilderConfig> =
+  | ConfigContext<Config>
+  | (() => ConfigContext<Config>)
+
+export type InteractionContextArgs<Config extends BuilderConfig> = IsContextRequired<Config> extends true
+  ? [ctx: InteractionContextArgument<Config>]
+  : [ctx?: InteractionContextArgument<Config>]
 
 export class DiscordInteraction<Config extends BuilderConfig = BuilderConfig> {
   readonly publicKey: CryptoKey
@@ -50,7 +59,16 @@ export class DiscordInteraction<Config extends BuilderConfig = BuilderConfig> {
     this.schema = options.schema
   }
 
-  async execute(interaction: APIInteraction, ctx?: ConfigContext<Config>): Promise<APIInteractionResponse> {
+  resolveContext(context?: InteractionContextArgument<Config>): ConfigContext<Config> | undefined {
+    if (context === undefined) return this.schema.defaultContext
+    if (typeof context === 'function') return (context as () => ConfigContext<Config>)()
+    return context
+  }
+
+  async execute(
+    interaction: APIInteraction,
+    ctx: ConfigContext<Config> | undefined = this.schema.defaultContext,
+  ): Promise<APIInteractionResponse> {
     // console.dir(interaction, {depth: null})
 
     if (interaction.type === InteractionType.Ping) {

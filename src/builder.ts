@@ -365,13 +365,21 @@ export interface BuilderConfig {
 }
 
 export class TypeHelper {
-  $type<T>(defaultValue?: T): T {
-    return defaultValue as T
+  $type<T>(): T & {__default: undefined}
+  $type<T>(defaultValue: Partial<T>): T & {__default: Partial<T>}
+  $type<T>(defaultValue?: Partial<T>): T & {__default: Partial<T> | undefined} {
+    return defaultValue as unknown as T & {__default: Partial<T> | undefined}
   }
 }
 
-export type ConfigContext<Config extends BuilderConfig> = Config extends {Context: infer Ctx extends object} ? Ctx
+export type ConfigContext<Config extends BuilderConfig> = Config extends {Context: infer SchemaContext extends object}
+  ? SchemaContext extends {__default: unknown} ? Omit<SchemaContext, '__default'> : SchemaContext
   : object
+
+export type IsContextRequired<Config extends BuilderConfig> = Config extends {Context: infer SchemaContext}
+  ? SchemaContext extends {__default: infer Default} ? Default extends undefined ? true : false
+  : true
+  : false
 
 export type MessageComponentMatcher = string | readonly string[] | ((customId: string) => boolean)
 
@@ -424,6 +432,10 @@ export class InteractionBuilder<
 
   get arg(): OptionFactory {
     return this.#tools().option
+  }
+
+  get defaultContext(): ConfigContext<Config> | undefined {
+    return this.config.Context as ConfigContext<Config> | undefined
   }
 
   slashCommands(

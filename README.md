@@ -54,6 +54,15 @@ const discordApp = new DiscordInteraction({
 export const handleRequest = (request: Request) => interactionHandler(request, discordApp)
 ```
 
+When a schema declares a `Context` with `t.$type<Context>()`, pass the context as the third argument to the web adapter:
+
+```ts
+interactionHandler(request, discordApp, {logger: console.log})
+```
+
+The context may also be a factory, which is called for each interaction. A default passed to `t.$type<Context>(default)`
+makes the adapter argument optional and is used when no context is supplied.
+
 Route Discord's interactions URL to `handleRequest` using your server framework. The handler verifies Discord's request
 signature before executing a command. Your endpoint must be publicly reachable over HTTPS.
 
@@ -78,7 +87,7 @@ as Hono middleware:
 ```ts
 import {interactionHandler} from '@maks11060/discord-interactions/hono'
 
-app.post('/api/discord/interactions', interactionHandler(discordApp))
+app.post('/api/discord/interactions', interactionHandler(discordApp, {logger: console.log}))
 ```
 
 ## Define commands

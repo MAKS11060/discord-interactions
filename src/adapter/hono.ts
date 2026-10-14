@@ -1,7 +1,8 @@
 import type {APIInteraction} from 'discord-api-types/v10'
 import {createMiddleware} from 'hono/factory'
+import type {BuilderConfig} from '../builder.ts'
 import {InteractionError} from '../errors.ts'
-import {type DiscordInteraction, DiscordInteractions} from '../interactions.ts'
+import {type DiscordInteraction, DiscordInteractions, type InteractionContextArgs} from '../interactions.ts'
 import {
   concat,
   ERROR_BadRequestSignature,
@@ -22,16 +23,22 @@ const encoder = new TextEncoder()
  * })
  *
  * const app = new Hono()
- * app.post('/api/discord/interactions', interactionHandler(discordApp))
+ * app.post('/api/discord/interactions', interactionHandler(discordApp, {logger: console.log}))
  * ```
  */
-export const interactionHandler = (apps: DiscordInteraction | DiscordInteractions) => {
+export const interactionHandler = <Config extends BuilderConfig>(
+  ...args: [
+    apps: DiscordInteraction<Config> | DiscordInteractions<Config>,
+    ...ctx: InteractionContextArgs<Config>,
+  ]
+) => {
+  const [apps, ctx] = args
   return createMiddleware(async (c, next) => {
     if (c.req.method !== 'POST') {
       return c.json(ERROR_MethodNotAllowed, {status: 405})
     }
 
-    let app: DiscordInteraction
+    let app: DiscordInteraction<Config>
     let interaction: APIInteraction | undefined
 
     // multi apps
@@ -77,6 +84,7 @@ export const interactionHandler = (apps: DiscordInteraction | DiscordInteraction
       return c.json(
         await app.execute(
           interaction ?? await c.req.json<APIInteraction>(),
+          app.resolveContext(ctx),
         ) as unknown, // hono can't forward a large type
       )
     } catch (e) {

@@ -1,7 +1,7 @@
 import type {APIInteraction} from 'discord-api-types/v10'
 import type {BuilderConfig} from '../builder.ts'
 import {InteractionError} from '../errors.ts'
-import {DiscordInteraction, DiscordInteractions} from '../interactions.ts'
+import {DiscordInteraction, DiscordInteractions, type InteractionContextArgs} from '../interactions.ts'
 import {
   concat,
   ERROR_BadRequestSignature,
@@ -38,9 +38,13 @@ const encoder = new TextEncoder()
  * ```
  */
 export const interactionHandler = async <Config extends BuilderConfig>(
-  request: Request,
-  apps: DiscordInteraction<Config> | DiscordInteractions<Config>,
+  ...args: [
+    request: Request,
+    apps: DiscordInteraction<Config> | DiscordInteractions<Config>,
+    ...ctx: InteractionContextArgs<Config>,
+  ]
 ): Promise<Response> => {
+  const [request, apps, ctx] = args
   if (request.method !== 'POST') {
     return Response.json(ERROR_MethodNotAllowed, {status: 405})
   }
@@ -95,7 +99,10 @@ export const interactionHandler = async <Config extends BuilderConfig>(
   // execute
   try {
     return Response.json(
-      await app.execute(interaction ?? JSON.parse(await blob.text()) as APIInteraction),
+      await app.execute(
+        interaction ?? JSON.parse(await blob.text()) as APIInteraction,
+        app.resolveContext(ctx),
+      ),
     )
   } catch (e) {
     if (e instanceof InteractionError) {
