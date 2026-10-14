@@ -33,7 +33,7 @@ import {
   type RESTPatchAPIInteractionOriginalResponseJSONBody,
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
-import type {BuilderConfig} from './builder.ts'
+import type {BuilderConfig, ConfigCustomIds} from './builder.ts'
 import type {Message} from './components.ts'
 import {Fmt, i} from './fmt.ts'
 
@@ -432,8 +432,7 @@ export class ApplicationCommandAutocompleteContext<
 }
 
 type AnyString = string & {}
-type GetCustomIds<T extends BuilderConfig> = T extends {customIds: {[k: PropertyKey]: infer K}} ? K | AnyString
-  : string
+type GetCustomIds<T extends BuilderConfig> = ConfigCustomIds<T>[keyof ConfigCustomIds<T>] | AnyString
 
 export class MessageComponentContext<Config extends BuilderConfig = BuilderConfig> {
   interaction!: APIMessageComponentInteraction

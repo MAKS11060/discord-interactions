@@ -107,7 +107,11 @@ test('Test 607811', async (t) => {
 
 test('declared slash commands can be registered in multiple builders', () => {
   type Context = {label: string}
-  const declarationBuilder = new InteractionBuilder<Context>()
+  const createBuilder = () =>
+    new InteractionBuilder((t) => ({
+      Context: t.$type<Context>(),
+    }))
+  const declarationBuilder = createBuilder()
   const reusable = declarationBuilder.declareCommand({
     name: 'reusable',
     args: {
@@ -120,8 +124,8 @@ test('declared slash commands can be registered in multiple builders', () => {
     },
   })
 
-  const first = new InteractionBuilder<Context>()
-  const second = new InteractionBuilder<Context>()
+  const first = createBuilder()
+  const second = createBuilder()
   first.slashCommands([reusable])
   second.slashCommands(() => [reusable])
 

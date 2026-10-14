@@ -1,3 +1,5 @@
+import {bigint} from 'zod'
+
 // 1. Вспомогательный класс, который прокидывается в коллбэк как аргумент `t`
 class TypeHelper {
   // Этот метод существует ТОЛЬКО для протаскивания типа на уровень TypeScript.
@@ -9,8 +11,8 @@ class TypeHelper {
 
 // 2. Интерфейс, описывающий структуру, которую должен вернуть разработчик
 interface SchemaDefinition {
-  Context: any
-  CustomId: Record<string, string>
+  Context?: object
+  CustomId?: Record<string, string>
 }
 
 // 3. Класс результирующей схемы, который хранит строгие типы
@@ -45,7 +47,7 @@ interface Context {
 }
 
 const schema = createSchemaBuilder((t) => ({
-  Context: t.$type<Context>(),
+  // Context: t.$type<Context>(),
   CustomId: {
     delete: 'global:delete',
     reply: 'global:reply',
@@ -59,3 +61,7 @@ schema.config satisfies {
     reply: 'global:reply'
   }
 }
+
+const builder = <T extends boolean>(...args: T extends true ? [val: string] : [val?: string]) => void {}
+
+builder<true>()

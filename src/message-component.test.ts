@@ -33,32 +33,39 @@ const publicKey = await crypto.subtle.importKey(
 )
 
 test('component handlers dispatch by custom ID without originating message metadata', async () => {
-  const schema = new InteractionBuilder({
-    customIds: {createReply: 'global:create'},
-  })
+  type Context = {requestId: string}
+  const schema = new InteractionBuilder((t) => ({
+    Context: t.$type<Context>(),
+    CustomId: {createReply: 'global:create'},
+  }))
   const handled: string[] = []
   schema.messageComponents((t) => [
     t.component({
       customId: schema.customIds.createReply,
-      resolve: (context) => {
-        handled.push(context.customId)
+      resolve: (context, ctx) => {
+        handled.push(ctx.requestId, context.customId)
         return context.reply('created a child message')
       },
     }),
     t.component({
       customId: (id) => id.startsWith('reply:'),
-      resolve: (context) => {
-        handled.push(context.customId)
+      resolve: (context, ctx) => {
+        handled.push(ctx.requestId, context.customId)
         return context.reply('handled child message')
       },
     }),
   ])
+  schema.config satisfies {
+    Context: Context
+    CustomId: {createReply: 'global:create'}
+  }
+  schema.customIds.createReply satisfies 'global:create'
 
   const interaction = new DiscordInteraction({publicKey, schema})
-  const firstResponse = await interaction.execute(createInteraction('global:create'))
-  const childResponse = await interaction.execute(createInteraction('reply:123'))
+  const firstResponse = await interaction.execute(createInteraction('global:create'), {requestId: 'request'})
+  const childResponse = await interaction.execute(createInteraction('reply:123'), {requestId: 'request'})
 
-  assert.deepEqual(handled, ['global:create', 'reply:123'])
+  assert.deepEqual(handled, ['request', 'global:create', 'request', 'reply:123'])
   assert.equal(firstResponse.type, InteractionResponseType.ChannelMessageWithSource)
   assert.equal(childResponse.type, InteractionResponseType.ChannelMessageWithSource)
 })

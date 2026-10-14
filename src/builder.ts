@@ -196,7 +196,7 @@ type SlashCommandsCommand = CommandMetadata & {
 }
 
 type SlashArgsCommand<
-  Ctx extends object,
+  Config extends BuilderConfig,
   O extends Record<string, AnyArg>,
 > = SlashCommandsCommand & {
   /**
@@ -242,7 +242,7 @@ type SlashArgsCommand<
   resolve?(
     context: ApplicationCommandContextChatInput<SlashCommandContextOption<O>>,
     args: SlashCommandArgs<O>,
-    ctx: Ctx,
+    ctx: ConfigContext<Config>,
   ): MaybePromise<APIInteractionResponse>
 
   /**
@@ -255,7 +255,7 @@ type SlashArgsCommand<
    */
   autocomplete?(
     context: ApplicationCommandAutocompleteContext,
-    ctx: Ctx,
+    ctx: ConfigContext<Config>,
     args: SlashCommandArgs<O>,
   ): MaybePromise<APIApplicationCommandOptionChoice[]>
 }
@@ -304,20 +304,20 @@ type SlashCommandContextOption<O extends Record<string, AnyArg>> = {
   >
 }[keyof O]
 
-type SlashCommandsTools<Ctx extends object> = {
+type SlashCommandsTools<Config extends BuilderConfig> = {
   arg: OptionFactory
   command<const O extends Record<string, AnyArg> = {}>(
-    definition: SlashArgsCommand<Ctx, O>,
+    definition: SlashArgsCommand<Config, O>,
   ): CommandResult
   declareCommand<const O extends Record<string, AnyArg> = {}>(
-    definition: SlashArgsCommand<Ctx, O>,
-    children?: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+    definition: SlashArgsCommand<Config, O>,
+    children?: (tools: SlashCommandDeclarationTools<Config>) => CommandResult[],
   ): CommandResult
   subcommand<const O extends Record<string, AnyArg> = {}>(
-    definition: SlashArgsCommand<Ctx, O>,
+    definition: SlashArgsCommand<Config, O>,
   ): CommandResult
   declareSubcommand<const O extends Record<string, AnyArg> = {}>(
-    definition: SlashArgsCommand<Ctx, O>,
+    definition: SlashArgsCommand<Config, O>,
   ): CommandResult
   group(definition: {
     name: string
@@ -326,12 +326,12 @@ type SlashCommandsTools<Ctx extends object> = {
   }): CommandResult
   declareSubcommandGroup(
     definition: {name: string; description?: string},
-    children: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+    children: (tools: SlashCommandDeclarationTools<Config>) => CommandResult[],
   ): CommandResult
 }
 
-type SlashCommandDeclarationTools<Ctx extends object> = Pick<
-  SlashCommandsTools<Ctx>,
+type SlashCommandDeclarationTools<Config extends BuilderConfig> = Pick<
+  SlashCommandsTools<Config>,
   'arg' | 'declareCommand' | 'declareSubcommand' | 'declareSubcommandGroup'
 >
 
@@ -359,41 +359,54 @@ const optionType = (kind: OptionKind): ApplicationCommandOptionType => {
   return types[kind]
 }
 
-/* WIP */
 export interface BuilderConfig {
-  /** Global `customIds` registry */
-  customIds?: Record<string, string>
+  Context?: object
+  CustomId?: Record<string, string>
 }
+
+export class TypeHelper {
+  $type<T>(defaultValue?: T): T {
+    return defaultValue as T
+  }
+}
+
+export type ConfigContext<Config extends BuilderConfig> = Config extends {Context: infer Ctx extends object} ? Ctx
+  : object
 
 export type MessageComponentMatcher = string | readonly string[] | ((customId: string) => boolean)
 
 export type MessageComponentDefinition<
-  Ctx extends object = object,
   Config extends BuilderConfig = BuilderConfig,
 > = {
   customId: MessageComponentMatcher
-  resolve: (context: MessageComponentContext<Config>, ctx: Ctx) => MaybePromise<APIInteractionResponse | void>
+  resolve: (
+    context: MessageComponentContext<Config>,
+    ctx: ConfigContext<Config>,
+  ) => MaybePromise<APIInteractionResponse | void>
 }
 
-type MessageComponentTools<Ctx extends object, Config extends BuilderConfig> = {
+type MessageComponentTools<Config extends BuilderConfig> = {
   component: (
-    definition: MessageComponentDefinition<Ctx, Config>,
-  ) => MessageComponentDefinition<Ctx, Config>
+    definition: MessageComponentDefinition<Config>,
+  ) => MessageComponentDefinition<Config>
 }
 
-type ConfigCustomIds<Config extends BuilderConfig> = Config extends {customIds: infer Ids} ? Ids
+export type ConfigCustomIds<Config extends BuilderConfig> = Config extends {
+  CustomId: infer Ids extends Record<string, string>
+} ? Ids
   : Record<string, string>
 
 export class InteractionBuilder<
-  Ctx extends object = object,
   const Config extends BuilderConfig = BuilderConfig,
 > {
   #commands: CommandDefinition[] = []
-  #messageComponents: MessageComponentDefinition<Ctx, Config>[] = []
+  #messageComponents: MessageComponentDefinition<Config>[] = []
   readonly customIds: ConfigCustomIds<Config>
+  readonly config: Config
 
-  constructor(readonly config?: Config) {
-    this.customIds = (config?.customIds ?? {}) as ConfigCustomIds<Config>
+  constructor(config: Config | ((types: TypeHelper) => Config) = {} as Config) {
+    this.config = typeof config === 'function' ? config(new TypeHelper()) : config
+    this.customIds = (this.config.CustomId ?? {}) as ConfigCustomIds<Config>
   }
 
   toSchema(): this {
@@ -416,7 +429,7 @@ export class InteractionBuilder<
   slashCommands(
     commands:
       | readonly CommandResult[]
-      | ((tools: SlashCommandsTools<Ctx>) => readonly CommandResult[]),
+      | ((tools: SlashCommandsTools<Config>) => readonly CommandResult[]),
   ): CommandResult[] {
     const tools = this.#slashCommandsTools()
     const declared = typeof commands === 'function' ? commands(tools) : commands
@@ -428,17 +441,17 @@ export class InteractionBuilder<
   }
 
   component(
-    definition: MessageComponentDefinition<Ctx, Config>,
-  ): MessageComponentDefinition<Ctx, Config> {
+    definition: MessageComponentDefinition<Config>,
+  ): MessageComponentDefinition<Config> {
     return definition
   }
 
   messageComponents(
     components:
-      | readonly MessageComponentDefinition<Ctx, Config>[]
-      | ((tools: MessageComponentTools<Ctx, Config>) => readonly MessageComponentDefinition<Ctx, Config>[]),
-  ): MessageComponentDefinition<Ctx, Config>[] {
-    const tools: MessageComponentTools<Ctx, Config> = {
+      | readonly MessageComponentDefinition<Config>[]
+      | ((tools: MessageComponentTools<Config>) => readonly MessageComponentDefinition<Config>[]),
+  ): MessageComponentDefinition<Config>[] {
+    const tools: MessageComponentTools<Config> = {
       component: (definition) => this.component(definition),
     }
     const registered = typeof components === 'function' ? components(tools) : components
@@ -446,7 +459,7 @@ export class InteractionBuilder<
     return [...registered]
   }
 
-  findMessageComponent(customId: string): MessageComponentDefinition<Ctx, Config> | undefined {
+  findMessageComponent(customId: string): MessageComponentDefinition<Config> | undefined {
     const exactMatch = this.#messageComponents.find(({customId: matcher}) =>
       typeof matcher === 'string'
         ? matcher === customId
@@ -457,8 +470,8 @@ export class InteractionBuilder<
   }
 
   declareCommand<const O extends Record<string, AnyArg> = {}>(
-    config: SlashArgsCommand<Ctx, O>,
-    children?: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+    config: SlashArgsCommand<Config, O>,
+    children?: (tools: SlashCommandDeclarationTools<Config>) => CommandResult[],
   ): CommandResult {
     const childCommands = children?.(this.#slashCommandDeclarationTools())
     return this.#buildArgsCommand(
@@ -468,14 +481,14 @@ export class InteractionBuilder<
   }
 
   declareSubcommand<const O extends Record<string, AnyArg> = {}>(
-    config: SlashArgsCommand<Ctx, O>,
+    config: SlashArgsCommand<Config, O>,
   ): CommandResult {
     return this.#buildArgsCommand(config, 'subcommand')
   }
 
   declareSubcommandGroup(
     config: {name: string; description?: string},
-    children: (tools: SlashCommandDeclarationTools<Ctx>) => CommandResult[],
+    children: (tools: SlashCommandDeclarationTools<Config>) => CommandResult[],
   ): CommandResult {
     return this.#publicResult({
       name: config.name,
@@ -485,7 +498,7 @@ export class InteractionBuilder<
     })
   }
 
-  #slashCommandDeclarationTools(): SlashCommandDeclarationTools<Ctx> {
+  #slashCommandDeclarationTools(): SlashCommandDeclarationTools<Config> {
     return {
       arg: this.arg,
       declareCommand: (config, children) => this.declareCommand(config, children),
@@ -494,7 +507,7 @@ export class InteractionBuilder<
     }
   }
 
-  #slashCommandsTools(): SlashCommandsTools<Ctx> {
+  #slashCommandsTools(): SlashCommandsTools<Config> {
     return {
       arg: this.#tools().option,
       command: (definition) => this.#buildArgsCommand(definition),
@@ -513,10 +526,10 @@ export class InteractionBuilder<
   }
 
   slashSubcommand(
-    builder: (t: CommandBuilder<Ctx>) => SlashSubcommandDefinition,
+    builder: (t: CommandBuilder<ConfigContext<Config>>) => SlashSubcommandDefinition,
   ): CommandResult
   slashSubcommand(
-    builder: (t: CommandBuilder<Ctx>) => SlashSubcommandDefinition,
+    builder: (t: CommandBuilder<ConfigContext<Config>>) => SlashSubcommandDefinition,
   ): CommandResult {
     const result = builder(this.#tools())
     return this.#publicResult({
@@ -529,7 +542,7 @@ export class InteractionBuilder<
 
   slashSubcommandGroup(
     builder: (
-      t: CommandBuilder<Ctx>,
+      t: CommandBuilder<ConfigContext<Config>>,
     ) => {name: string; description?: string; commands: Array<CommandResult | CommandDefinition>},
   ): CommandResult {
     const result = builder(this.#tools())
@@ -546,7 +559,7 @@ export class InteractionBuilder<
   message(
     config: CommandMetadata & {
       name: string
-      resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
+      resolve?: (context: ApplicationCommandContextMessage, ctx: ConfigContext<Config>) => APIInteractionResponse
     },
   ): CommandResult
   message(command: CommandResult): CommandResult
@@ -555,7 +568,7 @@ export class InteractionBuilder<
       | CommandResult
       | (CommandMetadata & {
         name: string
-        resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
+        resolve?: (context: ApplicationCommandContextMessage, ctx: ConfigContext<Config>) => APIInteractionResponse
       }),
   ): CommandResult {
     const command = this.#isCommandResult(config) ? config : this.declareMessage(config)
@@ -565,7 +578,7 @@ export class InteractionBuilder<
   declareMessage(
     config: CommandMetadata & {
       name: string
-      resolve?: (context: ApplicationCommandContextMessage, ctx: Ctx) => APIInteractionResponse
+      resolve?: (context: ApplicationCommandContextMessage, ctx: ConfigContext<Config>) => APIInteractionResponse
     },
   ): CommandResult {
     return this.#publicResult({
@@ -575,7 +588,7 @@ export class InteractionBuilder<
       applicationType: ApplicationCommandType.Message,
       ...this.#commandMetadata(config),
       resolve: config.resolve
-        ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextMessage, ctx as Ctx)
+        ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextMessage, ctx as ConfigContext<Config>)
         : undefined,
     })
   }
@@ -583,7 +596,7 @@ export class InteractionBuilder<
   user(
     config: CommandMetadata & {
       name: string
-      resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
+      resolve?: (context: ApplicationCommandContextUser, ctx: ConfigContext<Config>) => APIInteractionResponse
     },
   ): CommandResult
   user(command: CommandResult): CommandResult
@@ -592,7 +605,7 @@ export class InteractionBuilder<
       | CommandResult
       | (CommandMetadata & {
         name: string
-        resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
+        resolve?: (context: ApplicationCommandContextUser, ctx: ConfigContext<Config>) => APIInteractionResponse
       }),
   ): CommandResult {
     const command = this.#isCommandResult(config) ? config : this.declareUser(config)
@@ -602,7 +615,7 @@ export class InteractionBuilder<
   declareUser(
     config: CommandMetadata & {
       name: string
-      resolve?: (context: ApplicationCommandContextUser, ctx: Ctx) => APIInteractionResponse
+      resolve?: (context: ApplicationCommandContextUser, ctx: ConfigContext<Config>) => APIInteractionResponse
     },
   ): CommandResult {
     return this.#publicResult({
@@ -612,7 +625,7 @@ export class InteractionBuilder<
       applicationType: ApplicationCommandType.User,
       ...this.#commandMetadata(config),
       resolve: config.resolve
-        ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextUser, ctx as Ctx)
+        ? ({context, ctx}) => config.resolve!(context as ApplicationCommandContextUser, ctx as ConfigContext<Config>)
         : undefined,
     })
   }
@@ -699,7 +712,7 @@ export class InteractionBuilder<
   }
 
   #buildArgsCommand<const O extends Record<string, AnyArg>>(
-    result: SlashArgsCommand<Ctx, O>,
+    result: SlashArgsCommand<Config, O>,
     type: CommandDefinition['type'] = 'command',
   ): CommandResult {
     const args = result.args ?? {} as O
@@ -773,7 +786,7 @@ export class InteractionBuilder<
           const commandContext = context as unknown as ApplicationCommandContextChatInput<
             SlashCommandContextOption<O>
           >
-          return result.resolve!(commandContext, getArgs(commandContext), ctx as Ctx)
+          return result.resolve!(commandContext, getArgs(commandContext), ctx as ConfigContext<Config>)
         }
         : undefined,
       autocomplete: result.autocomplete
@@ -781,7 +794,7 @@ export class InteractionBuilder<
           const rawArgs = Object.fromEntries(
             Object.entries(args).map(([key, arg]) => [key, options[arg.name ?? key]?.value]),
           )
-          return result.autocomplete!(context, ctx as Ctx, rawArgs as SlashCommandArgs<O>)
+          return result.autocomplete!(context, ctx as ConfigContext<Config>, rawArgs as SlashCommandArgs<O>)
         }
         : undefined,
       children: result.commands?.map((command) => this.#definition(command)),
@@ -872,7 +885,7 @@ export class InteractionBuilder<
     }
   }
 
-  #tools(): CommandBuilder<Ctx> {
+  #tools(): CommandBuilder<ConfigContext<Config>> {
     const makeOption = <K extends OptionKind>(options: BuilderCommandOptions & {type: K} & object) =>
       options as Arg<K, OptionValue<K>, boolean, string | undefined, object>
     const option = Object.assign(makeOption, {
@@ -886,7 +899,7 @@ export class InteractionBuilder<
       number: (options: BuilderCommandOptions) => makeOption({...options, type: 'Number' as const}),
       attachment: (options: BuilderCommandOptions) => makeOption({...options, type: 'Attachment' as const}),
     }) as OptionFactory
-    const tools = ((definition: unknown) => definition) as CommandBuilder<Ctx>
+    const tools = ((definition: unknown) => definition) as CommandBuilder<ConfigContext<Config>>
     tools.option = option
     tools.autocomplete = () => true
     return tools

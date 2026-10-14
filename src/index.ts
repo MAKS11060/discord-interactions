@@ -1,5 +1,12 @@
 export {InteractionBuilder} from './builder.ts'
-export type {BuilderConfig, MessageComponentDefinition, MessageComponentMatcher} from './builder.ts'
+export type {
+  BuilderConfig,
+  ConfigContext,
+  ConfigCustomIds,
+  MessageComponentDefinition,
+  MessageComponentMatcher,
+} from './builder.ts'
+export {TypeHelper} from './builder.ts'
 export {DiscordInteraction, DiscordInteractions} from './interactions.ts'
 
 export {message} from './components.ts'

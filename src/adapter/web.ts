@@ -37,12 +37,9 @@ const encoder = new TextEncoder()
  * ])
  * ```
  */
-export const interactionHandler = async <
-  Ctx extends object,
-  Config extends BuilderConfig,
->(
+export const interactionHandler = async <Config extends BuilderConfig>(
   request: Request,
-  apps: DiscordInteraction<Ctx, Config> | DiscordInteractions<Ctx, Config>,
+  apps: DiscordInteraction<Config> | DiscordInteractions<Config>,
 ): Promise<Response> => {
   if (request.method !== 'POST') {
     return Response.json(ERROR_MethodNotAllowed, {status: 405})
@@ -57,7 +54,7 @@ export const interactionHandler = async <
 
   const blob = await request.blob()
   const body = await blob.bytes()
-  let app: DiscordInteraction<Ctx, Config>
+  let app: DiscordInteraction<Config>
   let interaction: APIInteraction | undefined
 
   if (apps instanceof DiscordInteractions) {

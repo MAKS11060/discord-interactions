@@ -12,6 +12,7 @@ import {
   type Arg,
   type BuilderConfig,
   type CommandDefinition,
+  type ConfigContext,
   InteractionBuilder,
   type ResolvedOption,
 } from './builder.ts'
@@ -25,24 +26,18 @@ import {
 } from './context.ts'
 import {InteractionError} from './errors.ts'
 
-export type DiscordInteractionOptions<
-  Ctx extends object = object,
-  Config extends BuilderConfig = BuilderConfig,
-> = {
+export type DiscordInteractionOptions<Config extends BuilderConfig = BuilderConfig> = {
   publicKey: CryptoKey
   clientId?: string
-  schema: InteractionBuilder<Ctx, Config>
+  schema: InteractionBuilder<Config>
 }
 
-export class DiscordInteraction<
-  Ctx extends object = object,
-  Config extends BuilderConfig = BuilderConfig,
-> {
+export class DiscordInteraction<Config extends BuilderConfig = BuilderConfig> {
   readonly publicKey: CryptoKey
   readonly clientId?: string
-  readonly schema: InteractionBuilder<Ctx, Config>
+  readonly schema: InteractionBuilder<Config>
 
-  constructor(options: DiscordInteractionOptions<Ctx, Config>) {
+  constructor(options: DiscordInteractionOptions<Config>) {
     if (
       options.publicKey.type !== 'public'
       || options.publicKey.algorithm.name !== 'Ed25519'
@@ -55,7 +50,7 @@ export class DiscordInteraction<
     this.schema = options.schema
   }
 
-  async execute(interaction: APIInteraction, ctx?: Ctx): Promise<APIInteractionResponse> {
+  async execute(interaction: APIInteraction, ctx?: ConfigContext<Config>): Promise<APIInteractionResponse> {
     // console.dir(interaction, {depth: null})
 
     if (interaction.type === InteractionType.Ping) {
@@ -112,7 +107,7 @@ export class DiscordInteraction<
       const context = new MessageComponentContext<Config>(interaction)
       const component = this.schema.findMessageComponent(context.customId)
       if (component) {
-        const response = await component.resolve(context, ctx as Ctx)
+        const response = await component.resolve(context, ctx as ConfigContext<Config>)
         if (response) return response
       }
 
@@ -146,13 +141,10 @@ export class DiscordInteraction<
   }
 }
 
-export class DiscordInteractions<
-  Ctx extends object = object,
-  Config extends BuilderConfig = BuilderConfig,
-> {
-  readonly #apps: Map<string, DiscordInteraction<Ctx, Config>>
+export class DiscordInteractions<Config extends BuilderConfig = BuilderConfig> {
+  readonly #apps: Map<string, DiscordInteraction<Config>>
 
-  constructor(apps: Iterable<DiscordInteractionOptions<Ctx, Config> & {clientId: string}>) {
+  constructor(apps: Iterable<DiscordInteractionOptions<Config> & {clientId: string}>) {
     this.#apps = new Map()
     for (const options of apps) {
       if (this.#apps.has(options.clientId)) {
@@ -162,7 +154,7 @@ export class DiscordInteractions<
     }
   }
 
-  get(clientId: string): DiscordInteraction<Ctx, Config> | undefined {
+  get(clientId: string): DiscordInteraction<Config> | undefined {
     return this.#apps.get(clientId)
   }
 }
