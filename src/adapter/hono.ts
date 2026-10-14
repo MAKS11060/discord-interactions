@@ -1,78 +1,97 @@
-/**
- * @module
- * Adapter for {@link https://hono.dev Hono} framework
- *
- * @example Usage `Hono` framework
- * ```ts
- * // main.ts
- * import {Hono} from 'hono'
- * import {discordInteraction, importKeyRaw} from '@maks11060/discord-interactions/hono'
- * import {commands} from './src/commands.ts'
- *
- * const app = new Hono()
- * const key = await importKeyRaw(Deno.env.get('CLIENT_PUBLIC_KEY')!)
- *
- * app.post('/interaction', ...await discordInteraction(key, commands))
- *
- * Deno.serve(app.fetch)
- * ```
- */
-
 import type {APIInteraction} from 'discord-api-types/v10'
-import type {Handler} from 'hono'
-import {createFactory} from 'hono/factory'
-import {createHandler, type CreateHandlerOptions} from '../interaction.ts'
-import {verifyRequestSignature as verifyRequest} from '../lib/ed25519.ts'
-import type {Command} from '../types.ts'
+import {createMiddleware} from 'hono/factory'
+import type {BuilderConfig} from '../builder.ts'
+import {InteractionError} from '../errors.ts'
+import {type DiscordInteraction, DiscordInteractions, type InteractionContextArgs} from '../interactions.ts'
+import {
+  concat,
+  ERROR_BadRequestSignature,
+  ERROR_ExecuteFailed,
+  ERROR_MethodNotAllowed,
+  HEADER_SIGNATURE,
+  HEADER_SIGNATURE_TS,
+} from './_common.ts'
 
-export {importKeyRaw} from '../lib/ed25519.ts'
-
-/**
- * Creates a middleware function that verifies the signature of a request using a CryptoKey object.
- *
- * @param {CryptoKey} key - The CryptoKey object representing the public key to use for verification.
- * @returns {MiddlewareHandler} A middleware function that can be used with the Hono framework to verify the signature of a request.
- */
-const verifyRequestSignature = (key: CryptoKey) => {
-  return createFactory().createMiddleware(async (c, next) => {
-    const invalid = await verifyRequest(c.req.raw, key)
-    if (invalid) return invalid
-    await next()
-  })
-}
+const encoder = new TextEncoder()
 
 /**
- * Adapter for {@link https://hono.dev Hono} framework.
- *
- * Creates a set of middleware handlers for the Hono framework that can be used to handle Discord interactions.
- *
- * @param {CryptoKey} key - The CryptoKey object representing the public key to use for verifying the signature of the interaction.
- * @param {Command[]} commands - An array of Command objects representing the commands that the bot supports.
- * @returns {Promise<Handler[]>} A promise that resolves to an array of middleware handlers that can be used with the Hono framework to handle Discord interactions.
- *
  * @example
  * ```ts
- * import {Hono} from 'hono'
- * import {discordInteraction} from '@maks11060/discord-interactions/hono'
- * import {commands} from './src/commands.ts'
+ * const discordApp = new DiscordInteraction({
+ *   publicKey: await importPublicKey(getEnvRequired('CLIENT_PUBLIC_KEY')),
+ *   schema
+ * })
  *
  * const app = new Hono()
- * const key = await importKeyRaw(Deno.env.get('CLIENT_PUBLIC_KEY')!)
- *
- * app.post('/interaction', ...await discordInteraction(key, commands))
+ * app.post('/api/discord/interactions', interactionHandler(discordApp, {logger: console.log}))
  * ```
  */
-export const discordInteraction = async (
-  key: CryptoKey,
-  commands: Command[],
-  options?: CreateHandlerOptions
-): Promise<Handler[]> => {
-  const handler = await createHandler(commands, options)
+export const interactionHandler = <Config extends BuilderConfig>(
+  ...args: [
+    apps: DiscordInteraction<Config> | DiscordInteractions<Config>,
+    ...ctx: InteractionContextArgs<Config>,
+  ]
+) => {
+  const [apps, ctx] = args
+  return createMiddleware(async (c, next) => {
+    if (c.req.method !== 'POST') {
+      return c.json(ERROR_MethodNotAllowed, {status: 405})
+    }
 
-  const interactionHandler = createFactory().createMiddleware(async (c) => {
-    const interaction = await c.req.json<APIInteraction>()
-    return c.json(await handler(interaction))
+    let app: DiscordInteraction<Config>
+    let interaction: APIInteraction | undefined
+
+    // multi apps
+    if (apps instanceof DiscordInteractions) {
+      const payload = await c.req.json()
+
+      if (
+        payload === undefined
+        || typeof payload !== 'object'
+        || payload === null
+        || !('application_id' in payload)
+        || typeof payload.application_id !== 'string'
+      ) {
+        return c.json(ERROR_BadRequestSignature, {status: 401})
+      }
+      const selectedApp = apps.get(payload.application_id)
+      if (!selectedApp) return c.json(ERROR_BadRequestSignature, {status: 401})
+      app = selectedApp
+      interaction = payload as APIInteraction
+    } else {
+      app = apps
+    }
+
+    // verify
+    const signature = c.req.header(HEADER_SIGNATURE)
+    const timestamp = c.req.header(HEADER_SIGNATURE_TS)
+    if (!signature || !timestamp) {
+      return c.json(ERROR_BadRequestSignature, {status: 401})
+    }
+
+    const valid = await crypto.subtle.verify(
+      app.publicKey.algorithm,
+      app.publicKey,
+      Uint8Array.fromHex(signature),
+      concat([encoder.encode(timestamp), await c.req.bytes()]), // (timestamp + body)
+    )
+    if (!valid) {
+      return c.json(ERROR_BadRequestSignature, {status: 401})
+    }
+
+    // execute
+    try {
+      return c.json(
+        await app.execute(
+          interaction ?? await c.req.json<APIInteraction>(),
+          app.resolveContext(ctx),
+        ) as unknown, // hono can't forward a large type
+      )
+    } catch (e) {
+      if (e instanceof InteractionError) {
+        return c.json({error: e.name, message: e.message}, {status: e.status as 400})
+      }
+      return c.json(ERROR_ExecuteFailed, {status: 500})
+    }
   })
-
-  return createFactory().createHandlers(verifyRequestSignature(key), interactionHandler)
 }

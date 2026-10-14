@@ -1,0 +1,86 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // runners
+    {
+      "label": "server (dev)",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiRed", "id": "server" },
+    },
+
+    // lint
+    {
+      "type": "shell",
+      "label": "dprint check",
+      "command": "dprint check",
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiYellow", "id": "check" },
+      "presentation": {
+        "clear": true,
+      },
+    },
+    {
+      "type": "shell",
+      "label": "typecheck",
+      "command": "pnpm tsc --noEmit",
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiYellow", "id": "check" },
+      "presentation": {
+        "clear": true,
+      },
+    },
+    {
+      "label": "lint code",
+      "dependsOn": [
+        "dprint check",
+        "typecheck",
+      ],
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiYellow", "id": "check-all" },
+    },
+
+    // fix
+    {
+      "type": "shell",
+      "label": "dprint fmt",
+      "command": "dprint fmt",
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiYellow", "id": "code-oss" },
+      "presentation": {
+        "panel": "dedicated",
+      },
+    },
+
+    // deps / codegen
+    {
+      "type": "shell",
+      "label": "deps up",
+      "command": "pnpm up -w",
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiWhite", "id": "download" },
+      "presentation": {
+        "close": true,
+      },
+    },
+
+    // prod / build
+    {
+      "label": "build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": [],
+      "icon": { "color": "terminal.ansiRed", "id": "build" },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "clear": true,
+        "revealProblems": "onProblem",
+      },
+    },
+  ],
+}

@@ -1,0 +1,293 @@
+import {
+  ApplicationIntegrationType,
+  ChannelType,
+  InteractionContextType,
+  InteractionResponseType,
+} from 'discord-api-types/v10'
+import {message} from '../../src/components.ts'
+import {c, Fmt, fmt, t} from '../../src/fmt.ts'
+import {schema} from '../builder.ts'
+
+const allOptions = schema.declareCommand({
+  name: 'all-options',
+  description: 'Test every chat input option field',
+  name_localizations: {'en-US': 'all-options'},
+  description_localizations: {'en-US': 'Test every option field'},
+  default_member_permissions: '8',
+  dm_permission: true,
+  default_permission: true,
+  nsfw: false,
+  integration_types: [
+    ApplicationIntegrationType.GuildInstall,
+    ApplicationIntegrationType.UserInstall,
+  ],
+  contexts: [
+    InteractionContextType.Guild,
+    InteractionContextType.BotDM,
+    InteractionContextType.PrivateChannel,
+  ],
+  args: {
+    integer: schema.arg.integer({
+      required: true,
+      description: 'Integer with choices and range',
+      autocomplete: false,
+      min_value: 1,
+      max_value: 10,
+      choices: [{name: 'one', value: 1}, {name: 'two', value: 2}],
+    }),
+    string: schema.arg.string({
+      name: 'string',
+      description: 'String with choices and length constraints',
+      required: false,
+      autocomplete: false,
+      min_length: 1,
+      max_length: 100,
+      choices: [{name: 'val 1', value: 'val-1'}, {name: 'val 2', value: 'val-2'}],
+    }),
+    number: schema.arg.number({
+      description: 'Number with range and autocomplete',
+      required: false,
+      autocomplete: true,
+      min_value: 0,
+      max_value: 100,
+    }),
+    boolean: schema.arg.boolean({description: 'Boolean option', required: false}),
+    user: schema.arg.user({description: 'User option', required: false}),
+    channel: schema.arg.channel({
+      description: 'Channel option restricted by channel type',
+      required: false,
+      channel_types: [ChannelType.GuildText, ChannelType.GuildVoice],
+    }),
+    role: schema.arg.role({description: 'Role option', required: false}),
+    mentionable: schema.arg.mentionable({description: 'Mentionable option', required: false}),
+    attachment: schema.arg.attachment({
+      description: 'Attachment option with file type restrictions',
+      required: false,
+      file_types: ['image', '.pdf'],
+    }),
+  },
+  resolve: (c, args) => {
+    // console.dir(c.interaction, {depth: null})
+    return c.reply(`Received ${args.integer}`)
+
+    const text = Fmt.join([
+      t`hello`.bold(),
+      Fmt.mention(c.from.user),
+
+      t`at`,
+      Fmt.timestamp(Date.now(), 'relative'),
+
+      t`\n`,
+      t`const timeString = \`${new Date().toISOString()}\``.code('ts'),
+
+      t`\n`,
+      t`${JSON.stringify(args, null, 2)}`.code('json'),
+    ])
+
+    return c.reply(text)
+  },
+
+  autocomplete: (c) => {
+    console.log(c.interaction.data)
+    const values = new Array(30).entries().map((v) => v[0] + 1 as number).toArray()
+    return c.suggest(values)
+  },
+})
+
+const hello = schema.declareCommand({
+  name: 'hello',
+  resolve: (c) => {
+    const text = Fmt.join([
+      t`hello`.bold(),
+      Fmt.mention('1234567890'),
+      t`at`,
+      Fmt.timestamp(Date.now(), 'relative'),
+      t`\n`,
+      t`const timeString = \`${new Date().toISOString()}\``.code('ts'),
+    ])
+
+    return c.reply(text)
+
+    // return c.reply(`Hello ${Fmt.mention(c.from.user)} ${Fmt.timestamp(new Date(), 'relative')}`)
+
+    return c.reply(message((t) => [
+      t.text`Hello ${Fmt.mention(c.from)}`,
+      t.separator({spacing: 'large'}),
+      t.row((t) => [
+        t.userSelect({id: schema.customIds.helloSelect}),
+      ]),
+      t.separator({spacing: 'large'}),
+      t.row((t) => [
+        t.button.primary({id: schema.customIds.helloDetail, label: 'a'}),
+        t.button.secondary({id: schema.customIds.helloSecondary, label: 'b'}),
+      ]),
+    ]))
+  },
+})
+
+const direct = schema.declareSubcommand({
+  name: 'direct',
+  description: 'Direct subcommand',
+  args: {
+    value: schema.arg.string({description: 'Subcommand value', required: true}),
+  },
+  resolve: (context, args) => context.reply(`Direct: ${args.value}`),
+})
+
+const manage = schema.declareSubcommandGroup({
+  name: 'manage',
+  description: 'Management subcommands',
+}, (t) => [
+  t.declareSubcommand({
+    name: 'create',
+    description: 'Create an item',
+    args: {
+      amount: t.arg.integer({description: 'Amount to create', required: true}),
+    },
+    resolve: (context, args) => {
+      // console.log(context.getInteger('amount'))
+      console.dir(context, {depth: null})
+      return context.reply(`Create ${args.amount}`)
+    },
+  }),
+  schema.declareSubcommand({
+    name: 'delete',
+    description: 'Delete an item',
+    args: {
+      id: schema.arg.string({description: 'Item identifier', required: true}),
+    },
+    resolve: (context, args) => context.reply(`Delete ${args.id}`),
+  }),
+])
+
+const inspect = schema.declareSubcommandGroup({
+  name: 'inspect',
+  description: 'Inspection subcommands',
+}, (t) => [
+  t.declareSubcommand({
+    name: 'show',
+    description: 'Show an item',
+    args: {
+      id: t.arg.string({description: 'Item identifier', required: true}),
+    },
+    resolve: (context, args) => context.reply(`Show ${args.id}`),
+  }),
+])
+
+const commandTree = schema.declareCommand({
+  name: 'command-tree',
+  description: 'Valid subcommand and subcommand-group structure',
+  resolve: (context) => context.reply('Choose a subcommand'),
+}, () => [direct, manage, inspect])
+
+schema.slashCommands([allOptions, hello, commandTree])
+
+// tests
+schema.slashCommands((t) => [
+  t.command({
+    name: 'test1',
+    resolve: (c) => {
+      return c.reply(message((t) => [
+        t.text`test 1`,
+        t.row((t) => [
+          t.button.primary({id: schema.customIds.btn1, label: 'Btn 1'}),
+          t.button.primary({id: schema.customIds.btn2, label: 'Btn 2'}),
+        ]),
+      ]))
+    },
+  }),
+])
+
+schema.slashCommands((t) => [
+  t.command({
+    name: 'test2',
+    args: {
+      text: t.arg.string({required: true}),
+      text2: t.arg.string({required: false}),
+    },
+    resolve: (c, args) => {
+      args.text satisfies string
+      args.text2 satisfies string | null
+
+      return c.reply(message((t) => [
+        t.text`test 2`,
+        t.row((t) => [
+          t.button.primary({id: schema.customIds.btnReply, label: 'reply'}),
+          t.button.primary({id: schema.customIds.btnReplyEphemeral, label: 'replyEphemeral'}),
+          t.button.primary({id: schema.customIds.btnUpdate, label: 'update'}),
+          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete'}),
+
+          t.button.danger({id: 'derefReply', label: 'derefReply'}),
+          t.button.danger({id: 'derefUpdate', label: 'derefUpdate'}),
+        ]),
+      ]))
+    },
+  }),
+])
+
+schema.messageComponents((components) => [
+  components.component({
+    customId: [
+      schema.customIds.helloDetail,
+      schema.customIds.helloSecondary,
+      schema.customIds.helloSelect,
+    ],
+    resolve: (c) =>
+      c.reply(
+        t`data: \n`.concat(
+          t`${
+            JSON.stringify({
+              customId: c.customId,
+            })
+          }`.code('json'),
+        ),
+      ),
+  }),
+  components.component({
+    customId: [schema.customIds.btn1, schema.customIds.btn2],
+    resolve: (c) =>
+      c.replyEphemeral(Fmt.join([
+        fmt`id: ${fmt`${c.customId}`.bold()}`,
+      ], '\n')),
+  }),
+  components.component({
+    customId: schema.customIds.btnReply,
+    resolve: (c) =>
+      c.reply(message((t) => [
+        t.text`New message`,
+        t.row((t) => [
+          t.button.primary({id: 'reply:123', label: 'reply'}),
+          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete this message'}),
+        ]),
+      ])),
+  }),
+  components.component({
+    customId: schema.customIds.btnReplyEphemeral,
+    resolve: (c) =>
+      c.replyEphemeral(message((t) => [
+        t.text`New ephemeral message`,
+      ])),
+  }),
+  components.component({
+    customId: schema.customIds.btnUpdate,
+    resolve: (c) =>
+      c.update(message((t) => [
+        t.text`Update parent message success`,
+        t.row((t) => [
+          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete this message'}),
+        ]),
+      ])),
+  }),
+  components.component({
+    customId: (id) => id.startsWith('reply:'),
+    resolve: (c) => c.reply('Handled a component from a reply message'),
+  }),
+  components.component({
+    customId: schema.customIds.btnDelete,
+    resolve: (c) =>
+      c.deferUpdate(async (def) => {
+        await def.deleteFollowup()
+        await def.deleteFollowup()
+      }),
+  }),
+])

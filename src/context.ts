@@ -1,320 +1,362 @@
+import * as discordRest from '#lib/api/discord/index.ts'
 import {
-  ApplicationCommandOptionType,
-  ApplicationCommandType,
-  InteractionResponseType,
-  InteractionType,
   type APIApplicationCommandAutocompleteInteraction,
-  type APIApplicationCommandAutocompleteResponse,
   type APIApplicationCommandInteraction,
-  type APIApplicationCommandInteractionDataBasicOption,
-  type APIApplicationCommandInteractionDataIntegerOption,
-  type APIApplicationCommandInteractionDataNumberOption,
-  type APIApplicationCommandInteractionDataStringOption,
+  type APIApplicationCommandInteractionDataOption,
   type APIApplicationCommandOption,
   type APIAttachment,
-  type APICommandAutocompleteInteractionResponseCallbackData,
+  type APIChannel,
   type APIInteractionDataOptionBase,
   type APIInteractionDataResolvedChannel,
   type APIInteractionDataResolvedGuildMember,
+  type APIInteractionGuildMember,
+  type APIInteractionResponse,
   type APIInteractionResponseCallbackData,
   type APIInteractionResponseChannelMessageWithSource,
   type APIInteractionResponseDeferredChannelMessageWithSource,
   type APIInteractionResponseDeferredMessageUpdate,
   type APIInteractionResponseUpdateMessage,
-  type APIMessage,
   type APIMessageComponentInteraction,
   type APIModalInteractionResponse,
   type APIModalInteractionResponseCallbackData,
-  type APIModalSubmission,
   type APIModalSubmitInteraction,
   type APIRole,
   type APIUser,
-  type ComponentType,
-  type RESTPostAPIChatInputApplicationCommandsJSONBody,
+  type APIUserInteractionDataResolved,
+  ApplicationCommandOptionType,
+  ApplicationCommandType,
+  ComponentType,
+  InteractionResponseType,
+  InteractionType,
+  MessageFlags,
+  type RESTPatchAPIInteractionFollowupJSONBody,
+  type RESTPatchAPIInteractionOriginalResponseJSONBody,
+  type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
-import {DeferredContext} from './deferred-context.ts'
-import type {OptionToObject} from './types.ts'
+import type {BuilderConfig, ConfigCustomIds} from './builder.ts'
+import type {Message} from './components.ts'
+import {Fmt, i} from './fmt.ts'
 
-/** Type guard for `APIApplicationCommandOption` */
-type PickType<
-  T extends APIApplicationCommandOption,
-  Type extends ApplicationCommandOptionType
-> = T extends T & {
-  type: Type
+export type MaybePromise<T> = Promise<T> | T
+export type OptionToObject<T extends APIApplicationCommandOption> = {
+  [K in T['name']]: T extends {name: K} ? T : never
 }
-  ? T
+
+//
+export const deferredResponse = Symbol('Deferred')
+
+// pick Option by Type
+type GetOptionNameByType<
+  Option extends {type: ApplicationCommandOptionType; name: string; required?: boolean},
+  Type extends ApplicationCommandOptionType,
+> = Option extends {type: Type; name: infer Name} ? Name : never
+
+// check is required options
+type GetOptionsResult<
+  Option extends {type: ApplicationCommandOptionType; name: string; required?: boolean},
+  Key extends string,
+  Result extends unknown,
+> = Option extends {name: Key} //
+  ? Option extends {required: true} ? Result : Result | null
   : never
 
-type PickTypeWithAutocomplete<
-  T extends APIApplicationCommandOption,
-  Type extends ApplicationCommandOptionType
-> = T extends T & {
-  type: Type
-  autocomplete: true
+const normalizeReply = <
+  const T extends string | Fmt | Message | {
+    content?: string | Fmt | undefined
+  },
+>(input: T):
+  & (T extends (string | Fmt) ? {content: string} : Omit<T, 'content'> & {content?: string | undefined})
+  & Record<string, string> =>
+{
+  if (typeof input === 'string') return {content: String(input)} as any
+  if (input instanceof Fmt) return {content: input.toString()} as any
+  // Message with components
+  if (typeof input === 'object' && 'components' in input) return {...input} as any
+
+  // override Fmt in object
+  if (input.content instanceof Fmt) input.content = input.content.toString()
+  return input as any
 }
-  ? T
-  : never
 
-type isRequiredOption<T extends APIApplicationCommandOption, R> = T extends {required: true}
-  ? R
-  : R | null
-
-// TODO
-// type extractChoices<T extends APIApplicationCommandOptionChoice> = T['name']
-
-/**
- * Represents the context of an application command interaction.
- */
-export class ApplicationCommandContext<
-  C extends RESTPostAPIChatInputApplicationCommandsJSONBody | APIApplicationCommandOption,
-  O extends APIApplicationCommandOption
+// Context
+export class ApplicationCommandContextChatInput<
+  Option extends {type: ApplicationCommandOptionType; name: string; required?: boolean} = APIApplicationCommandOption,
 > {
+  readonly interaction!: APIApplicationCommandInteraction
+  readonly options!: Record<string, {value: unknown}>
+
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns The `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns The `member` who caused the interaction, guild only
+     */
+    readonly member?: APIInteractionGuildMember
+
+    /**
+     * @returns The `channel` it was sent from
+     */
+    readonly channel?: Partial<APIChannel> & Pick<APIChannel, 'id' | 'type'>
+  }
+
   constructor(
-    /** Get raw interaction data */
-    readonly interaction: APIApplicationCommandInteraction,
-    readonly options: OptionToObject<O>,
-    readonly payload: Record<string, APIApplicationCommandInteractionDataBasicOption>
-  ) {}
-
-  /**
-   * Gets the user object for the application command interaction.
-   * @returns {APIUser} The user object.
-   */
-  get user(): APIUser {
-    return this.interaction?.user ?? (this.interaction.member?.user as APIUser)
-  }
-
-  /**
-   * Get `String`
-   */
-  getString<K extends PickType<O, ApplicationCommandOptionType.String>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIInteractionDataOptionBase<ApplicationCommandOptionType.String, string>
-  > {
-    if (this.payload[name] && this.payload[name].type === ApplicationCommandOptionType.String) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.String,
-        string
-      >
+    interaction: APIApplicationCommandInteraction,
+    options: Record<string, {value: unknown}> = {},
+  ) {
+    if (interaction.data.type !== ApplicationCommandType.ChatInput) {
+      throw new Error('interaction type not supported for this context')
     }
 
-    return null!
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+    Object.defineProperty(this, 'options', {enumerable: true, value: options})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => this.interaction.member ?? null,
+      },
+      channel: {
+        enumerable: true,
+        get: () => this.interaction.channel ?? null,
+      },
+    })
   }
 
-  /**
-   * Get `Integer` between -2^53 and 2^53
-   */
-  getInteger<K extends PickType<O, ApplicationCommandOptionType.Integer>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIInteractionDataOptionBase<ApplicationCommandOptionType.Integer, number>
-  > {
-    if (this.payload[name] && this.payload[name].type === ApplicationCommandOptionType.Integer) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.Integer,
-        number
-      >
+  #optionValue(name: string, type: ApplicationCommandOptionType): unknown {
+    const resolved = this.options[name]
+    if (resolved) return resolved.value
+
+    const findOption = (options: APIApplicationCommandInteractionDataOption[]): unknown => {
+      for (const option of options) {
+        if ('value' in option && option.type === type && option.name === name) return option.value
+        if ('options' in option && option.options) {
+          const value = findOption(option.options)
+          if (value !== undefined) return value
+        }
+      }
+      return undefined
     }
 
-    return null!
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return undefined
+    return findOption(this.interaction.data.options ?? [])
   }
+
+  // for pretty log
+  get [Symbol.toStringTag]() {
+    return `app:${this.interaction.application_id} user:${this.me.username}`
+  }
+
+  // Request
 
   /**
-   * Get `Boolean`
+   * @returns The `user` who caused the interaction
    */
-  getBoolean<K extends PickType<O, ApplicationCommandOptionType.Boolean>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIInteractionDataOptionBase<ApplicationCommandOptionType.Boolean, boolean>
-  > {
-    if (this.payload[name] && this.payload[name].type === ApplicationCommandOptionType.Boolean) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.Boolean,
-        boolean
-      >
-    }
-
-    return null!
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
   }
 
-  /**
-   * Get `User`
-   */
-  getUser<K extends PickType<O, ApplicationCommandOptionType.User>['name']>(
-    name: K
-  ): isRequiredOption<O extends {name: K} ? O : never, APIUser> {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
+  getString<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.String>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, string> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
 
-    if (this.payload[name]?.type === ApplicationCommandOptionType.User) {
-      return interaction.data.resolved?.users?.[this.payload[name].value as string] ?? null!
-    }
-
-    return null!
+    return (this.#optionValue(name, ApplicationCommandOptionType.String) ?? null) as any
   }
 
-  /**
-   * Get Guild `Member` object
-   */
-  getMember<K extends PickType<O, ApplicationCommandOptionType.User>['name']>(
-    name: K
-  ): isRequiredOption<O extends {name: K} ? O : never, APIInteractionDataResolvedGuildMember> {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
+  getInteger<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Integer>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, number> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
 
-    if (this.payload[name]?.type === ApplicationCommandOptionType.User) {
-      return interaction.data.resolved?.members?.[this.payload[name].value as string] ?? null!
-    }
-
-    return null!
+    return (this.#optionValue(name, ApplicationCommandOptionType.Integer) ?? null) as any
   }
 
-  /**
-   * Get `Channel`
-   */
-  getChannel<K extends PickType<O, ApplicationCommandOptionType.Channel>['name']>(
-    name: K
-  ): isRequiredOption<O extends {name: K} ? O : never, APIInteractionDataResolvedChannel> {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
+  getBoolean<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Boolean>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, boolean> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
 
-    if (this.payload[name]?.type === ApplicationCommandOptionType.Channel) {
-      return interaction.data.resolved?.channels?.[this.payload[name].value as string] ?? null!
-    }
-
-    return null!
+    return (this.#optionValue(name, ApplicationCommandOptionType.Boolean) ?? null) as any
   }
 
-  /**
-   * Get `Role`
-   */
-  getRole<K extends PickType<O, ApplicationCommandOptionType.Role>['name']>(
-    name: K
-  ): isRequiredOption<O extends {name: K} ? O : never, APIRole> {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
-
-    if (this.payload[name]?.type === ApplicationCommandOptionType.Role) {
-      return interaction.data.resolved?.roles?.[this.payload[name].value as string] ?? null!
-    }
-
-    return null!
+  getUser<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.User>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIUser> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+    // { name: "user", type: 6, value: "421033097400811521" }
+    const userId = this.#optionValue(name, ApplicationCommandOptionType.User)
+    const resolved = this.interaction.data.resolved as APIUserInteractionDataResolved
+    return (typeof userId === 'string' ? resolved?.users?.[userId] : null) as any
   }
 
-  /**
-   * Get `User` or `Role`
-   */
-  getMentionable<K extends PickType<O, ApplicationCommandOptionType.Mentionable>['name']>(
-    name: K
-  ): isRequiredOption<O extends {name: K} ? O : never, APIUser | APIRole> {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
+  getMember<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.User>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIInteractionDataResolvedGuildMember> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
 
-    if (this.payload[name]?.type === ApplicationCommandOptionType.Mentionable) {
-      // TODO resolved[users or member] ???
-      return (
-        interaction.data.resolved?.users?.[this.payload[name].value as string] ??
-        interaction.data.resolved?.roles?.[this.payload[name].value as string] ??
-        null!
-      )
-    }
-
-    return null!
+    // { name: "user", type: 6, value: "421033097400811521" }
+    const userId = this.#optionValue(name, ApplicationCommandOptionType.User)
+    const resolved = this.interaction.data.resolved as APIUserInteractionDataResolved
+    return (typeof userId === 'string' ? resolved?.members?.[userId] : null) as any
   }
 
-  /** Any double between -2^53 and 2^53 */
-  getNumber<K extends PickType<O, ApplicationCommandOptionType.Number>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIInteractionDataOptionBase<ApplicationCommandOptionType.Number, number>
-  > {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
+  getChannel<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Channel>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIInteractionDataResolvedChannel> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
 
-    if (this.payload[name]?.type === ApplicationCommandOptionType.Number) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.Number,
-        number
-      >
-    }
-
-    return null!
+    // { name: "channel", type: 7, value: "1223906943987617833" }
+    const channelId = this.#optionValue(name, ApplicationCommandOptionType.Channel)
+    const resolved = this.interaction.data.resolved // as APIInteractionDataResolvedChannel
+    return (typeof channelId === 'string' ? resolved?.channels?.[channelId] : null) as any
   }
 
-  /**
-   * Get `Attachment` data
-   */
-  getAttachment<K extends PickType<O, ApplicationCommandOptionType.Attachment>['name']>(
-    name: K
-  ): isRequiredOption<O extends {name: K} ? O : never, APIAttachment> {
-    const interaction = this.interaction
-    if (interaction.type !== InteractionType.ApplicationCommand) return null!
-    if (interaction.data.type !== ApplicationCommandType.ChatInput) return null!
+  getRole<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Role>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIRole> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
 
-    if (this.payload[name]?.type === ApplicationCommandOptionType.Attachment) {
-      return interaction.data.resolved?.attachments?.[this.payload[name].value as string] ?? null!
-    }
-
-    return null!
+    const roleId = this.#optionValue(name, ApplicationCommandOptionType.Role)
+    const resolved = this.interaction.data.resolved
+    return (typeof roleId === 'string' ? resolved?.roles?.[roleId] : null) as any
   }
 
-  /**
-   * Sends a new message in response to the application command interaction.
-   * @param {APIInteractionResponseCallbackData} data - The data for the new message.
-   * @returns {APIInteractionResponseChannelMessageWithSource} The interaction response object.
-   */
-  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource {
+  getMentionable<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIUser | APIRole> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const mentionableId = this.#optionValue(name, ApplicationCommandOptionType.Mentionable)
+    const resolved = this.interaction.data.resolved
+    return (
+      (typeof mentionableId === 'string' ? resolved?.roles?.[mentionableId] : undefined)
+        ?? (typeof mentionableId === 'string' ? resolved?.users?.[mentionableId] : undefined)
+        ?? null
+    ) as any
+  }
+
+  getMentionableUser<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIUser | null> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const mentionableId = this.#optionValue(name, ApplicationCommandOptionType.Mentionable)
+    const resolved = this.interaction.data.resolved
+    return (typeof mentionableId === 'string' ? resolved?.users?.[mentionableId] : null) as any
+  }
+
+  getMentionableMember<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIInteractionDataResolvedGuildMember | null> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const mentionableId = this.#optionValue(name, ApplicationCommandOptionType.Mentionable)
+    const resolved = this.interaction.data.resolved
+    return (typeof mentionableId === 'string' ? resolved?.members?.[mentionableId] : null) as any
+  }
+
+  getMentionableRole<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Mentionable>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIRole | null> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "mentionable", type: 9, value: "1213048588805083157" }
+    const mentionableId = this.#optionValue(name, ApplicationCommandOptionType.Mentionable)
+    const resolved = this.interaction.data.resolved
+    return (typeof mentionableId === 'string' ? resolved?.roles?.[mentionableId] : null) as any
+  }
+
+  // type guards
+  isMentionableUser(mentionable: APIUser | APIRole): mentionable is APIUser {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    return Boolean(this.interaction.data.resolved?.users?.[mentionable.id])
+  }
+
+  isMentionableRole(mentionable: APIUser | APIRole): mentionable is APIRole {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    return Boolean(this.interaction.data.resolved?.roles?.[mentionable.id])
+  }
+
+  getNumber<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Number>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, number> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    return (this.#optionValue(name, ApplicationCommandOptionType.Number) ?? null) as any
+  }
+
+  getAttachment<Key extends GetOptionNameByType<Option, ApplicationCommandOptionType.Attachment>>(
+    name: Key,
+  ): GetOptionsResult<Option, Key, APIAttachment> {
+    if (this.interaction.data.type !== ApplicationCommandType.ChatInput) return null as any
+
+    // { name: "attachment", type: 11, value: "1213048588805083157" }
+    const attachmentId = this.#optionValue(name, ApplicationCommandOptionType.Attachment)
+    const resolved = this.interaction.data.resolved
+    return (typeof attachmentId === 'string' ? resolved?.attachments?.[attachmentId] : null) as any
+  }
+
+  // Response
+  reply(content: string | Fmt): APIInteractionResponseChannelMessageWithSource
+  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  reply(data: string | Fmt | APIInteractionResponseCallbackData): APIInteractionResponse {
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
-      data,
+      data: normalizeReply(data),
     }
   }
 
-  /**
-   * Replaces the current message with a new message in response to the application command interaction.
-   * @param {APIInteractionResponseCallbackData} data - The data for the new message.
-   * @returns {APIInteractionResponseUpdateMessage} The interaction response object.
-   */
-  replyUpdate(data: APIInteractionResponseCallbackData): APIInteractionResponseUpdateMessage {
+  replyEphemeral(content: string): APIInteractionResponseChannelMessageWithSource
+  replyEphemeral(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  replyEphemeral(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
+    const res = normalizeReply(data)
+    res.flags = MessageFlags.Ephemeral
+
     return {
-      type: InteractionResponseType.UpdateMessage,
-      data,
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: res,
     }
   }
 
-  /**
-   * Defers the interaction response and calls the provided callback function with a DeferredContext object.
-   * @param {(c: DeferredContext) => void | Promise<void>} callback - The callback function to call with the DeferredContext object.
-   * @param {Pick<APIInteractionResponseCallbackData, 'flags'>} [data] - The data for the deferred interaction response.
-   * @returns {APIInteractionResponseDeferredChannelMessageWithSource} The deferred interaction response object.
-   */
-  deferredReply(
-    callback: (c: DeferredContext) => void | Promise<void>,
-    data?: Pick<APIInteractionResponseCallbackData, 'flags'>
-  ): APIInteractionResponseDeferredChannelMessageWithSource {
-    callback(new DeferredContext(this.interaction))
-    return {type: InteractionResponseType.DeferredChannelMessageWithSource, data}
+  replyDeferred(cb?: (c: DeferredContext) => MaybePromise<void>): DeferredContext {
+    const deferredContext = new DeferredContext(
+      this.interaction,
+      {type: InteractionResponseType.DeferredChannelMessageWithSource},
+    )
+
+    cb?.(deferredContext)
+    return deferredContext
+  }
+
+  replyDeferredEphemeral(cb: (c: DeferredContext) => MaybePromise<void>): DeferredContext {
+    const deferredContext = new DeferredContext(this.interaction, {
+      type: InteractionResponseType.DeferredChannelMessageWithSource,
+      data: {flags: MessageFlags.Ephemeral},
+    })
+
+    cb?.(deferredContext)
+    return deferredContext
   }
 
   /**
-   * Creates a modal window in response to the application command interaction.
-   *
-   * WARNING calls all modal window handlers.
-   * @param {APIModalInteractionResponseCallbackData} data - The data for the modal window.
-   * @returns {APIModalInteractionResponse} The interaction response object.
+   * Creates a modal window
    */
-  modal(data: APIModalInteractionResponseCallbackData): APIModalInteractionResponse {
+  replyModal(data: APIModalInteractionResponseCallbackData): APIInteractionResponse {
     return {
       type: InteractionResponseType.Modal,
       data,
@@ -322,113 +364,134 @@ export class ApplicationCommandContext<
   }
 }
 
-/**
- * Represents the context of an application command autocomplete interaction.
- */
-export class ApplicationCommandAutocompleteContext<O extends APIApplicationCommandOption> {
-  constructor(
-    readonly interaction: APIApplicationCommandAutocompleteInteraction,
-    readonly payload: Record<string, APIApplicationCommandInteractionDataBasicOption>
-  ) {}
+//
+export class ApplicationCommandAutocompleteContext<
+  Option extends APIApplicationCommandOption = APIApplicationCommandOption,
+> {
+  interaction!: APIApplicationCommandAutocompleteInteraction
 
   /**
-   * Gets the value of a string option from the payload of the application command autocomplete interaction.
-   * @template K - The name of the string option.
-   * @param {K} name - The name of the string option.
-   * @returns {isRequiredOption<O extends {name: K} ? O : never, APIApplicationCommandInteractionDataStringOption>} The value of the string option, or null if the option is not present or not a string option.
+   * Contains the initiator user
    */
-  getString<K extends PickTypeWithAutocomplete<O, ApplicationCommandOptionType.String>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIApplicationCommandInteractionDataStringOption
-  > {
-    if (this.payload[name] && this.payload[name].type === ApplicationCommandOptionType.String) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.String,
-        string
-      >
-    }
+  readonly from!: {
+    /**
+     * @returns The `user` who caused the interaction
+     */
+    readonly user: APIUser
 
-    return null!
+    /**
+     * @returns The `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
   }
 
-  /**
-   * Gets the value of an integer option from the payload of the application command autocomplete interaction.
-   * @template K - The name of the integer option.
-   * @param {K} name - The name of the integer option.
-   * @returns {isRequiredOption<O extends {name: K} ? O : never, APIApplicationCommandInteractionDataIntegerOption>} The value of the integer option, or null if the option is not present or not an integer option.
-   */
-  getInteger<K extends PickTypeWithAutocomplete<O, ApplicationCommandOptionType.Integer>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIApplicationCommandInteractionDataIntegerOption
-  > {
-    if (this.payload[name] && this.payload[name].type === ApplicationCommandOptionType.Integer) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.Integer,
-        number
-      >
+  constructor(interaction: APIApplicationCommandAutocompleteInteraction) {
+    if (interaction.type !== InteractionType.ApplicationCommandAutocomplete) {
+      throw new Error('interaction type not supported for this context')
     }
 
-    return null!
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          return this.interaction.member ?? null
+        },
+      },
+    })
   }
 
-  /**
-   * Gets the value of a number option from the payload of the application command autocomplete interaction.
-   * @template K - The name of the number option.
-   * @param {K} name - The name of the number option.
-   * @returns {isRequiredOption<O extends {name: K} ? O : never, APIApplicationCommandInteractionDataNumberOption>} The value of the number option, or null if the option is not present or not a number option.
-   */
-  getNumber<K extends PickTypeWithAutocomplete<O, ApplicationCommandOptionType.Number>['name']>(
-    name: K
-  ): isRequiredOption<
-    O extends {name: K} ? O : never,
-    APIApplicationCommandInteractionDataNumberOption
-  > {
-    if (this.payload[name] && this.payload[name].type === ApplicationCommandOptionType.Number) {
-      return this.payload[name] as APIInteractionDataOptionBase<
-        ApplicationCommandOptionType.Number,
-        number
-      >
-    }
+  // Request
 
-    return null!
+  /**
+   * @returns The `user` who caused the interaction
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
   }
 
-  /**
-   * Creates an application command autocomplete response with the given data.
-   * @param {APICommandAutocompleteInteractionResponseCallbackData} data - The data for the autocomplete response.
-   * @returns {APIApplicationCommandAutocompleteResponse} The application command autocomplete response.
-   */
-  autocomplete(
-    data: APICommandAutocompleteInteractionResponseCallbackData
-  ): APIApplicationCommandAutocompleteResponse {
-    return {
-      type: InteractionResponseType.ApplicationCommandAutocompleteResult,
-      data,
-    }
+  // Response
+  /** Returns the list for auto-completion and truncates it to the limit of `25` */
+  suggest(suggestions: Iterable<string | number | {value: string | number; name?: string}>) {
+    return Array.from(Iterator.from(suggestions).take(25), (v) =>
+      typeof v === 'object'
+        ? {value: v.value, name: v.name ?? String(v.value)}
+        : {value: v, name: String(v)})
+      .slice(0, 25)
   }
 
-  /**
-   * Creates an empty application command autocomplete response.
-   * @returns {APIApplicationCommandAutocompleteResponse} The empty application command autocomplete response.
-   */
-  pass(): APIApplicationCommandAutocompleteResponse {
-    return this.autocomplete({choices: []})
+  /** Returns empty list */
+  empty() {
+    return []
   }
 }
 
-/**
- * Represents the context of a message component interaction.
- */
-export class MessageComponentContext {
-  constructor(readonly interaction: APIMessageComponentInteraction) {}
+type AnyString = string & {}
+type GetCustomIds<T extends BuilderConfig> = ConfigCustomIds<T>[keyof ConfigCustomIds<T>] | AnyString
+
+export class MessageComponentContext<Config extends BuilderConfig = BuilderConfig> {
+  interaction!: APIMessageComponentInteraction
+
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns The `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns The `member` who caused the interaction, guild only
+     */
+    readonly member?: APIInteractionGuildMember
+
+    /**
+     * @returns The `channel` it was sent from
+     */
+    readonly channel?: Partial<APIChannel> & Pick<APIChannel, 'id' | 'type'>
+  }
+
+  constructor(interaction: APIMessageComponentInteraction) {
+    if (interaction.type !== InteractionType.MessageComponent) {
+      throw new Error('interaction type not supported for this context')
+    }
+
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => this.interaction.member ?? null,
+      },
+      channel: {
+        enumerable: true,
+        get: () => this.interaction.channel ?? null,
+      },
+    })
+  }
+
+  // #region Request
+
+  /**
+   * @returns The `user` who caused the interaction
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
+  }
 
   /**
    * Gets the type of the message component.
-   * @returns {ComponentType} The type of the message component.
+   * @returns The type of the message component.
    */
   get type(): ComponentType {
     return this.interaction.data.component_type
@@ -436,152 +499,369 @@ export class MessageComponentContext {
 
   /**
    * Gets the custom ID of the message component.
-   * @returns {string} The custom ID of the message component, which is a string with a maximum length of 100 characters.
+   * @returns The custom ID of the message component, which is a string with a maximum length of 100 characters.
    */
-  get customId(): string {
-    return this.interaction.data.custom_id
+  get customId(): GetCustomIds<Config> {
+    return this.interaction.data.custom_id as GetCustomIds<Config> // optional typed
   }
+  // #endregion
 
-  /**
-   * Sends a new message in response to the message component interaction.
-   * @param {APIInteractionResponseCallbackData} data - The data for the new message.
-   * @returns {APIInteractionResponseChannelMessageWithSource} The interaction response object.
-   */
-  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource {
+  // #region Response
+  // Response
+  reply(content: string | Fmt | Message): APIInteractionResponseChannelMessageWithSource
+  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  reply(data: string | Fmt | Message | APIInteractionResponseCallbackData): APIInteractionResponse {
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
-      data,
+      data: normalizeReply(data),
     }
   }
 
-  /**
-   * Replaces the current message with a new message in response to the message component interaction.
-   * @param {APIInteractionResponseCallbackData} data - The data for the new message.
-   * @returns {APIInteractionResponseUpdateMessage} The interaction response object.
-   */
-  replyUpdate(data: APIInteractionResponseCallbackData): APIInteractionResponseUpdateMessage {
+  replyEphemeral(content: string | Fmt | Message): APIInteractionResponseChannelMessageWithSource {
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: {
+        ...normalizeReply(content),
+        flags: MessageFlags.Ephemeral,
+      },
+    }
+  }
+
+  update(content: string | Fmt | Message): APIInteractionResponseUpdateMessage
+  update(data: APIInteractionResponseCallbackData): APIInteractionResponseUpdateMessage
+  update(data: string | Fmt | Message | APIInteractionResponseCallbackData): APIInteractionResponseUpdateMessage {
     return {
       type: InteractionResponseType.UpdateMessage,
-      data,
+      data: normalizeReply(data),
     }
   }
 
-  /**
-   * Defers the interaction response update and calls the provided callback function with a DeferredContext object.
-   * @param {(c: DeferredContext) => void | Promise<void>} callback - The callback function to call with the DeferredContext object.
-   * @returns {APIInteractionResponseDeferredMessageUpdate} The deferred interaction response update object.
-   */
-  deferredReplyUpdate(
-    callback: (c: DeferredContext) => void | Promise<void>
+  deferReply(
+    defer: (deferredContext: DeferredContext) => MaybePromise<void>,
+  ): APIInteractionResponseDeferredChannelMessageWithSource {
+    defer(new DeferredContext(this.interaction, {type: InteractionResponseType.DeferredChannelMessageWithSource}))
+
+    return {type: InteractionResponseType.DeferredChannelMessageWithSource}
+  }
+
+  deferUpdate(
+    defer: (deferredContext: DeferredContext) => MaybePromise<void>,
   ): APIInteractionResponseDeferredMessageUpdate {
-    callback(new DeferredContext(this.interaction))
+    defer(new DeferredContext(this.interaction, {type: InteractionResponseType.DeferredMessageUpdate}))
+
     return {type: InteractionResponseType.DeferredMessageUpdate}
   }
 
-  /**
-   * Creates a modal window in response to the message component interaction.
-   * @param {APIModalInteractionResponseCallbackData} data - The data for the modal window.
-   * @returns {APIModalInteractionResponse} The interaction response object.
-   */
-  modal(data: APIModalInteractionResponseCallbackData): APIModalInteractionResponse {
-    return {
-      type: InteractionResponseType.Modal,
-      data,
-    }
-  }
+  // #endregion
 }
 
-/**
- * Represents the context of a modal submit interaction.
- */
-export class ModalContext {
-  constructor(readonly interaction: APIModalSubmitInteraction, readonly data: APIModalSubmission) {}
+export class ModalSubmitContext {
+  interaction!: APIModalSubmitInteraction
 
   /**
-   * Sends a new message in response to the modal submit interaction.
-   * @param {APIInteractionResponseCallbackData} data - The data for the new message.
-   * @returns {APIInteractionResponseChannelMessageWithSource} The interaction response object.
+   * Contains the initiator user
    */
-  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource {
-    return {
-      type: InteractionResponseType.ChannelMessageWithSource,
-      data,
+  readonly from!: {
+    /**
+     * @returns The `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns The `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
+  }
+
+  constructor(interaction: APIModalSubmitInteraction) {
+    if (interaction.type !== InteractionType.ModalSubmit) {
+      throw new Error('interaction type not supported for this context')
     }
+
+    Object.defineProperty(this, 'interaction', {enumerable: true, value: interaction})
+
+    this.from = Object.create({}, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          return this.interaction.member ?? null
+        },
+      },
+    })
+
+    this.interaction.data.components
   }
 
+  // Request
+
   /**
-   * Defers the interaction response and calls the provided callback function with a DeferredContext object.
-   * @param {(c: DeferredContext) => void | Promise<void>} callback - The callback function to call with the DeferredContext object.
-   * @param {Pick<APIInteractionResponseCallbackData, 'flags'>} [data] - The data for the deferred interaction response.
-   * @returns {APIInteractionResponseDeferredChannelMessageWithSource} The deferred interaction response object.
+   * @returns The `user` who caused the interaction
    */
-  deferredReply(
-    callback: (c: DeferredContext) => void | Promise<void>,
-    data?: Pick<APIInteractionResponseCallbackData, 'flags'>
-  ): APIInteractionResponseDeferredChannelMessageWithSource {
-    callback(new DeferredContext(this.interaction))
-    return {type: InteractionResponseType.DeferredChannelMessageWithSource, data}
+  get me(): APIUser {
+    return this.interaction.member?.user ?? this.interaction.user!
   }
+
+  get id() {
+    return this.interaction.data.custom_id
+  }
+
+  // Response
 }
 
-class MenuCommandContext {
+// Deferred messages
+export class DeferredContext {
+  readonly interaction!: APIApplicationCommandInteraction | APIMessageComponentInteraction;
+  [deferredResponse]!: APIInteractionResponse
+
   constructor(
-    readonly interaction: APIApplicationCommandInteraction,
-    readonly payload: Record<string, APIApplicationCommandInteractionDataBasicOption>
-  ) {}
+    interaction: APIApplicationCommandInteraction | APIMessageComponentInteraction,
+    response: APIInteractionResponse,
+  ) {
+    Object.defineProperty(this, 'interaction', {value: interaction})
+    this[deferredResponse] = response
+  }
 
   /**
-   * Sends a new message in response to the context menu command interaction.
-   * @param {APIInteractionResponseCallbackData} data - The data for the new message.
-   * @returns {APIInteractionResponseChannelMessageWithSource} The interaction response object.
+   * Edits the original interaction response.
+   * @param body - The data for the edited interaction response.
+   * @returns A promise that resolves to a DeferredReplyContext object.
    */
-  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource {
+  async reply(
+    body: RESTPatchAPIInteractionOriginalResponseJSONBody,
+    options?: {
+      signal?: AbortSignal
+    },
+  ) {
+    const {data, error} = await discordRest.updateOriginalWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+      },
+      body: normalizeReply(body as any),
+      signal: options?.signal,
+    })
+
+    return {
+      res: data!,
+      delete: async () => {
+        const {data, error, response} = await discordRest.deleteOriginalWebhookMessage({
+          path: {
+            webhook_id: this.interaction.application_id,
+            webhook_token: this.interaction.token,
+          },
+        })
+
+        return error ? false : response?.ok ?? false
+      },
+    }
+  }
+
+  /**
+   * Creates a followup message.
+   * @param body - The data for the followup message.
+   * @returns A promise that resolves to a DeferredReplyFollowupContext object.
+   */
+  async replyFollowup(
+    body: RESTPostAPIInteractionFollowupJSONBody,
+    options?: {
+      signal?: AbortSignal
+    },
+  ) {
+    const {data, error} = await discordRest.executeWebhook({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+      },
+      body: normalizeReply(body as any),
+      signal: options?.signal,
+    })
+
+    if (!data || error) return null
+
+    return {
+      res: data!,
+      edit: async (
+        body: RESTPatchAPIInteractionFollowupJSONBody,
+        options?: {
+          signal?: AbortSignal
+        },
+      ) => {
+        const {data: edited, error} = await discordRest.updateWebhookMessage({
+          path: {
+            webhook_id: this.interaction.application_id,
+            webhook_token: this.interaction.token,
+            message_id: data?.id,
+          },
+          body: body as any,
+          signal: options?.signal,
+        })
+
+        return edited!
+      },
+      delete: async (
+        options?: {
+          signal?: AbortSignal
+        },
+      ) => {
+        const {error, response} = await discordRest.deleteWebhookMessage({
+          path: {
+            webhook_id: this.interaction.application_id,
+            webhook_token: this.interaction.token,
+            message_id: data.id,
+          },
+          signal: options?.signal,
+        })
+
+        return response?.ok ?? false
+      },
+    }
+  }
+
+  async deleteFollowup() {
+    const res = await discordRest.deleteWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+        message_id: this.interaction.message?.id!,
+      },
+    })
+    console.log(res.response?.status)
+  }
+
+  async deleteOrigin() {
+    const res = await discordRest.deleteOriginalWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+      },
+    })
+    console.log(res.response?.status)
+  }
+}
+
+// user context menu
+class ApplicationCommandContextMenu {
+  readonly interaction!: APIApplicationCommandInteraction
+
+  /**
+   * Contains the initiator user
+   */
+  readonly from!: {
+    /**
+     * @returns The `user` who caused the interaction
+     */
+    readonly user: APIUser
+
+    /**
+     * @returns The `member` who caused the interaction
+     */
+    readonly member?: APIInteractionGuildMember
+  }
+
+  /**
+   * Contains the target user
+   */
+  readonly to!: {
+    /**
+     * the `user` object for which the interaction is triggered, via the user's context menu.
+     * @returns The resolved user object.
+     */
+    readonly user: APIUser
+
+    /**
+     * The guild `member` object for which the interaction is triggered, via the user's context menu.
+     * @returns Returns the guild member object only if the interaction is a user context menu command interaction in a guild and the guild member object is present.
+     */
+    readonly member?: APIInteractionDataResolvedGuildMember
+  }
+
+  constructor(interaction: APIApplicationCommandInteraction) {
+    if (interaction.type !== InteractionType.ApplicationCommand) {
+      throw new Error('interaction type not supported for this context')
+    }
+
+    Object.defineProperty(this, 'interaction', {value: interaction})
+
+    this.from = Object.create(null, {
+      user: {
+        enumerable: true,
+        get: () => this.me,
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.member ?? null
+        },
+      },
+    })
+
+    this.to = Object.create(null, {
+      user: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.data.resolved.users[this.interaction.data.target_id]!
+        },
+      },
+      member: {
+        enumerable: true,
+        get: () => {
+          if (this.interaction.data.type !== ApplicationCommandType.User) return null!
+          return this.interaction.data.resolved.members?.[this.interaction.data.target_id] ?? null
+        },
+      },
+    })
+  }
+
+  /**
+   * @returns The `user` who caused the interaction
+   */
+  get me(): APIUser {
+    return this.interaction.member?.user || this.interaction.user!
+  }
+
+  // Response
+  reply(content: string | Fmt): APIInteractionResponseChannelMessageWithSource
+  reply(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  reply(data: string | Fmt | APIInteractionResponseCallbackData): APIInteractionResponse {
     return {
       type: InteractionResponseType.ChannelMessageWithSource,
-      data,
+      data: normalizeReply(data),
+    }
+  }
+
+  replyEphemeral(content: string): APIInteractionResponseChannelMessageWithSource
+  replyEphemeral(data: APIInteractionResponseCallbackData): APIInteractionResponseChannelMessageWithSource
+  replyEphemeral(data: string | APIInteractionResponseCallbackData): APIInteractionResponse {
+    const res = normalizeReply(data)
+    res.flags = MessageFlags.Ephemeral
+
+    return {
+      type: InteractionResponseType.ChannelMessageWithSource,
+      data: res,
     }
   }
 }
 
-/**
- * Represents the context of a user context menu command interaction.
- */
-export class UserMenuCommandContext extends MenuCommandContext {
-  /**
-   * Gets the user object for a user context menu command interaction.
-   * @returns {APIUser} The user object.
-   */
-  getUser(): APIUser {
-    const {type, data} = this.interaction
-    if (type !== InteractionType.ApplicationCommand) return null!
-    if (data.type !== ApplicationCommandType.User) return null!
-    return data.resolved.users[data.target_id]
-  }
-
-  /**
-   * Gets the guild member object for a user context menu command interaction.
-   * @returns {APIInteractionDataResolvedGuildMember | void} Returns the guild member object only if the interaction is a user context menu command interaction in a guild and the guild member object is present.
-   */
-  getMember(): APIInteractionDataResolvedGuildMember | void {
-    const {type, data} = this.interaction
-    if (type !== InteractionType.ApplicationCommand) return null!
-    if (data.type !== ApplicationCommandType.User) return null!
-    return data.resolved.members?.[data.target_id]
+export class ApplicationCommandContextUser extends ApplicationCommandContextMenu {
+  constructor(interaction: APIApplicationCommandInteraction) {
+    super(interaction)
+    if (interaction.data.type !== ApplicationCommandType.User) {
+      throw new Error('interaction type not supported for this context')
+    }
   }
 }
 
-/**
- * Represents the context of a message context menu command interaction.
- */
-export class MessageMenuCommandContext extends MenuCommandContext {
-  /**
-   * Gets the message object for a message context menu command interaction.
-   * @returns {APIMessage} The message object, or null if the interaction is not a message context menu command interaction.
-   */
-  getMessage(): APIMessage {
-    const {type, data} = this.interaction
-    if (type !== InteractionType.ApplicationCommand) return null!
-    if (data.type !== ApplicationCommandType.Message) return null!
-    return data.resolved.messages[data.target_id]
+export class ApplicationCommandContextMessage extends ApplicationCommandContextMenu {
+  constructor(interaction: APIApplicationCommandInteraction) {
+    super(interaction)
+    if (interaction.data.type !== ApplicationCommandType.Message) {
+      throw new Error('interaction type not supported for this context')
+    }
   }
 }

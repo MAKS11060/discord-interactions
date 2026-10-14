@@ -1,1 +1,8 @@
+node_modules
+dist
+
+# build
+*.tgz
+
 .env
+.discord.json

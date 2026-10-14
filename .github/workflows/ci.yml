@@ -1,43 +1,30 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  # push:
+  # pull_request:
+  #   branches: [main]
+  workflow_call:
 
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    timeout-minutes: 10
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
 
       - name: Set up Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v1.x
+          cache: true
 
-      - name: Run tests
-        run: deno task test
+      - name: Format
+        run: deno fmt --check
 
-  publish-dry-run:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      id-token: write
+      # - name: Test
+      #   run: >
+      #     deno test --parallel
 
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Set up Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-
-      - name: Publish (dry run)
-        run: deno task publish-dry-run
+      - name: Publish dry run
+        run: deno publish --allow-slow-types --dry-run

@@ -1,0 +1,30 @@
+{
+  "deno.enable": false,
+  "task.autoDetect": "off", // hide default tasks
+  "editor.defaultFormatter": "dprint.dprint",
+
+  "js/ts.experimental.useTsgo": true,
+  "js/ts.referencesCodeLens.enabled": true,
+  "js/ts.preferences.autoImportSpecifierExcludeRegexes": [
+    "discord-api-types/v7",
+    "discord-api-types/v8",
+    "discord-api-types/v9",
+    "discord-api-types/payload",
+    "console",
+    "node:console",
+    "node:inspector",
+    "zod/",
+    // "^node:"
+  ],
+
+  "explorer.incrementalNaming": "smart",
+  "explorer.fileNesting.patterns": {
+    "package.json": ".*, *.config.ts, *.config.js, tsconfig.json, dprint.*, pnpm-*",
+  },
+
+  "nodejs-testing.extensions": [{
+    "extensions": ["ts"],
+    "filePatterns": ["**/*{js,ts,tsx,jsx,mts,cts,cjs,mjs}"],
+    "parameters": ["--env-file-if-exists=.env", "--import", "tsx"],
+  }],
+}

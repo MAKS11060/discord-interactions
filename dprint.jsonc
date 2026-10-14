@@ -1,0 +1,33 @@
+{
+  "newLineKind": "auto",
+  "typescript": {
+    "arrowFunction.useParentheses": "force",
+    "exportDeclaration.spaceSurroundingNamedExports": false,
+    "importDeclaration.spaceSurroundingNamedImports": false,
+    "lineWidth": 120,
+    "quoteStyle": "alwaysSingle",
+    "semiColons": "asi",
+    "spaceAround": false,
+    "spaceSurroundingProperties": false,
+  },
+  "json": {
+    "trailingCommas": "jsonc",
+    "jsonTrailingCommaFiles": ["dprint.json", "{j,t}sconfig*.json", ".vscode/*.json"],
+  },
+  "markdown": {
+    "lineWidth": 120,
+  },
+  "yaml": {},
+  "excludes": [
+    "**/node_modules",
+    "**/*-lock.json",
+    "**/*-lock.yaml",
+    "!.mcp.json",
+  ],
+  "plugins": [
+    "npm:@dprint/typescript@0.96.1",
+    "npm:@dprint/json@0.25.2",
+    "npm:@dprint/markdown@0.26.0",
+    "npm:dprint-plugin-yaml@0.6.0",
+  ],
+}

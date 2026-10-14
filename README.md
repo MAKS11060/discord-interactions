@@ -1,164 +1,127 @@
-<h1 align="center">Discord Interactions</h1>
-<div align="center">
-  <a href="https://jsr.io/@maks11060/discord-interactions">
-    <img src="https://jsr.io/badges/@maks11060/discord-interactions">
-  </a>
-  <a href="https://github.com/MAKS11060/discord-interactions/actions/workflows/ci.yml">
-    <img src="https://github.com/MAKS11060/discord-interactions/actions/workflows/ci.yml/badge.svg">
-  </a>
-</div>
+# Discord Interactions
 
+A TypeScript library for Discord application commands, message components, and interactions.
 
-### Library for handling **Discord Interactions**.
-Handle slash command, user and chat command. [Overview of Interactions](https://discord.com/developers/docs/interactions/overview)
+## Install
 
-## Quick Start
-
-1. Create a new application on the [Discord Developer Portal](https://discord.com/developers/applications).
-2. Add your application to your Discord server by visiting the following URL and replacing `your_client_id` with your actual client ID:
-   - `https://discord.com/oauth2/authorize?client_id=your_client_id`
-3. Copy the `PUBLIC KEY` from your application's settings page and add it to your `.env` file.
-4. Copy the `CLIENT_ID` and `CLIENT_SECRET` from the OAuth2 page of your application's settings and add them to your `.env` file.
-
-### `.env` file:
-```env
-# Discord application settings
-# CLIENT_ID=        # Required for deploying commands
-# CLIENT_SECRET=    # Required for deploying commands
-CLIENT_PUBLIC_KEY=  # Required for verifying requests
+```sh
+npm install @maks11060/discord-interactions
 ```
 
-## Install from [JSR](https://jsr.io/@maks11060/discord-interactions)
-```powershell
-deno add @maks11060/discord-interactions
-deno add npm:discord-api-types
-```
+For the Hono adapter, install `hono` as well.
 
-## Install CLI
-```powershell
-deno install -Arfgn deploy-discord --unstable-kv jsr:@maks11060/discord-interactions/cli
-```
+## Quick start
 
-## Usage
+Create an application in the [Discord Developer Portal](https://discord.com/developers/applications) and configure its
+HTTPS interactions endpoint. Use the application's public key to verify requests:
 
-Define commands:
 ```ts
-// ./src/commands.ts
-import {defineCommand, Format} from '@maks11060/discord-interactions'
+import {DiscordInteraction, importPublicKey, InteractionBuilder} from '@maks11060/discord-interactions'
+import {interactionHandler} from '@maks11060/discord-interactions/web'
 
-const hello = defineCommand({
-  name: 'hello',
-  description: 'says hi',
-}).createHandler({
-  hello: () => ({
-    command: (c) => {
-      return c.reply({
-        content: `Hello ${Format.user(c.user.id)}`,
-      });
-    },
+const schema = new InteractionBuilder()
+schema.slashCommands((t) => [
+  t.command({
+    name: 'hello',
+    description: 'Say hello',
+    args: {name: t.arg.string({required: true})},
+    resolve: (context, args) => context.reply(`Hello, ${args.name}!`),
   }),
+])
+
+const publicKey = process.env.CLIENT_PUBLIC_KEY
+if (!publicKey) throw new Error('CLIENT_PUBLIC_KEY is required')
+
+const app = new DiscordInteraction({
+  publicKey: await importPublicKey(publicKey),
+  schema,
 })
 
-export const commands = [hello]
-
-// or use
-// export default [hello]
+export const handleRequest = (request: Request) => interactionHandler(request, app)
 ```
 
-Run **[CLI](#install-cli)**:
-```powershell
-deploy-discord ./src/commands.ts
-# or use help
-deploy-discord -h
-```
+Register commands with Discord using the CLI's `push` command; defining them in a schema alone does not publish them.
 
-### Use [Hono](https://hono.dev)
+## Context
+
+Declare a typed context in the schema. Pass a value or a factory as the adapter's final argument. Factories run once per
+request:
 
 ```ts
-// main.ts
-import {Hono} from 'hono'
-import {importKeyRaw, discordInteraction} from '@maks11060/discord-interactions/hono'
-import {commands} from './src/commands.ts'
+type Context = {logger: typeof console.log}
 
-const app = new Hono()
-const key = await importKeyRaw(Deno.env.get('CLIENT_PUBLIC_KEY')!)
+const schema = new InteractionBuilder((t) => ({
+  Context: t.$type<Context>(),
+  CustomId: {delete: 'global:delete'},
+}))
 
-app.post('/interaction', ...await discordInteraction(key, commands))
-
-Deno.serve(app.fetch)
+interactionHandler(request, app, () => ({logger: console.log}))
 ```
 
-### Use web standards api
+When a default context is supplied, the adapter argument is optional and the schema default is used:
+
 ```ts
-// main.ts
-import {importKeyRaw, discordInteraction} from '@maks11060/discord-interactions'
-import {commands} from './src/commands.ts'
-
-const key = await importKeyRaw(Deno.env.get('CLIENT_PUBLIC_KEY')!)
-const interaction = await discordInteraction(key, commands)
-
-Deno.serve(req => {
-  const uri = new URL(req.url)
-  if (req.method === 'POST' && uri.pathname === '/interaction') {
-    return interaction(req)
-  }
-  return new Response('404 Not found', {status: 404})
-})
+const schema = new InteractionBuilder((t) => ({
+  Context: t.$type<Context>({logger: console.log}),
+}))
 ```
 
-## Features
-  - [x] ApplicationCommandContext
-    - [x] getter for options
-    - [x] reply/replyUpdate
-    - [x] deferredReply
-  - [x] ApplicationCommandAutocompleteContext
-    - [x] get[string/integer/number]
-    - [x] autocomplete()
-    - [x] pass() return empty autocomplete
-  - [x] MessageComponentContext
-    - [x] getter(type/customId)
-    - [x] deferredReplyUpdate (DeferredMessageUpdate)
-    - [x] optional response support
-    - [x] optional. Support for manual call handling
-  - [x] ModalContext
-    - [x] reply
-    - [x] deferredReply
-  - [x] MenuCommandContext
-    - [x] reply
-    - [x] UserMenuCommandContext
-      - [x] getUser
-      - [x] getMember(guild only)
-    - [x] MessageMenuCommandContext
-      - [x] getMessage
-  - [x] CLI
-    - [x] resolve imports in deno.json[c]
-    - [ ] * resolve deps in package.json
+## Message components
 
-\* Maybe it works
+Register component handlers on the builder. Match a custom ID exactly, against a list, or with a predicate:
 
-### Problems
-1. Run the application to cache types from `discord-api-types/v10`
 ```ts
-// ./src/commands.ts
-import {defineCommand} from '@maks11060/discord-interactions' // or 'jsr:@maks11060/discord-interactions'
-import {ApplicationCommandType} from 'discord-api-types/v10' // or 'npm:discord-api-types/v10'
-
-const test = defineCommand({
-  type: ApplicationCommandType.ChatInput,
-  name: 'test',
-  description: 'autocomplete',
-}).createHandler({
-  test: () => ({
-    command(c) {
-      return c.reply({content: 'ok'})
-    },
+schema.messageComponents((t) => [
+  t.component({
+    customId: schema.customIds.delete,
+    resolve: (context) =>
+      context.deferUpdate(async (deferred) => {
+        await deferred.deleteFollowup()
+      }),
   }),
-})
+  t.component({
+    customId: (id) => id.startsWith('reply:'),
+    resolve: (context) => context.reply('Button pressed'),
+  }),
+])
 ```
 
-|                         Supported Runtime                         |                        Tested                        |
-| :---------------------------------------------------------------: | :--------------------------------------------------: |
-|                        Deno / Deno Deploy                         |                          ✓                           |
-|                         CloudFlare worker                         |                          ?                           |
-|                                Bun                                | x / [bug](https://github.com/oven-sh/bun/pull/12473) |
-| Node + [@hono/node-server](https://github.com/honojs/node-server) |                          ?                           |
+Handlers are global to the schema, so they work for components on reply and follow-up messages too.
+
+## Adapters
+
+The `/web` entry point handles standard `Request` and `Response` objects (Node.js, Deno, or Bun):
+
+```ts
+import {interactionHandler} from '@maks11060/discord-interactions/web'
+const response = await interactionHandler(request, app)
+```
+
+The `/hono` entry point returns Hono middleware:
+
+```ts
+import {interactionHandler} from '@maks11060/discord-interactions/hono'
+hono.post('/api/discord/interactions', interactionHandler(discordApp))
+```
+
+## Package entry points
+
+| Import path                            | Contents                                                              |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `@maks11060/discord-interactions`      | Builder, interaction handlers, message builder, and public-key helper |
+| `@maks11060/discord-interactions/fmt`  | `Fmt` formatting utilities                                            |
+| `@maks11060/discord-interactions/web`  | Web `Request`/`Response` adapter                                      |
+| `@maks11060/discord-interactions/hono` | Hono middleware adapter                                               |
+
+## CLI
+
+In a checkout of this repository, run the CLI with `pnpm discord`. It reads credentials from `.env` and application
+settings from `.discord.json`:
+
+```sh
+pnpm discord init --schema ./src/schema.ts
+pnpm discord push --all
+pnpm discord push --name hello
+```
+
+Use `pnpm discord --help` for the available commands and options.
