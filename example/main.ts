@@ -11,7 +11,7 @@ serve(async (req) => {
 
   if (req.method === 'POST' && url.pathname === '/api/discord/interactions') {
     const response = await interactionHandler(req, app, {
-      logger: console.log.bind(this)
+      logger: console.log.bind(this),
     })
     return logger.log(response)
   }
