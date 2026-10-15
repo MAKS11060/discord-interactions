@@ -1,8 +1,6 @@
-#!/usr/bin/env -S deno run -A --env-file
+#!/usr/bin/env node
 
 import {checkbox, select} from '@inquirer/prompts'
-import {resolve} from 'node:path'
-import {pathToFileURL} from 'node:url'
 import {parseArgs} from 'node:util'
 import {type DiscordApplicationConfig, initDiscordConfig, readDiscordConfig} from './config.ts'
 import {listApplicationCommands, showApplicationInfo} from './discord.ts'
@@ -212,7 +210,7 @@ async function runPush(options: {
   })
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (import.meta.main) {
   try {
     await runCli()
   } catch (error) {

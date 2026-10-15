@@ -1,11 +1,15 @@
 {
   "name": "@maks11060/discord-interactions",
   "version": "0.1.0",
-  "description": "",
+  "description": "TypeScript toolkit and CLI for building Discord interactions, application commands, and message components.",
   "keywords": [
     "discord",
-    "discord interactions",
-    "interactions builder"
+    "discord-api",
+    "discord-interactions",
+    "slash-commands",
+    "message-components",
+    "typescript",
+    "cli"
   ],
   "license": "MIT",
   "author": "MAKS11060",
@@ -49,6 +53,9 @@
     "./web": "./src/adapter/web.ts",
     "./hono": "./src/adapter/hono.ts"
   },
+  "bin": {
+    "discord": "./dist/cli.mjs"
+  },
   "files": [
     "dist"
   ],
@@ -69,21 +76,21 @@
     "openapi-ts": "openapi-ts"
   },
   "dependencies": {
-    "@maks11060/oauth2": "jsr:^0.0.2",
-    "discord-api-types": "^0.38.56"
+    "@inquirer/prompts": "^8.7.3",
+    "discord-api-types": "^0.38.56",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.0.0-next-20260930190945",
     "@hono/node-server": "^2.1.5",
-    "@inquirer/prompts": "^8.7.3",
+    "@maks11060/oauth2": "jsr:^0.0.2",
     "@maks11060/transform-publish-config": "^0.0.1",
     "@types/bun": "catalog:",
     "@types/deno": "catalog:",
     "@types/node": "catalog:",
     "tsdown": "^0.23.1",
     "tsx": "catalog:",
-    "typescript": "catalog:",
-    "zod": "catalog:"
+    "typescript": "catalog:"
   },
   "peerDependencies": {
     "hono": "catalog:"
