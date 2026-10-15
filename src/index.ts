@@ -12,3 +12,5 @@ export {DiscordInteraction, DiscordInteractions} from './interactions.ts'
 export {message} from './components.ts'
 
 export {importPublicKey} from './lib/crypto.ts'
+
+export type {DeferredOptions} from './context.ts'

@@ -38,6 +38,13 @@ import type {Message} from './components.ts'
 import {Fmt, i} from './fmt.ts'
 
 export type MaybePromise<T> = Promise<T> | T
+export type DeferredOptions = {
+  fetch?: typeof fetch
+  signal?: AbortSignal
+  waitUntil?: (promise: Promise<unknown>) => void
+}
+
+type DeferredRequestOptions = Pick<DeferredOptions, 'fetch' | 'signal'>
 export type OptionToObject<T extends APIApplicationCommandOption> = {
   [K in T['name']]: T extends {name: K} ? T : never
 }
@@ -538,16 +545,32 @@ export class MessageComponentContext<Config extends BuilderConfig = BuilderConfi
 
   deferReply(
     defer: (deferredContext: DeferredContext) => MaybePromise<void>,
+    options?: DeferredOptions,
   ): APIInteractionResponseDeferredChannelMessageWithSource {
-    defer(new DeferredContext(this.interaction, {type: InteractionResponseType.DeferredChannelMessageWithSource}))
+    const callback = Promise.resolve(defer(
+      new DeferredContext(
+        this.interaction,
+        {type: InteractionResponseType.DeferredChannelMessageWithSource},
+        options,
+      ),
+    ))
+    if (options?.waitUntil) options.waitUntil(callback)
 
     return {type: InteractionResponseType.DeferredChannelMessageWithSource}
   }
 
   deferUpdate(
     defer: (deferredContext: DeferredContext) => MaybePromise<void>,
+    options?: DeferredOptions,
   ): APIInteractionResponseDeferredMessageUpdate {
-    defer(new DeferredContext(this.interaction, {type: InteractionResponseType.DeferredMessageUpdate}))
+    const callback = Promise.resolve(defer(
+      new DeferredContext(
+        this.interaction,
+        {type: InteractionResponseType.DeferredMessageUpdate},
+        options,
+      ),
+    ))
+    if (options?.waitUntil) options.waitUntil(callback)
 
     return {type: InteractionResponseType.DeferredMessageUpdate}
   }
@@ -616,13 +639,16 @@ export class ModalSubmitContext {
 export class DeferredContext {
   readonly interaction!: APIApplicationCommandInteraction | APIMessageComponentInteraction;
   [deferredResponse]!: APIInteractionResponse
+  readonly #options: DeferredRequestOptions
 
   constructor(
     interaction: APIApplicationCommandInteraction | APIMessageComponentInteraction,
     response: APIInteractionResponse,
+    options?: DeferredRequestOptions,
   ) {
     Object.defineProperty(this, 'interaction', {value: interaction})
     this[deferredResponse] = response
+    this.#options = options ?? {}
   }
 
   /**
@@ -632,9 +658,7 @@ export class DeferredContext {
    */
   async reply(
     body: RESTPatchAPIInteractionOriginalResponseJSONBody,
-    options?: {
-      signal?: AbortSignal
-    },
+    options?: DeferredRequestOptions,
   ) {
     const {data, error} = await discordRest.updateOriginalWebhookMessage({
       path: {
@@ -642,7 +666,8 @@ export class DeferredContext {
         webhook_token: this.interaction.token,
       },
       body: normalizeReply(body as any),
-      signal: options?.signal,
+      fetch: options?.fetch ?? this.#options.fetch,
+      signal: options?.signal ?? this.#options.signal,
     })
 
     return {
@@ -653,6 +678,8 @@ export class DeferredContext {
             webhook_id: this.interaction.application_id,
             webhook_token: this.interaction.token,
           },
+          fetch: this.#options.fetch,
+          signal: this.#options.signal,
         })
 
         return error ? false : response?.ok ?? false
@@ -667,9 +694,7 @@ export class DeferredContext {
    */
   async replyFollowup(
     body: RESTPostAPIInteractionFollowupJSONBody,
-    options?: {
-      signal?: AbortSignal
-    },
+    options?: DeferredRequestOptions,
   ) {
     const {data, error} = await discordRest.executeWebhook({
       path: {
@@ -677,7 +702,8 @@ export class DeferredContext {
         webhook_token: this.interaction.token,
       },
       body: normalizeReply(body as any),
-      signal: options?.signal,
+      fetch: options?.fetch ?? this.#options.fetch,
+      signal: options?.signal ?? this.#options.signal,
     })
 
     if (!data || error) return null
@@ -686,9 +712,7 @@ export class DeferredContext {
       res: data!,
       edit: async (
         body: RESTPatchAPIInteractionFollowupJSONBody,
-        options?: {
-          signal?: AbortSignal
-        },
+        options?: DeferredRequestOptions,
       ) => {
         const {data: edited, error} = await discordRest.updateWebhookMessage({
           path: {
@@ -697,15 +721,14 @@ export class DeferredContext {
             message_id: data?.id,
           },
           body: body as any,
-          signal: options?.signal,
+          fetch: options?.fetch ?? this.#options.fetch,
+          signal: options?.signal ?? this.#options.signal,
         })
 
         return edited!
       },
       delete: async (
-        options?: {
-          signal?: AbortSignal
-        },
+        options?: DeferredRequestOptions,
       ) => {
         const {error, response} = await discordRest.deleteWebhookMessage({
           path: {
@@ -713,7 +736,8 @@ export class DeferredContext {
             webhook_token: this.interaction.token,
             message_id: data.id,
           },
-          signal: options?.signal,
+          fetch: options?.fetch ?? this.#options.fetch,
+          signal: options?.signal ?? this.#options.signal,
         })
 
         return response?.ok ?? false
@@ -728,6 +752,8 @@ export class DeferredContext {
         webhook_token: this.interaction.token,
         message_id: this.interaction.message?.id!,
       },
+      fetch: this.#options.fetch,
+      signal: this.#options.signal,
     })
     console.log(res.response?.status)
   }
@@ -738,6 +764,8 @@ export class DeferredContext {
         webhook_id: this.interaction.application_id,
         webhook_token: this.interaction.token,
       },
+      fetch: this.#options.fetch,
+      signal: this.#options.signal,
     })
     console.log(res.response?.status)
   }

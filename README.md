@@ -88,6 +88,19 @@ schema.messageComponents((t) => [
 
 Handlers are global to the schema, so they work for components on reply and follow-up messages too.
 
+For runtimes that may stop work after sending the interaction response, pass `waitUntil` as the second argument to
+`deferReply()` or `deferUpdate()`. The deferred context also forwards a custom `fetch` and `signal` to REST requests:
+
+```ts
+context.deferUpdate(async (deferred) => {
+  await deferred.deleteFollowup()
+}, {
+  waitUntil: (promise) => executionContext.waitUntil(promise),
+  fetch: envFetch,
+  signal: request.signal,
+})
+```
+
 ## Adapters
 
 The `/web` entry point handles standard `Request` and `Response` objects (Node.js, Deno, or Bun):
