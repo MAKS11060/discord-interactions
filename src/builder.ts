@@ -18,9 +18,9 @@ import type {
   ApplicationCommandContextChatInput,
   ApplicationCommandContextMessage,
   ApplicationCommandContextUser,
-  MaybePromise,
   MessageComponentContext,
 } from './context.ts'
+import type {MaybePromise} from './types.ts'
 
 type Primitive = string | number | boolean
 type OptionKind =

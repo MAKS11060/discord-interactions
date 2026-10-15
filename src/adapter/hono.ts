@@ -1,4 +1,5 @@
 import type {APIInteraction} from 'discord-api-types/v10'
+import type {MiddlewareHandler} from 'hono'
 import {createMiddleware} from 'hono/factory'
 import type {BuilderConfig} from '../builder.ts'
 import {InteractionError} from '../errors.ts'
@@ -31,7 +32,7 @@ export const interactionHandler = <Config extends BuilderConfig>(
     apps: DiscordInteraction<Config> | DiscordInteractions<Config>,
     ...ctx: InteractionContextArgs<Config>,
   ]
-) => {
+): MiddlewareHandler => {
   const [apps, ctx] = args
   return createMiddleware(async (c, next) => {
     if (c.req.method !== 'POST') {

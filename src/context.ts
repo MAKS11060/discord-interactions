@@ -4,9 +4,9 @@ import {
   type APIApplicationCommandInteraction,
   type APIApplicationCommandInteractionDataOption,
   type APIApplicationCommandOption,
+  type APIApplicationCommandOptionChoice,
   type APIAttachment,
   type APIChannel,
-  type APIInteractionDataOptionBase,
   type APIInteractionDataResolvedChannel,
   type APIInteractionDataResolvedGuildMember,
   type APIInteractionGuildMember,
@@ -17,7 +17,6 @@ import {
   type APIInteractionResponseDeferredMessageUpdate,
   type APIInteractionResponseUpdateMessage,
   type APIMessageComponentInteraction,
-  type APIModalInteractionResponse,
   type APIModalInteractionResponseCallbackData,
   type APIModalSubmitInteraction,
   type APIRole,
@@ -30,14 +29,20 @@ import {
   InteractionType,
   MessageFlags,
   type RESTPatchAPIInteractionFollowupJSONBody,
+  type RESTPatchAPIInteractionFollowupResult,
   type RESTPatchAPIInteractionOriginalResponseJSONBody,
+  type RESTPatchAPIInteractionOriginalResponseResult,
+  type RESTPatchAPIWebhookWithTokenMessageResult,
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
 import type {BuilderConfig, ConfigCustomIds} from './builder.ts'
 import type {Message} from './components.ts'
-import {Fmt, i} from './fmt.ts'
+import {Fmt} from './fmt.ts'
+import type {AnyString, MaybePromise} from './types.ts'
 
-export type MaybePromise<T> = Promise<T> | T
+// #region Types
+type GetCustomIds<T extends BuilderConfig> = ConfigCustomIds<T>[keyof ConfigCustomIds<T>] | AnyString
+
 export type DeferredOptions = {
   fetch?: typeof fetch
   signal?: AbortSignal
@@ -67,6 +72,9 @@ type GetOptionsResult<
   ? Option extends {required: true} ? Result : Result | null
   : never
 
+// #endregion
+
+// #region Helper
 const normalizeReply = <
   const T extends string | Fmt | Message | {
     content?: string | Fmt | undefined
@@ -84,8 +92,9 @@ const normalizeReply = <
   if (input.content instanceof Fmt) input.content = input.content.toString()
   return input as any
 }
+// #endregion
 
-// Context
+// #region ChatInput
 export class ApplicationCommandContextChatInput<
   Option extends {type: ApplicationCommandOptionType; name: string; required?: boolean} = APIApplicationCommandOption,
 > {
@@ -159,7 +168,7 @@ export class ApplicationCommandContextChatInput<
   }
 
   // for pretty log
-  get [Symbol.toStringTag]() {
+  get [Symbol.toStringTag](): string {
     return `app:${this.interaction.application_id} user:${this.me.username}`
   }
 
@@ -371,7 +380,6 @@ export class ApplicationCommandContextChatInput<
   }
 }
 
-//
 export class ApplicationCommandAutocompleteContext<
   Option extends APIApplicationCommandOption = APIApplicationCommandOption,
 > {
@@ -424,7 +432,9 @@ export class ApplicationCommandAutocompleteContext<
 
   // Response
   /** Returns the list for auto-completion and truncates it to the limit of `25` */
-  suggest(suggestions: Iterable<string | number | {value: string | number; name?: string}>) {
+  suggest(
+    suggestions: Iterable<string | number | {value: string | number; name?: string}>,
+  ): APIApplicationCommandOptionChoice[] {
     return Array.from(Iterator.from(suggestions).take(25), (v) =>
       typeof v === 'object'
         ? {value: v.value, name: v.name ?? String(v.value)}
@@ -433,14 +443,13 @@ export class ApplicationCommandAutocompleteContext<
   }
 
   /** Returns empty list */
-  empty() {
+  empty(): APIApplicationCommandOptionChoice[] {
     return []
   }
 }
+// #endregion
 
-type AnyString = string & {}
-type GetCustomIds<T extends BuilderConfig> = ConfigCustomIds<T>[keyof ConfigCustomIds<T>] | AnyString
-
+// #region MessageComponent
 export class MessageComponentContext<Config extends BuilderConfig = BuilderConfig> {
   interaction!: APIMessageComponentInteraction
 
@@ -577,7 +586,9 @@ export class MessageComponentContext<Config extends BuilderConfig = BuilderConfi
 
   // #endregion
 }
+// #endregion
 
+// #region ModalSubmit
 export class ModalSubmitContext {
   interaction!: APIModalSubmitInteraction
 
@@ -633,21 +644,22 @@ export class ModalSubmitContext {
   }
 
   // Response
+  // TODO
 }
+// #endregion
 
-// Deferred messages
+// #region Deferred messages
+// TODO: rewrite to recursive: replyFollowup(create new simple instance with update/delete/followup)
 export class DeferredContext {
-  readonly interaction!: APIApplicationCommandInteraction | APIMessageComponentInteraction;
-  [deferredResponse]!: APIInteractionResponse
+  readonly interaction!: APIApplicationCommandInteraction | APIMessageComponentInteraction
   readonly #options: DeferredRequestOptions
 
   constructor(
     interaction: APIApplicationCommandInteraction | APIMessageComponentInteraction,
-    response: APIInteractionResponse,
+    response: APIInteractionResponse, // TODO Remove
     options?: DeferredRequestOptions,
   ) {
     Object.defineProperty(this, 'interaction', {value: interaction})
-    this[deferredResponse] = response
     this.#options = options ?? {}
   }
 
@@ -659,30 +671,20 @@ export class DeferredContext {
   async reply(
     body: RESTPatchAPIInteractionOriginalResponseJSONBody,
     options?: DeferredRequestOptions,
-  ) {
-    const {data, error} = await discordRest.updateOriginalWebhookMessage({
-      path: {
-        webhook_id: this.interaction.application_id,
-        webhook_token: this.interaction.token,
-      },
-      body: normalizeReply(body as any),
-      fetch: options?.fetch ?? this.#options.fetch,
-      signal: options?.signal ?? this.#options.signal,
-    })
+  ): Promise<
+    {
+      message: RESTPatchAPIInteractionOriginalResponseResult
+      delete(): Promise<boolean>
+    } | null
+  > {
+    const message = await this.#updateOriginalMessage(body, options)
+    if (!message) return null
 
     return {
-      res: data!,
+      message: message as RESTPatchAPIInteractionOriginalResponseResult,
       delete: async () => {
-        const {data, error, response} = await discordRest.deleteOriginalWebhookMessage({
-          path: {
-            webhook_id: this.interaction.application_id,
-            webhook_token: this.interaction.token,
-          },
-          fetch: this.#options.fetch,
-          signal: this.#options.signal,
-        })
-
-        return error ? false : response?.ok ?? false
+        const ok = await this.#deleteOriginalMessage(options)
+        return ok
       },
     }
   }
@@ -695,8 +697,49 @@ export class DeferredContext {
   async replyFollowup(
     body: RESTPostAPIInteractionFollowupJSONBody,
     options?: DeferredRequestOptions,
+  ): Promise<
+    {
+      message: RESTPatchAPIInteractionFollowupResult
+      edit(
+        body: RESTPatchAPIInteractionFollowupJSONBody,
+        options?: DeferredRequestOptions,
+      ): Promise<discordRest.MessageResponse | null>
+      delete(options?: DeferredRequestOptions): Promise<boolean>
+    } | null
+  > {
+    const message = await this.#createWebhookMessage(body, options)
+    if (!message) return null
+
+    return {
+      message: message as RESTPatchAPIInteractionFollowupResult,
+      edit: async (
+        body: RESTPatchAPIInteractionFollowupJSONBody,
+        options?: DeferredRequestOptions,
+      ) => {
+        const newMassage = await this.#updateWebhookMessage(message.id, body, options)
+        if (!newMassage.data) return null
+
+        return newMassage.data
+      },
+      delete: async (options?: DeferredRequestOptions) => {
+        return await this.#deleteWebhookMessage(message.id, options)
+      },
+    }
+  }
+
+  async deleteFollowup(options?: DeferredRequestOptions): Promise<boolean> {
+    return await this.#deleteWebhookMessage(undefined, options)
+  }
+
+  async deleteOriginal(options?: DeferredRequestOptions): Promise<boolean> {
+    return await this.#deleteOriginalMessage(options)
+  }
+
+  async #updateOriginalMessage(
+    body: RESTPatchAPIInteractionOriginalResponseJSONBody,
+    options?: DeferredRequestOptions,
   ) {
-    const {data, error} = await discordRest.executeWebhook({
+    const result = await discordRest.updateOriginalWebhookMessage({
       path: {
         webhook_id: this.interaction.application_id,
         webhook_token: this.interaction.token,
@@ -706,72 +749,72 @@ export class DeferredContext {
       signal: options?.signal ?? this.#options.signal,
     })
 
-    if (!data || error) return null
-
-    return {
-      res: data!,
-      edit: async (
-        body: RESTPatchAPIInteractionFollowupJSONBody,
-        options?: DeferredRequestOptions,
-      ) => {
-        const {data: edited, error} = await discordRest.updateWebhookMessage({
-          path: {
-            webhook_id: this.interaction.application_id,
-            webhook_token: this.interaction.token,
-            message_id: data?.id,
-          },
-          body: body as any,
-          fetch: options?.fetch ?? this.#options.fetch,
-          signal: options?.signal ?? this.#options.signal,
-        })
-
-        return edited!
-      },
-      delete: async (
-        options?: DeferredRequestOptions,
-      ) => {
-        const {error, response} = await discordRest.deleteWebhookMessage({
-          path: {
-            webhook_id: this.interaction.application_id,
-            webhook_token: this.interaction.token,
-            message_id: data.id,
-          },
-          fetch: options?.fetch ?? this.#options.fetch,
-          signal: options?.signal ?? this.#options.signal,
-        })
-
-        return response?.ok ?? false
-      },
-    }
+    return result.data ?? null
   }
 
-  async deleteFollowup() {
-    const res = await discordRest.deleteWebhookMessage({
-      path: {
-        webhook_id: this.interaction.application_id,
-        webhook_token: this.interaction.token,
-        message_id: this.interaction.message?.id!,
-      },
-      fetch: this.#options.fetch,
-      signal: this.#options.signal,
-    })
-    console.log(res.response?.status)
-  }
-
-  async deleteOrigin() {
-    const res = await discordRest.deleteOriginalWebhookMessage({
+  async #deleteOriginalMessage(options?: DeferredRequestOptions) {
+    const result = await discordRest.deleteOriginalWebhookMessage({
       path: {
         webhook_id: this.interaction.application_id,
         webhook_token: this.interaction.token,
       },
-      fetch: this.#options.fetch,
-      signal: this.#options.signal,
+      fetch: options?.fetch ?? this.#options.fetch,
+      signal: options?.signal ?? this.#options.signal,
     })
-    console.log(res.response?.status)
+
+    return result.error ? false : result.response?.ok ?? false
+  }
+
+  async #createWebhookMessage(
+    body: RESTPostAPIInteractionFollowupJSONBody,
+    options?: DeferredRequestOptions,
+  ) {
+    const result = await discordRest.executeWebhook({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+      },
+      body: normalizeReply(body as any),
+      fetch: options?.fetch ?? this.#options.fetch,
+      signal: options?.signal ?? this.#options.signal,
+    })
+    return result.data ?? null
+  }
+
+  async #updateWebhookMessage(
+    message_id: string,
+    body: RESTPatchAPIInteractionFollowupJSONBody,
+    options?: DeferredRequestOptions,
+  ) {
+    const result = await discordRest.updateWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+        message_id,
+      },
+      body: body as any,
+      fetch: options?.fetch ?? this.#options.fetch,
+      signal: options?.signal ?? this.#options.signal,
+    })
+    return result
+  }
+
+  async #deleteWebhookMessage(message_id?: string, options?: DeferredRequestOptions) {
+    const result = await discordRest.deleteWebhookMessage({
+      path: {
+        webhook_id: this.interaction.application_id,
+        webhook_token: this.interaction.token,
+        message_id: message_id ?? this.interaction.message?.id!,
+      },
+      fetch: options?.fetch ?? this.#options.fetch,
+      signal: options?.signal ?? this.#options.signal,
+    })
+    return !!result.response?.ok
   }
 }
+// #endregion
 
-// user context menu
+// #region User Context Menu
 class ApplicationCommandContextMenu {
   readonly interaction!: APIApplicationCommandInteraction
 
@@ -893,3 +936,4 @@ export class ApplicationCommandContextMessage extends ApplicationCommandContextM
     }
   }
 }
+// #endregion

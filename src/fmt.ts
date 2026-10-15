@@ -455,10 +455,10 @@ export function fmt(
 }
 
 export {fmt as t}
-export const b = (v: unknown) => Fmt.of(v).bold()
-export const i = (v: unknown) => Fmt.of(v).italic()
-export const u = (v: unknown) => Fmt.of(v).underline()
-export const s = (v: unknown) => Fmt.of(v).strike()
-export const sp = (v: unknown) => Fmt.of(v).spoiler()
-export const c = (v: unknown, lang?: string) => Fmt.of(v).code(lang)
-export const link = (text: unknown, url: string) => Fmt.of(text).link(url)
+export const b = (v: unknown): Fmt => Fmt.of(v).bold()
+export const i = (v: unknown): Fmt => Fmt.of(v).italic()
+export const u = (v: unknown): Fmt => Fmt.of(v).underline()
+export const s = (v: unknown): Fmt => Fmt.of(v).strike()
+export const sp = (v: unknown): Fmt => Fmt.of(v).spoiler()
+export const c = (v: unknown, lang?: string): Fmt => Fmt.of(v).code(lang)
+export const link = (text: unknown, url: string) : Fmt=> Fmt.of(text).link(url)
