@@ -19,7 +19,7 @@ Commands:
 
 Run "pnpm discord <command> --help" for command-specific options.
 Global options:
-      --env-file <path>  Load an environment file (first-time setup)
+      --env-file <path> Load an environment file (first-time setup)
 `
 
 const commandHelp: Record<string, string> = {
@@ -29,41 +29,41 @@ Create .discord.json and .discord.secret.json in the current directory.
 Add .discord.secret.json to .gitignore. Existing files are left unchanged.
 
 Options:
-  -s, --schema <path>  Add an application entry with this schema module path
+  -s, --schema <path>   Add an application entry with this schema module path
       --env-file <path> Load environment variables from this file
-  -h, --help           Show this help
+  -h, --help            Show this help
 `,
   push: `Usage: pnpm discord push [options]
 
 Interactively select an application, then synchronize all or selected commands.
 
 Options:
-  -s, --schema <path>  Override the schema module path
-      --all            Replace all registered commands for the selected application
-      --name <name>    Upsert a command by name (repeatable; non-interactive)
-      --id <clientId>  Select an application without prompting
+  -s, --schema <path>   Override the schema module path
+      --all             Replace all registered commands for the selected application
+      --name <name>     Upsert a command by name (repeatable; non-interactive)
+      --id <clientId>   Select an application without prompting
       --env-file <path> Load environment variables from this file
-  -h, --help           Show this help
+  -h, --help            Show this help
 `,
   list: `Usage: pnpm discord list [--guild <id>] [--id <clientId>]
 
 List registered global application commands, or commands for one guild.
 
 Options:
-      --guild <id>  List commands registered for a guild
-      --id <clientId>  Select an application without prompting
+      --guild <id>      List commands registered for a guild
+      --id <clientId>   Select an application without prompting
       --env-file <path> Load environment variables from this file
-  -h, --help        Show this help
+  -h, --help            Show this help
 `,
   ls: `Usage: pnpm discord ls [--guild <id>] [--id <clientId>]
 
 Alias for "pnpm discord list".
 
 Options:
-      --guild <id>     List commands registered for a guild
-      --id <clientId>  Select an application without prompting
+      --guild <id>      List commands registered for a guild
+      --id <clientId>   Select an application without prompting
       --env-file <path> Load environment variables from this file
-  -h, --help           Show this help
+  -h, --help            Show this help
 `,
   me: `Usage: pnpm discord me [--id <clientId>]
 
@@ -71,9 +71,9 @@ Show application information and verify CLIENT_PUBLIC_KEY.
 Aliases: i, whoim, whoami, login
 
 Options:
-      --id <clientId>  Select an application without prompting
+      --id <clientId>   Select an application without prompting
       --env-file <path> Load environment variables from this file
-  -h, --help           Show this help
+  -h, --help            Show this help
 `,
 }
 
