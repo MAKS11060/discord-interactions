@@ -10,7 +10,15 @@
     "./hono": "./src/adapter/hono.ts",
   },
   "publish": {
-    // "include": ["jsr.json", "LICENSE", "README.md", "src/**/*.ts"],
-    // "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+    "include": [
+      "LICENSE",
+      "README.md",
+      // "src/**/*.ts", // tmp
+      "src/*.ts",
+      "src/adapter/**/*.ts",
+      "src/lib/api/**/*.ts",
+      "src/lib/crypto.ts",
+    ],
+    "exclude": ["src/**/*.test.ts"],
   },
 }
