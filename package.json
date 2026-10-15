@@ -64,7 +64,6 @@
     "lint": "dprint check && tsc --noEmit",
     "tc": "tsc --noEmit",
     "tcw": "tsc --noEmit --watch",
-    "prepare": "git config core.hooksPath .hooks",
     "cli": "node --env-file-if-exists=.env --import tsx ./cli/index.ts",
     "discord": "node --env-file-if-exists=.env --import tsx ./cli/index.ts",
     "generate:discord-schema": "tsx ./scripts/generate-discord-schema.ts",
@@ -72,8 +71,9 @@
     "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
     "dev:bun": "bun --hot ./example/main.ts",
     "build": "tsdown",
-    "build:pkg": "pnpm lint && pnpm build && pnpm transform-publish-config --extension mjs,d.mts --write && pnpm pack",
-    "openapi-ts": "openapi-ts"
+    "openapi-ts": "openapi-ts",
+    "prepare": "git config core.hooksPath .hooks",
+    "prepack": "pnpm lint && pnpm build && pnpm transform-publish-config --extension mjs,d.mts --write"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.7.3",
