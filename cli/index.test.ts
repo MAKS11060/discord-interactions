@@ -31,5 +31,12 @@ test('push help only lists options supported by push', async () => {
 test('list help only lists guild filter', async () => {
   const output = await captureHelp(['list', '--help'])
   assert.match(output, /--guild <id>/)
+  assert.match(output, /--id <clientId>/)
   assert.doesNotMatch(output, /--schema|--all|--name/)
+})
+
+test('me help documents application selection and environment-file options', async () => {
+  const output = await captureHelp(['me', '--help'])
+  assert.match(output, /--id <clientId>/)
+  assert.match(output, /--env-file <path>/)
 })

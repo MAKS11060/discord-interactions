@@ -1,9 +1,10 @@
 import {createDiscordOauth2, oauth2ClientCredentials, type OAuth2TokenResponse} from '@maks11060/oauth2'
 import * as discordRest from '../src/lib/api/discord/index.ts'
+import type {DiscordApplicationConfig} from './config.ts'
 import {type CredentialPrompts, resolveClientSecret} from './credentials.ts'
 import {printSchema} from './helper.ts'
 
-type Authorization = {
+export type Authorization = {
   application: {
     id: string
     name: string
@@ -124,20 +125,37 @@ export const createCliDependencies = (): CliDependencies => {
 
 const getCredentials = async (
   env: NodeJS.ProcessEnv,
-  options: {cwd?: string; prompts?: CredentialPrompts} = {},
+  options: {cwd?: string; prompts?: CredentialPrompts; application?: DiscordApplicationConfig} = {},
 ) => {
-  const clientId = getRequiredEnv(env, 'CLIENT_ID')
-  const clientSecret = await resolveClientSecret(clientId, env, options)
+  const clientId = options.application?.clientId?.trim() || getRequiredEnv(env, 'CLIENT_ID')
+  const clientSecret = await resolveClientSecret(clientId, env, {
+    ...options,
+    preferSavedSecret: Boolean(options.application),
+  })
   return {clientId, clientSecret}
+}
+
+export async function getAuthorizedApplication(
+  clientId: string,
+  clientSecret: string,
+  dependencies: CliDependencies = createCliDependencies(),
+): Promise<Authorization['application']> {
+  const token = await dependencies.getToken(clientId, clientSecret)
+  const {data, error} = await dependencies.discordApi.getAuthorization(token.access_token)
+  assertApiSuccess(error)
+  if (!data) throw new Error('Discord API did not return application information')
+  if (data.application.id !== clientId) {
+    throw new Error(`CLIENT_ID mismatch: expected ${clientId}, Discord returned ${data.application.id}`)
+  }
+  return data.application
 }
 
 export const showApplicationInfo = async (
   env: NodeJS.ProcessEnv = process.env,
   dependencies: CliDependencies = createCliDependencies(),
-  options: {cwd?: string; prompts?: CredentialPrompts} = {},
+  options: {cwd?: string; prompts?: CredentialPrompts; application?: DiscordApplicationConfig} = {},
 ): Promise<void> => {
   const {clientId, clientSecret} = await getCredentials(env, options)
-  const publicKey = getRequiredEnv(env, 'CLIENT_PUBLIC_KEY')
   const token = await dependencies.getToken(clientId, clientSecret)
   const {data, error} = await dependencies.discordApi.getAuthorization(token.access_token)
   assertApiSuccess(error)
@@ -147,9 +165,8 @@ export const showApplicationInfo = async (
   if (application.id !== clientId) {
     throw new Error(`CLIENT_ID mismatch: .env has ${clientId}, Discord returned ${application.id}`)
   }
-  if (application.verify_key.toLowerCase() !== publicKey.toLowerCase()) {
-    throw new Error('CLIENT_PUBLIC_KEY does not match the public key returned by Discord')
-  }
+  const envPublicKey = env.CLIENT_ID?.trim() === clientId ? env.CLIENT_PUBLIC_KEY?.trim() : undefined
+  const publicKey = options.application?.publicKey?.trim() || envPublicKey
 
   console.log({
     user: data.user
@@ -162,14 +179,16 @@ export const showApplicationInfo = async (
     scopes: data.scopes,
     expires: data.expires,
   })
-  console.log('CLIENT_PUBLIC_KEY: matches Discord')
+  if (publicKey?.toLowerCase() !== application.verify_key.toLowerCase()) {
+    throw new Error(`Mismatched PUBLIC_KEY: \n     Local ${publicKey}\n    Remote ${application.verify_key}`)
+  }
 }
 
 export const listApplicationCommands = async (
   env: NodeJS.ProcessEnv = process.env,
   guildId?: string,
   dependencies: CliDependencies = createCliDependencies(),
-  options: {cwd?: string; prompts?: CredentialPrompts} = {},
+  options: {cwd?: string; prompts?: CredentialPrompts; application?: DiscordApplicationConfig} = {},
 ): Promise<void> => {
   const {clientId, clientSecret} = await getCredentials(env, options)
   const token = await dependencies.getToken(clientId, clientSecret)

@@ -16,6 +16,7 @@ import {
   initDiscordConfig,
   readDiscordConfig,
   readDiscordSecrets,
+  writeDiscordApplication,
 } from './config.ts'
 
 async function withTempDirectory(run: (directory: string) => Promise<void>): Promise<void> {
@@ -125,5 +126,29 @@ test('legacy client secrets migrate into the ignored secret file', async () => {
       secrets: {'app-123': 'legacy-secret'},
     })
     assert.match(await readFile(join(cwd, '.gitignore'), 'utf8'), /^\.discord\.secret\.json\n$/)
+  })
+})
+
+test('a saved first-use application can omit its command schema', async () => {
+  await withTempDirectory(async (cwd) => {
+    await writeDiscordApplication(
+      {
+        clientId: 'app-123',
+        name: 'Example app',
+        publicKey: 'public-key',
+      },
+      'client-secret',
+      cwd,
+    )
+
+    assert.deepEqual(await readDiscordConfig(cwd), {
+      $schema: DISCORD_CONFIG_SCHEMA_URL,
+      applications: [{
+        clientId: 'app-123',
+        name: 'Example app',
+        publicKey: 'public-key',
+      }],
+    })
+    assert.deepEqual((await readDiscordSecrets(cwd)).secrets, {'app-123': 'client-secret'})
   })
 })

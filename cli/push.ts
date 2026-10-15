@@ -52,7 +52,7 @@ export async function pushApplicationCommands(
   const cwd = options.cwd ?? process.cwd()
   const clientSecret = options.resolveSecret
     ? await options.resolveSecret(clientId, env, cwd)
-    : await resolveClientSecret(clientId, env, {cwd})
+    : await resolveClientSecret(clientId, env, {cwd, preferSavedSecret: true})
 
   const commands = await loadCommandsFromSchema(schemaPath, cwd)
   const names = options.names

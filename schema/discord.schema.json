@@ -19,14 +19,15 @@
             "type": "string",
             "minLength": 1
           },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
           "publicKey": {
             "type": "string",
             "minLength": 1
           }
         },
-        "required": [
-          "schema"
-        ],
         "additionalProperties": false
       }
     }

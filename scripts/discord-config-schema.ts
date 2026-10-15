@@ -8,8 +8,9 @@ export const DISCORD_CONFIG_PATH = '.discord.json'
 export const DISCORD_SECRET_PATH = '.discord.secret.json'
 
 export const discordApplicationConfigSchema = z.object({
-  schema: z.string().min(1),
+  schema: z.string().min(1).optional(),
   clientId: z.string().min(1).optional(),
+  name: z.string().min(1).optional(),
   publicKey: z.string().min(1).optional(),
 }).strict()
 

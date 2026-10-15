@@ -4,7 +4,7 @@ import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 import {test} from 'node:test'
 import {DISCORD_SECRET_SCHEMA_URL, readDiscordSecrets, writeDiscordSecret} from './config.ts'
-import {resolveClientSecret} from './credentials.ts'
+import {resolveClientSecret, resolveFirstUseCredentials} from './credentials.ts'
 
 async function withTempDirectory(run: (directory: string) => Promise<void>): Promise<void> {
   const directory = await mkdtemp(join(tmpdir(), 'discord-interactions-credentials-'))
@@ -27,6 +27,19 @@ test('secret resolution prefers env, then the secret file', async () => {
 
     assert.equal(envSecret, 'env-secret')
     assert.equal(storedSecret, 'stored-secret')
+  })
+})
+
+test('a configured application prefers its own saved secret over an unscoped env secret', async () => {
+  await withTempDirectory(async (cwd) => {
+    await writeDiscordSecret('app-123', 'stored-secret', cwd)
+    const secret = await resolveClientSecret(
+      'app-123',
+      {CLIENT_SECRET: 'unscoped-secret'},
+      {cwd, preferSavedSecret: true},
+    )
+
+    assert.equal(secret, 'stored-secret')
   })
 })
 
@@ -72,4 +85,33 @@ test('prompted secrets are not saved when declined', async () => {
     })
     assert.equal(await readFile(join(cwd, '.gitignore'), 'utf8'), 'node_modules\n')
   })
+})
+
+test('first-use credentials prompt for missing environment values and ask before saving', async () => {
+  const prompted: string[] = []
+  const credentials = await resolveFirstUseCredentials({}, {
+    input: async (message) => {
+      prompted.push(message)
+      return 'app-123'
+    },
+    password: async (message) => {
+      prompted.push(message)
+      return 'client-secret'
+    },
+    confirmSave: async (message) => {
+      prompted.push(message)
+      return true
+    },
+  })
+
+  assert.deepEqual(credentials, {
+    clientId: 'app-123',
+    clientSecret: 'client-secret',
+    save: true,
+  })
+  assert.deepEqual(prompted, [
+    'Enter CLIENT_ID',
+    'Enter CLIENT_SECRET',
+    'Save the application in .discord.json and the secret in .discord.secret.json?',
+  ])
 })

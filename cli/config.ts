@@ -139,6 +139,29 @@ export async function writeDiscordSecret(
   )
 }
 
+export async function writeDiscordApplication(
+  application: DiscordApplicationConfig & {clientId: string},
+  clientSecret: string,
+  cwd = process.cwd(),
+): Promise<void> {
+  const config = await readDiscordConfig(cwd) ?? {
+    $schema: DISCORD_CONFIG_SCHEMA_URL,
+    applications: [],
+  }
+  const existingIndex = config.applications.findIndex((item) => item.clientId === application.clientId)
+  if (existingIndex === -1) {
+    config.applications.push(application)
+  } else {
+    config.applications[existingIndex] = {...config.applications[existingIndex], ...application}
+  }
+  await writeFile(
+    resolve(cwd, DISCORD_CONFIG_PATH),
+    `${JSON.stringify(config, null, 2)}\n`,
+    'utf8',
+  )
+  await writeDiscordSecret(application.clientId, clientSecret, cwd)
+}
+
 async function initializeSecretFile(cwd: string): Promise<void> {
   const filePath = resolve(cwd, DISCORD_SECRET_PATH)
   const content = `${JSON.stringify({$schema: DISCORD_SECRET_SCHEMA_URL, secrets: {}}, null, 2)}\n`
