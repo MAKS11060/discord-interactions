@@ -61,7 +61,6 @@ function createDependencies(existingCommands: ApplicationCommandResponse[] = [])
 const application = {
   schema: './schema.ts',
   clientId: 'app-id',
-  clientSecret: 'app-secret',
 }
 
 test('schema loader imports command JSON from an InteractionBuilder-like export', async () => {
@@ -74,7 +73,7 @@ test('schema loader imports command JSON from an InteractionBuilder-like export'
 test('push --all bulk synchronizes the schema commands', async () => {
   await withSchema(async (cwd, schemaPath) => {
     const {dependencies, calls} = createDependencies()
-    await pushApplicationCommands(application, {}, {
+    await pushApplicationCommands(application, {CLIENT_SECRET: 'app-secret'}, {
       all: true,
       schemaPath,
       cwd,
@@ -95,7 +94,7 @@ test('push by name updates matching commands and creates missing commands', asyn
       name: 'existing',
       description: 'old description',
     }])
-    await pushApplicationCommands(application, {}, {
+    await pushApplicationCommands(application, {CLIENT_SECRET: 'app-secret'}, {
       names: ['existing', 'new-command'],
       schemaPath,
       cwd,

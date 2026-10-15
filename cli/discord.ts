@@ -1,6 +1,7 @@
 import {createDiscordOauth2, oauth2ClientCredentials, type OAuth2TokenResponse} from '@maks11060/oauth2'
 import {printSchema} from '../src/helper.ts'
 import * as discordRest from '../src/lib/api/discord/index.ts'
+import {type CredentialPrompts, resolveClientSecret} from './credentials.ts'
 
 type Authorization = {
   application: {
@@ -121,16 +122,21 @@ export const createCliDependencies = (): CliDependencies => {
   }
 }
 
-const getCredentials = (env: NodeJS.ProcessEnv) => ({
-  clientId: getRequiredEnv(env, 'CLIENT_ID'),
-  clientSecret: getRequiredEnv(env, 'CLIENT_SECRET'),
-})
+const getCredentials = async (
+  env: NodeJS.ProcessEnv,
+  options: {cwd?: string; prompts?: CredentialPrompts} = {},
+) => {
+  const clientId = getRequiredEnv(env, 'CLIENT_ID')
+  const clientSecret = await resolveClientSecret(clientId, env, options)
+  return {clientId, clientSecret}
+}
 
 export const showApplicationInfo = async (
   env: NodeJS.ProcessEnv = process.env,
   dependencies: CliDependencies = createCliDependencies(),
+  options: {cwd?: string; prompts?: CredentialPrompts} = {},
 ): Promise<void> => {
-  const {clientId, clientSecret} = getCredentials(env)
+  const {clientId, clientSecret} = await getCredentials(env, options)
   const publicKey = getRequiredEnv(env, 'CLIENT_PUBLIC_KEY')
   const token = await dependencies.getToken(clientId, clientSecret)
   const {data, error} = await dependencies.discordApi.getAuthorization(token.access_token)
@@ -163,8 +169,9 @@ export const listApplicationCommands = async (
   env: NodeJS.ProcessEnv = process.env,
   guildId?: string,
   dependencies: CliDependencies = createCliDependencies(),
+  options: {cwd?: string; prompts?: CredentialPrompts} = {},
 ): Promise<void> => {
-  const {clientId, clientSecret} = getCredentials(env)
+  const {clientId, clientSecret} = await getCredentials(env, options)
   const token = await dependencies.getToken(clientId, clientSecret)
   const result = guildId
     ? await dependencies.discordApi.listGuildCommands(token.access_token, clientId, guildId)

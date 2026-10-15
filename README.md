@@ -128,8 +128,7 @@ hono.post('/api/discord/interactions', interactionHandler(discordApp))
 
 ## CLI
 
-In a checkout of this repository, run the CLI with `pnpm discord`. It reads credentials from `.env` and application
-settings from `.discord.json`:
+In a checkout of this repository, run the CLI with `pnpm discord`:
 
 ```sh
 pnpm discord init --schema ./src/schema.ts

@@ -11,7 +11,7 @@ import {loadCommandsFromSchema, pushApplicationCommands} from './push.ts'
 const help = `Usage: pnpm discord <command> [options]
 
 Commands:
-  init       Create .discord.json if it does not exist
+  init       Initialize Discord config and secret files
   push       Create or update application commands
   list, ls   List registered application commands
   me         Show application info (aliases: i, whoim, whoami, login)
@@ -22,7 +22,8 @@ Run "pnpm discord <command> --help" for command-specific options.
 const commandHelp: Record<string, string> = {
   init: `Usage: pnpm discord init [-s <path>]
 
-Create .discord.json in the current directory. Existing files are left unchanged.
+Create .discord.json and .discord.secret.json in the current directory.
+Add .discord.secret.json to .gitignore. Existing files are left unchanged.
 
 Options:
   -s, --schema <path>  Add an application entry with this schema module path
@@ -136,7 +137,6 @@ async function runPush(options: {
     applications = [{
       schema: options.schemaPath,
       ...(process.env.CLIENT_ID ? {clientId: process.env.CLIENT_ID} : {}),
-      ...(process.env.CLIENT_SECRET ? {clientSecret: process.env.CLIENT_SECRET} : {}),
       ...(process.env.CLIENT_PUBLIC_KEY ? {publicKey: process.env.CLIENT_PUBLIC_KEY} : {}),
     }]
   }

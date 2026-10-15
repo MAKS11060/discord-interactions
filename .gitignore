@@ -5,4 +5,4 @@ dist
 *.tgz
 
 .env
-.discord.json
+.discord.secret.json

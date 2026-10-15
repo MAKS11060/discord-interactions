@@ -1,0 +1,10 @@
+{
+  "$schema": "./schema/discord.schema.json",
+  "applications": [
+    {
+      "schema": "./example/schema.ts",
+      "clientId": "1097172825292406814",
+      "publicKey": "1edaa9599ddd9e75b3204d1b148d619596bd9341e7a0f41264067696ad10a787"
+    }
+  ]
+}

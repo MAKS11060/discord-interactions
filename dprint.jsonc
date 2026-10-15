@@ -23,6 +23,7 @@
     "**/*-lock.json",
     "**/*-lock.yaml",
     "!.mcp.json",
+    "!.discord.*",
   ],
   "plugins": [
     "npm:@dprint/typescript@0.96.1",

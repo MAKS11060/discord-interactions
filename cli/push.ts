@@ -2,6 +2,7 @@ import {resolve} from 'node:path'
 import {pathToFileURL} from 'node:url'
 import type {ApplicationCommandCreateRequest} from '../src/lib/api/discord/index.ts'
 import type {DiscordApplicationConfig} from './config.ts'
+import {resolveClientSecret} from './credentials.ts'
 import {type CliDependencies, createCliDependencies} from './discord.ts'
 
 export type CommandPayload = ApplicationCommandCreateRequest
@@ -40,17 +41,20 @@ export async function pushApplicationCommands(
     all?: boolean
     cwd?: string
     dependencies?: CliDependencies
+    resolveSecret?: (clientId: string, env: NodeJS.ProcessEnv, cwd: string) => Promise<string>
   } = {},
 ): Promise<void> {
   const schemaPath = options.schemaPath ?? application.schema
   if (!schemaPath) throw new Error('No schema path configured; use --schema <path>')
 
   const clientId = application.clientId?.trim() || env.CLIENT_ID?.trim()
-  const clientSecret = application.clientSecret?.trim() || env.CLIENT_SECRET?.trim()
   if (!clientId) throw new Error(`Missing clientId for schema "${schemaPath}"`)
-  if (!clientSecret) throw new Error(`Missing clientSecret for schema "${schemaPath}"`)
+  const cwd = options.cwd ?? process.cwd()
+  const clientSecret = options.resolveSecret
+    ? await options.resolveSecret(clientId, env, cwd)
+    : await resolveClientSecret(clientId, env, {cwd})
 
-  const commands = await loadCommandsFromSchema(schemaPath, options.cwd)
+  const commands = await loadCommandsFromSchema(schemaPath, cwd)
   const names = options.names
   let selected: CommandPayload[]
   if (options.all) {

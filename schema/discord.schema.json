@@ -19,10 +19,6 @@
             "type": "string",
             "minLength": 1
           },
-          "clientSecret": {
-            "type": "string",
-            "minLength": 1
-          },
           "publicKey": {
             "type": "string",
             "minLength": 1
