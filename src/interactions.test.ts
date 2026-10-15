@@ -1,8 +1,8 @@
 import assert from 'assert'
 import type {APIInteraction} from 'discord-api-types/v10'
 import {test} from 'node:test'
+import {printSchema} from '../cli/helper.ts'
 import {schema} from '../example/builder.ts'
-import {printSchema} from './helper.ts'
 import {DiscordInteraction} from './interactions.ts'
 
 import '../example/commands/slash.ts'

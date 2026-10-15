@@ -1,7 +1,7 @@
 import {createDiscordOauth2, oauth2ClientCredentials, type OAuth2TokenResponse} from '@maks11060/oauth2'
-import {printSchema} from '../src/helper.ts'
 import * as discordRest from '../src/lib/api/discord/index.ts'
 import {type CredentialPrompts, resolveClientSecret} from './credentials.ts'
+import {printSchema} from './helper.ts'
 
 type Authorization = {
   application: {
