@@ -19,7 +19,7 @@
 
   "explorer.incrementalNaming": "smart",
   "explorer.fileNesting.patterns": {
-    "package.json": ".*, *.config.ts, *.config.js, tsconfig.json, dprint.*, pnpm-*",
+    "package.json": ".*, *.json, *.jsonc, *.config.ts, *.config.js, pnpm-*",
   },
 
   "nodejs-testing.extensions": [{
