@@ -64,7 +64,7 @@
     "lint": "dprint check && tsc --noEmit",
     "tc": "tsc --noEmit",
     "tcw": "tsc --noEmit --watch",
-    "discord": "node --env-file-if-exists=.env ./cli/index.ts",
+    "discord": "node ./cli/index.ts",
     "generate:discord-schema": "tsx ./scripts/generate-discord-schema.ts",
     "dev": "deno run -A --env-file --watch-hmr --unstable-no-legacy-abort ./example/main.ts",
     "dev:node": "node --env-file-if-exists=.env --watch ./example/main.ts",
