@@ -399,7 +399,7 @@ type MessageComponentTools<Config extends BuilderConfig> = {
   ) => MessageComponentDefinition<Config>
 }
 
-export type ConfigCustomIds<Config extends BuilderConfig> = Config extends {
+export type ConfigCustomId<Config extends BuilderConfig> = Config extends {
   CustomId: infer Ids extends Record<string, string>
 } ? Ids
   : Record<string, string>
@@ -409,12 +409,12 @@ export class InteractionBuilder<
 > {
   #commands: CommandDefinition[] = []
   #messageComponents: MessageComponentDefinition<Config>[] = []
-  readonly customIds: ConfigCustomIds<Config>
+  readonly customId: ConfigCustomId<Config>
   readonly config: Config
 
   constructor(config: Config | ((types: TypeHelper) => Config) = {} as Config) {
     this.config = typeof config === 'function' ? config(new TypeHelper()) : config
-    this.customIds = (this.config.CustomId ?? {}) as ConfigCustomIds<Config>
+    this.customId = (this.config.CustomId ?? {}) as ConfigCustomId<Config>
   }
 
   toSchema(): this {

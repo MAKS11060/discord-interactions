@@ -2,7 +2,7 @@ export {InteractionBuilder} from './builder.ts'
 export type {
   BuilderConfig,
   ConfigContext,
-  ConfigCustomIds,
+  ConfigCustomId,
   MessageComponentDefinition,
   MessageComponentMatcher,
 } from './builder.ts'

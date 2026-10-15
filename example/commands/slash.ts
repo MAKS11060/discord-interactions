@@ -114,12 +114,12 @@ const hello = schema.declareCommand({
       t.text`Hello ${Fmt.mention(c.from)}`,
       t.separator({spacing: 'large'}),
       t.row((t) => [
-        t.userSelect({id: schema.customIds.helloSelect}),
+        t.userSelect({id: schema.customId.helloSelect}),
       ]),
       t.separator({spacing: 'large'}),
       t.row((t) => [
-        t.button.primary({id: schema.customIds.helloDetail, label: 'a'}),
-        t.button.secondary({id: schema.customIds.helloSecondary, label: 'b'}),
+        t.button.primary({id: schema.customId.helloDetail, label: 'a'}),
+        t.button.secondary({id: schema.customId.helloSecondary, label: 'b'}),
       ]),
     ]))
   },
@@ -190,8 +190,8 @@ schema.slashCommands((t) => [
       return c.reply(message((t) => [
         t.text`test 1`,
         t.row((t) => [
-          t.button.primary({id: schema.customIds.btn1, label: 'Btn 1'}),
-          t.button.primary({id: schema.customIds.btn2, label: 'Btn 2'}),
+          t.button.primary({id: schema.customId.btn1, label: 'Btn 1'}),
+          t.button.primary({id: schema.customId.btn2, label: 'Btn 2'}),
         ]),
       ]))
     },
@@ -212,10 +212,10 @@ schema.slashCommands((t) => [
       return c.reply(message((t) => [
         t.text`test 2`,
         t.row((t) => [
-          t.button.primary({id: schema.customIds.btnReply, label: 'reply'}),
-          t.button.primary({id: schema.customIds.btnReplyEphemeral, label: 'replyEphemeral'}),
-          t.button.primary({id: schema.customIds.btnUpdate, label: 'update'}),
-          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete'}),
+          t.button.primary({id: schema.customId.btnReply, label: 'reply'}),
+          t.button.primary({id: schema.customId.btnReplyEphemeral, label: 'replyEphemeral'}),
+          t.button.primary({id: schema.customId.btnUpdate, label: 'update'}),
+          t.button.danger({id: schema.customId.btnDelete, label: 'Delete'}),
 
           t.button.danger({id: 'derefReply', label: 'derefReply'}),
           t.button.danger({id: 'derefUpdate', label: 'derefUpdate'}),
@@ -228,9 +228,9 @@ schema.slashCommands((t) => [
 schema.messageComponents((components) => [
   components.component({
     customId: [
-      schema.customIds.helloDetail,
-      schema.customIds.helloSecondary,
-      schema.customIds.helloSelect,
+      schema.customId.helloDetail,
+      schema.customId.helloSecondary,
+      schema.customId.helloSelect,
     ],
     resolve: (c) =>
       c.reply(
@@ -244,37 +244,37 @@ schema.messageComponents((components) => [
       ),
   }),
   components.component({
-    customId: [schema.customIds.btn1, schema.customIds.btn2],
+    customId: [schema.customId.btn1, schema.customId.btn2],
     resolve: (c) =>
       c.replyEphemeral(Fmt.join([
         fmt`id: ${fmt`${c.customId}`.bold()}`,
       ], '\n')),
   }),
   components.component({
-    customId: schema.customIds.btnReply,
+    customId: schema.customId.btnReply,
     resolve: (c) =>
       c.reply(message((t) => [
         t.text`New message`,
         t.row((t) => [
           t.button.primary({id: 'reply:123', label: 'reply'}),
-          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete this message'}),
+          t.button.danger({id: schema.customId.btnDelete, label: 'Delete this message'}),
         ]),
       ])),
   }),
   components.component({
-    customId: schema.customIds.btnReplyEphemeral,
+    customId: schema.customId.btnReplyEphemeral,
     resolve: (c) =>
       c.replyEphemeral(message((t) => [
         t.text`New ephemeral message`,
       ])),
   }),
   components.component({
-    customId: schema.customIds.btnUpdate,
+    customId: schema.customId.btnUpdate,
     resolve: (c) =>
       c.update(message((t) => [
         t.text`Update parent message success`,
         t.row((t) => [
-          t.button.danger({id: schema.customIds.btnDelete, label: 'Delete this message'}),
+          t.button.danger({id: schema.customId.btnDelete, label: 'Delete this message'}),
         ]),
       ])),
   }),
@@ -283,7 +283,7 @@ schema.messageComponents((components) => [
     resolve: (c) => c.reply('Handled a component from a reply message'),
   }),
   components.component({
-    customId: schema.customIds.btnDelete,
+    customId: schema.customId.btnDelete,
     resolve: (c) =>
       c.deferUpdate(async (def) => {
         await def.deleteFollowup()

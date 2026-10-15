@@ -41,7 +41,7 @@ test('component handlers dispatch by custom ID without originating message metad
   const handled: string[] = []
   schema.messageComponents((t) => [
     t.component({
-      customId: schema.customIds.createReply,
+      customId: schema.customId.createReply,
       resolve: (context, ctx) => {
         handled.push(ctx.requestId, context.customId)
         return context.reply('created a child message')
@@ -59,7 +59,7 @@ test('component handlers dispatch by custom ID without originating message metad
     Context: Context
     CustomId: {createReply: 'global:create'}
   }
-  schema.customIds.createReply satisfies 'global:create'
+  schema.customId.createReply satisfies 'global:create'
 
   const interaction = new DiscordInteraction({publicKey, schema})
   const firstResponse = await interaction.execute(createInteraction('global:create'), {requestId: 'request'})

@@ -73,7 +73,7 @@ Register component handlers on the builder. Match a custom ID exactly, against a
 ```ts
 schema.messageComponents((t) => [
   t.component({
-    customId: schema.customIds.delete,
+    customId: schema.customId.delete,
     resolve: (context) =>
       context.deferUpdate(async (deferred) => {
         await deferred.deleteFollowup()

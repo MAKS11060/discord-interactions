@@ -32,16 +32,15 @@ import {
   type RESTPatchAPIInteractionFollowupResult,
   type RESTPatchAPIInteractionOriginalResponseJSONBody,
   type RESTPatchAPIInteractionOriginalResponseResult,
-  type RESTPatchAPIWebhookWithTokenMessageResult,
   type RESTPostAPIInteractionFollowupJSONBody,
 } from 'discord-api-types/v10'
-import type {BuilderConfig, ConfigCustomIds} from './builder.ts'
+import type {BuilderConfig, ConfigCustomId} from './builder.ts'
 import type {Message} from './components.ts'
 import {Fmt} from './fmt.ts'
 import type {AnyString, MaybePromise} from './types.ts'
 
 // #region Types
-type GetCustomIds<T extends BuilderConfig> = ConfigCustomIds<T>[keyof ConfigCustomIds<T>] | AnyString
+type GetCustomId<T extends BuilderConfig> = ConfigCustomId<T>[keyof ConfigCustomId<T>] | AnyString
 
 export type DeferredOptions = {
   fetch?: typeof fetch
@@ -517,8 +516,8 @@ export class MessageComponentContext<Config extends BuilderConfig = BuilderConfi
    * Gets the custom ID of the message component.
    * @returns The custom ID of the message component, which is a string with a maximum length of 100 characters.
    */
-  get customId(): GetCustomIds<Config> {
-    return this.interaction.data.custom_id as GetCustomIds<Config> // optional typed
+  get customId(): GetCustomId<Config> {
+    return this.interaction.data.custom_id as GetCustomId<Config> // optional typed
   }
   // #endregion
 
